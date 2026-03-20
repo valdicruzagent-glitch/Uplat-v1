@@ -50,9 +50,18 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
   }
 
   if (done) {
+    const basePath = locale === "en" ? "/en" : "";
     return (
       <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-        {t.thanks}
+        <div>{t.thanks}</div>
+        <div className="mt-3">
+          <a
+            className="inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            href={basePath + "/start"}
+          >
+            {locale === "en" ? "Continue" : "Continuar"}
+          </a>
+        </div>
       </div>
     );
   }
