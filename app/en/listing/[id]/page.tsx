@@ -43,6 +43,14 @@ export default async function ListingPageEn({
   return (
     <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
       <div className="mx-auto flex max-w-2xl flex-col gap-3">
+        {listing.cover_image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={listing.cover_image_url}
+            alt={listing.title}
+            className="h-64 w-full rounded-xl object-cover"
+          />
+        ) : null}
         <div className="flex items-center justify-between gap-4">
           <Link className="text-sm underline" href="/en">
             {en.back}
