@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 import "leaflet/dist/leaflet.css";
+import type { Listing } from "@/app/types/listing";
 
-// Fix default marker icon paths when bundling (Next/Webpack).
-// See: https://github.com/Leaflet/Leaflet/issues/4968
-const DEFAULT_CENTER: [number, number] = [44.9778, -93.265]; // Minneapolis-ish (smoke test)
+const DEFAULT_CENTER: [number, number] = [12.1364, -86.2514]; // Managua-ish
 
-export default function LeafletMap() {
+export default function LeafletMap({ listings }: { listings: Listing[] }) {
   useEffect(() => {
     // Only run on client.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -31,17 +31,28 @@ export default function LeafletMap() {
     <div className="h-[420px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
       <MapContainer
         center={DEFAULT_CENTER}
-        zoom={12}
-        scrollWheelZoom={false}
+        zoom={8}
+        scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Marker position={DEFAULT_CENTER}>
-          <Popup>Uplat V1 smoke test map is working.</Popup>
-        </Marker>
+
+        {listings.map((l) => (
+          <Marker key={l.id} position={[l.lat, l.lng]}>
+            <Popup>
+              <div className="font-semibold">{l.title}</div>
+              <div className="text-xs opacity-80">
+                ${Number(l.price_usd).toLocaleString()} • {l.city}
+              </div>
+              <Link className="text-xs underline" href={`/listing/${l.id}`}>
+                Open
+              </Link>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   );

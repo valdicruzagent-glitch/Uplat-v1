@@ -1,6 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+import type { Listing } from "@/app/types/listing";
 
 const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
   ssr: false,
@@ -9,15 +13,108 @@ const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
   ),
 });
 
+type Filters = {
+  city: string;
+  mode: string;
+  type: string;
+};
+
 export default function MapSection() {
+  const [loading, setLoading] = useState(true);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [filters, setFilters] = useState<Filters>({ city: "", mode: "", type: "" });
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+
+      const supabase = getSupabaseClient();
+      let q = supabase.from("listings").select("*").order("created_at", { ascending: false });
+      if (filters.city) q = q.eq("city", filters.city);
+      if (filters.mode) q = q.eq("mode", filters.mode);
+      if (filters.type) q = q.eq("type", filters.type);
+
+      const { data, error } = await q;
+      if (error) {
+        console.error(error);
+        setListings([]);
+      } else {
+        setListings((data ?? []) as Listing[]);
+      }
+
+      setLoading(false);
+    }
+
+    load();
+  }, [filters.city, filters.mode, filters.type]);
+
+  const count = useMemo(() => listings.length, [listings]);
+
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-base font-medium">Map</h2>
-      <LeafletMap />
-      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-        If you see tiles + a marker popup, the Leaflet + react-leaflet setup is
-        good.
-      </p>
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-base font-semibold">Browse listings</h2>
+        <span className="text-xs text-zinc-600 dark:text-zinc-400">
+          {loading ? "Loading…" : `${count} listings`}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <select
+          className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          value={filters.city}
+          onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}
+        >
+          <option value="">All cities</option>
+          <option value="Managua">Managua</option>
+          <option value="San Juan del Sur">San Juan del Sur</option>
+          <option value="Granada">Granada</option>
+        </select>
+
+        <select
+          className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          value={filters.mode}
+          onChange={(e) => setFilters((f) => ({ ...f, mode: e.target.value }))}
+        >
+          <option value="">Buy + Rent</option>
+          <option value="buy">Buy</option>
+          <option value="rent">Rent</option>
+        </select>
+
+        <select
+          className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          value={filters.type}
+          onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}
+        >
+          <option value="">All types</option>
+          <option value="house">House</option>
+          <option value="land">Land</option>
+          <option value="apartment">Apartment</option>
+        </select>
+      </div>
+
+      <LeafletMap listings={listings} />
+
+      <div className="grid gap-2">
+        {listings.map((l) => (
+          <Link
+            key={l.id}
+            href={`/listing/${l.id}`}
+            className="block rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+          >
+            <div className="font-semibold">{l.title}</div>
+            <div className="text-sm text-zinc-600 dark:text-zinc-400">
+              ${Number(l.price_usd).toLocaleString()} • {l.city} • {l.type} • {l.mode}
+            </div>
+          </Link>
+        ))}
+
+        {!loading && listings.length === 0 ? (
+          <div className="text-sm text-zinc-600 dark:text-zinc-400">
+            No listings yet. Seed a few in Supabase → table <code>listings</code>.
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }
