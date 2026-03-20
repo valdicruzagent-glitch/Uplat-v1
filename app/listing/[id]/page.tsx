@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TrackListingView from "@/app/components/TrackListingView";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
 export default async function ListingPage({
@@ -45,6 +46,7 @@ export default async function ListingPage({
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           ${Number(listing.price_usd).toLocaleString()} • {listing.city} • {listing.type} • {listing.mode}
         </p>
+        <TrackListingView listingId={listing.id} />
 
         {listing.description ? (
           <p className="text-sm leading-6">{listing.description}</p>

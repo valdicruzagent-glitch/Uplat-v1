@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import UseMyLocationButton from "@/app/components/UseMyLocationButton";
 import type { Listing } from "@/app/types/listing";
 
 const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
@@ -23,6 +24,7 @@ export default function MapSection() {
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<Filters>({ city: "", mode: "", type: "" });
+  const [center, setCenter] = useState<[number, number] | null>(null);
 
   const [err, setErr] = useState<string | null>(null);
 
@@ -74,6 +76,7 @@ export default function MapSection() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <UseMyLocationButton onLocation={(lat, lng) => setCenter([lat, lng])} />
         <select
           className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           value={filters.city}
@@ -107,7 +110,7 @@ export default function MapSection() {
         </select>
       </div>
 
-      <LeafletMap listings={listings} />
+      <LeafletMap listings={listings} center={center ?? undefined} />
 
       {err ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">

@@ -10,7 +10,13 @@ import type { Listing } from "@/app/types/listing";
 
 const DEFAULT_CENTER: [number, number] = [12.1364, -86.2514]; // Managua-ish
 
-export default function LeafletMap({ listings }: { listings: Listing[] }) {
+export default function LeafletMap({
+  listings,
+  center,
+}: {
+  listings: Listing[];
+  center?: [number, number];
+}) {
   useEffect(() => {
     // Only run on client.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -30,10 +36,11 @@ export default function LeafletMap({ listings }: { listings: Listing[] }) {
   return (
     <div className="h-[420px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
       <MapContainer
-        center={DEFAULT_CENTER}
-        zoom={8}
+        center={center ?? DEFAULT_CENTER}
+        zoom={center ? 12 : 8}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
+        key={`${(center ?? DEFAULT_CENTER)[0]}_${(center ?? DEFAULT_CENTER)[1]}`}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
