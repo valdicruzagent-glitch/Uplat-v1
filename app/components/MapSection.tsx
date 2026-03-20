@@ -162,8 +162,17 @@ export default function MapSection({
           <Link
             key={l.id}
             href={`${basePath}/listing/${l.id}`}
-            className="block rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+            className="grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
           >
+            {l.cover_image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={l.cover_image_url}
+                alt={l.title}
+                className="h-40 w-full rounded-lg object-cover"
+                loading="lazy"
+              />
+            ) : null}
             <div className="font-semibold">{l.title}</div>
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               ${Number(l.price_usd).toLocaleString()} • {l.city} • {l.type} • {l.mode}
