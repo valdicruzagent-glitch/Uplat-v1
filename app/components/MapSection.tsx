@@ -24,25 +24,39 @@ export default function MapSection() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<Filters>({ city: "", mode: "", type: "" });
 
+  const [err, setErr] = useState<string | null>(null);
+
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setErr(null);
 
-      const supabase = getSupabaseClient();
-      let q = supabase.from("listings").select("*").order("created_at", { ascending: false });
-      if (filters.city) q = q.eq("city", filters.city);
-      if (filters.mode) q = q.eq("mode", filters.mode);
-      if (filters.type) q = q.eq("type", filters.type);
+      try {
+        const supabase = getSupabaseClient();
+        let q = supabase
+          .from("listings")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (filters.city) q = q.eq("city", filters.city);
+        if (filters.mode) q = q.eq("mode", filters.mode);
+        if (filters.type) q = q.eq("type", filters.type);
 
-      const { data, error } = await q;
-      if (error) {
-        console.error(error);
+        const { data, error } = await q;
+        if (error) {
+          console.error(error);
+          setErr(error.message);
+          setListings([]);
+        } else {
+          setListings((data ?? []) as Listing[]);
+        }
+      } catch (e: unknown) {
+        console.error(e);
+        const msg = e instanceof Error ? e.message : "Failed to load listings";
+        setErr(msg);
         setListings([]);
-      } else {
-        setListings((data ?? []) as Listing[]);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     load();
@@ -94,6 +108,12 @@ export default function MapSection() {
       </div>
 
       <LeafletMap listings={listings} />
+
+      {err ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+          Error loading listings: {err}
+        </div>
+      ) : null}
 
       <div className="grid gap-2">
         {listings.map((l) => (
