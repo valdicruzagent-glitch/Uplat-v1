@@ -7,6 +7,7 @@ export const es = {
   listingsCount: (n: number) => `${n} propiedades`,
   allCities: "Todas las ciudades",
   buyRent: "Comprar + Rentar",
+  browseModeLabel: "Modo",
   buy: "Comprar",
   rent: "Rentar",
   allTypes: "Todos los tipos",

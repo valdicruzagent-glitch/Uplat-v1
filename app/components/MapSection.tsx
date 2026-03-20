@@ -101,15 +101,36 @@ export default function MapSection({
           <option value="Granada">Granada</option>
         </select>
 
-        <select
-          className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          value={filters.mode}
-          onChange={(e) => setFilters((f) => ({ ...f, mode: e.target.value }))}
-        >
-          <option value="">{t.buyRent}</option>
-          <option value="buy">{t.buy}</option>
-          <option value="rent">{t.rent}</option>
-        </select>
+        <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <button
+            type="button"
+            onClick={() =>
+              setFilters((f) => ({ ...f, mode: f.mode === "buy" ? "" : "buy" }))
+            }
+            className={
+              "px-3 py-1 text-sm transition-colors " +
+              (filters.mode === "buy"
+                ? "bg-blue-600 text-white"
+                : "text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900")
+            }
+          >
+            {t.buy}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setFilters((f) => ({ ...f, mode: f.mode === "rent" ? "" : "rent" }))
+            }
+            className={
+              "px-3 py-1 text-sm transition-colors " +
+              (filters.mode === "rent"
+                ? "bg-blue-600 text-white"
+                : "text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900")
+            }
+          >
+            {t.rent}
+          </button>
+        </div>
 
         <select
           className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"

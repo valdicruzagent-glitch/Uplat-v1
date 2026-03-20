@@ -7,6 +7,7 @@ export const en = {
   listingsCount: (n: number) => `${n} listings`,
   allCities: "All cities",
   buyRent: "Buy + Rent",
+  browseModeLabel: "Mode",
   buy: "Buy",
   rent: "Rent",
   allTypes: "All types",
