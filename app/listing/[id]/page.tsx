@@ -35,8 +35,10 @@ export default async function ListingPage({
     );
   }
 
+  const priceText = listing.price_usd ? `$${Number(listing.price_usd).toLocaleString()}` : "—";
+
   const msg = encodeURIComponent(
-    `Hola, estoy interesado en: ${listing.title} en ${listing.city}. Precio: $${listing.price_usd}.`
+    `Hola, estoy interesado en: ${listing.title} en ${listing.city}. Precio: ${priceText}.`
   );
   const wa = `https://wa.me/505XXXXXXXX?text=${msg}`;
 
@@ -60,7 +62,10 @@ export default async function ListingPage({
 
         <h1 className="text-2xl font-semibold tracking-tight">{listing.title}</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          ${Number(listing.price_usd).toLocaleString()} • {listing.city} • {listing.type} • {listing.mode}
+          {priceText} • {listing.city} • {listing.type} • {listing.mode}
+          {typeof listing.beds === "number" ? ` • ${es.bedsShort(listing.beds)}` : ""}
+          {typeof listing.baths === "number" ? ` • ${es.bathsShort(listing.baths)}` : ""}
+          {typeof listing.area_m2 === "number" ? ` • ${es.areaShort(listing.area_m2)}` : ""}
         </p>
         <TrackListingView listingId={listing.id} locale="es" />
 
@@ -68,14 +73,18 @@ export default async function ListingPage({
           <p className="text-sm leading-6">{listing.description}</p>
         ) : null}
 
-        <a
-          className="mt-2 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-          href={wa}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {es.contactWhatsapp}
-        </a>
+        {(listing.status ?? "active") !== "comp" ? (
+          <a
+            className="mt-2 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            href={wa}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {es.contactWhatsapp}
+          </a>
+        ) : (
+          <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{es.compsHint}</div>
+        )}
       </div>
     </main>
   );

@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Grey "comp" markers (divIcon) */
+.uplat-comp-marker {
+  background: transparent;
+  border: 0;
+}
+.uplat-comp-marker__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: rgba(113, 113, 122, 0.9); /* zinc-500-ish */
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+@media (prefers-color-scheme: dark) {
+  .uplat-comp-marker__dot {
+    border-color: rgba(9, 9, 11, 0.95); /* zinc-950-ish */
+  }
+}
