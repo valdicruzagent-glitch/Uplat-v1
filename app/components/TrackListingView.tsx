@@ -4,7 +4,17 @@ import { useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getOrCreateVisitorId } from "@/app/lib/visitor";
 
-export default function TrackListingView({ listingId }: { listingId: string }) {
+import { en } from "@/app/i18n/en";
+import { es } from "@/app/i18n/es";
+
+export default function TrackListingView({
+  listingId,
+  locale,
+}: {
+  listingId: string;
+  locale: "es" | "en";
+}) {
+  const t = locale === "en" ? en : es;
   const [views, setViews] = useState<number | null>(null);
 
   useEffect(() => {
@@ -28,13 +38,7 @@ export default function TrackListingView({ listingId }: { listingId: string }) {
       });
   }, [listingId]);
 
-  if (views === null) {
-    return (
-      <div className="text-xs text-zinc-600 dark:text-zinc-400">Views: …</div>
-    );
-  }
-
   return (
-    <div className="text-xs text-zinc-600 dark:text-zinc-400">Views: {views}</div>
+    <div className="text-xs text-zinc-600 dark:text-zinc-400">{t.views(views)}</div>
   );
 }

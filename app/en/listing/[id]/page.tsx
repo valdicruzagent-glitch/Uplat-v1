@@ -1,10 +1,10 @@
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import Link from "next/link";
 import TrackListingView from "@/app/components/TrackListingView";
-import { es } from "@/app/i18n/es";
+import { en } from "@/app/i18n/en";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
-export default async function ListingPage({
+export default async function ListingPageEn({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -24,19 +24,19 @@ export default async function ListingPage({
       <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
         <div className="mx-auto max-w-2xl">
           <div className="flex items-center justify-between gap-4">
-            <Link className="text-sm underline" href="/">
-              {es.back}
+            <Link className="text-sm underline" href="/en">
+              {en.back}
             </Link>
-            <LanguageSwitch current="es" />
+            <LanguageSwitch current="en" />
           </div>
-          <h1 className="mt-4 text-xl font-semibold">{es.listingNotFound}</h1>
+          <h1 className="mt-4 text-xl font-semibold">{en.listingNotFound}</h1>
         </div>
       </main>
     );
   }
 
   const msg = encodeURIComponent(
-    `Hola, estoy interesado en: ${listing.title} en ${listing.city}. Precio: $${listing.price_usd}.`
+    `Hi, I'm interested in: ${listing.title} in ${listing.city}. Price: $${listing.price_usd}.`
   );
   const wa = `https://wa.me/505XXXXXXXX?text=${msg}`;
 
@@ -44,17 +44,17 @@ export default async function ListingPage({
     <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
       <div className="mx-auto flex max-w-2xl flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
-          <Link className="text-sm underline" href="/">
-            {es.back}
+          <Link className="text-sm underline" href="/en">
+            {en.back}
           </Link>
-          <LanguageSwitch current="es" />
+          <LanguageSwitch current="en" />
         </div>
 
         <h1 className="text-2xl font-semibold tracking-tight">{listing.title}</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           ${Number(listing.price_usd).toLocaleString()} • {listing.city} • {listing.type} • {listing.mode}
         </p>
-        <TrackListingView listingId={listing.id} locale="es" />
+        <TrackListingView listingId={listing.id} locale="en" />
 
         {listing.description ? (
           <p className="text-sm leading-6">{listing.description}</p>
@@ -66,7 +66,7 @@ export default async function ListingPage({
           target="_blank"
           rel="noreferrer"
         >
-          {es.contactWhatsapp}
+          {en.contactWhatsapp}
         </a>
       </div>
     </main>

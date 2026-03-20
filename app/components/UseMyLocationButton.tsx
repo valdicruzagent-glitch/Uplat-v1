@@ -2,8 +2,10 @@
 
 export default function UseMyLocationButton({
   onLocation,
+  label,
 }: {
   onLocation: (lat: number, lng: number) => void;
+  label: string;
 }) {
   return (
     <button
@@ -24,7 +26,7 @@ export default function UseMyLocationButton({
         );
       }}
     >
-      Use my location
+      {label}
     </button>
   );
 }

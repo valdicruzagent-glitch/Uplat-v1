@@ -20,7 +20,17 @@ type Filters = {
   type: string;
 };
 
-export default function MapSection() {
+import { en } from "@/app/i18n/en";
+import { es } from "@/app/i18n/es";
+
+export default function MapSection({
+  locale,
+  basePath,
+}: {
+  locale: "es" | "en";
+  basePath: "" | "/en";
+}) {
+  const t = locale === "en" ? en : es;
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<Filters>({ city: "", mode: "", type: "" });
@@ -69,20 +79,23 @@ export default function MapSection() {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-base font-semibold">Browse listings</h2>
+        <h2 className="text-base font-semibold">{t.browseListings}</h2>
         <span className="text-xs text-zinc-600 dark:text-zinc-400">
-          {loading ? "Loading…" : `${count} listings`}
+          {loading ? t.loading : t.listingsCount(count)}
         </span>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <UseMyLocationButton onLocation={(lat, lng) => setCenter([lat, lng])} />
+        <UseMyLocationButton
+          label={t.useMyLocation}
+          onLocation={(lat, lng) => setCenter([lat, lng])}
+        />
         <select
           className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           value={filters.city}
           onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}
         >
-          <option value="">All cities</option>
+          <option value="">{t.allCities}</option>
           <option value="Managua">Managua</option>
           <option value="San Juan del Sur">San Juan del Sur</option>
           <option value="Granada">Granada</option>
@@ -93,9 +106,9 @@ export default function MapSection() {
           value={filters.mode}
           onChange={(e) => setFilters((f) => ({ ...f, mode: e.target.value }))}
         >
-          <option value="">Buy + Rent</option>
-          <option value="buy">Buy</option>
-          <option value="rent">Rent</option>
+          <option value="">{t.buyRent}</option>
+          <option value="buy">{t.buy}</option>
+          <option value="rent">{t.rent}</option>
         </select>
 
         <select
@@ -103,18 +116,23 @@ export default function MapSection() {
           value={filters.type}
           onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}
         >
-          <option value="">All types</option>
-          <option value="house">House</option>
-          <option value="land">Land</option>
-          <option value="apartment">Apartment</option>
+          <option value="">{t.allTypes}</option>
+          <option value="house">{t.house}</option>
+          <option value="land">{t.land}</option>
+          <option value="apartment">{t.apartment}</option>
         </select>
       </div>
 
-      <LeafletMap listings={listings} center={center ?? undefined} />
+      <LeafletMap
+        listings={listings}
+        center={center ?? undefined}
+        basePath={basePath}
+        openLabel={basePath === "/en" ? "Open" : "Ver"}
+      />
 
       {err ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-          Error loading listings: {err}
+          {t.errorLoadingListings(err)}
         </div>
       ) : null}
 
@@ -122,7 +140,7 @@ export default function MapSection() {
         {listings.map((l) => (
           <Link
             key={l.id}
-            href={`/listing/${l.id}`}
+            href={`${basePath}/listing/${l.id}`}
             className="block rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
           >
             <div className="font-semibold">{l.title}</div>
@@ -133,9 +151,7 @@ export default function MapSection() {
         ))}
 
         {!loading && listings.length === 0 ? (
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">
-            No listings yet. Seed a few in Supabase → table <code>listings</code>.
-          </div>
+          <div className="text-sm text-zinc-600 dark:text-zinc-400">{t.noListings}</div>
         ) : null}
       </div>
     </section>

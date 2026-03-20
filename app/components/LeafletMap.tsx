@@ -13,9 +13,13 @@ const DEFAULT_CENTER: [number, number] = [12.1364, -86.2514]; // Managua-ish
 export default function LeafletMap({
   listings,
   center,
+  basePath,
+  openLabel,
 }: {
   listings: Listing[];
   center?: [number, number];
+  basePath: "" | "/en";
+  openLabel: string;
 }) {
   useEffect(() => {
     // Only run on client.
@@ -54,8 +58,8 @@ export default function LeafletMap({
               <div className="text-xs opacity-80">
                 ${Number(l.price_usd).toLocaleString()} • {l.city}
               </div>
-              <Link className="text-xs underline" href={`/listing/${l.id}`}>
-                Open
+              <Link className="text-xs underline" href={`${basePath}/listing/${l.id}`}>
+                {openLabel}
               </Link>
             </Popup>
           </Marker>
