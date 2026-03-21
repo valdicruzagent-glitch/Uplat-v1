@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
+import { getClientDeviceInfo } from "@/lib/deviceInfo";
 
 export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const t = locale === "en" ? en : es;
@@ -40,6 +41,8 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
       const price = priceUsd ? Number(priceUsd) : null;
 
+      const device = getClientDeviceInfo();
+
       const { error } = await supabase.from("listing_submissions").insert({
         locale,
         contact_whatsapp: contactWhatsapp,
@@ -51,6 +54,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         type: type || null,
         description: description || null,
         photo_links: photoLinks || null,
+        ...device,
       });
 
       if (error) throw error;

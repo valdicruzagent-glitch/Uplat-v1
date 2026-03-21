@@ -4,6 +4,7 @@ import { useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
+import { getClientDeviceInfo } from "@/lib/deviceInfo";
 
 function normalizeWhatsapp(input: string) {
   return input.replace(/\s+/g, "").replace(/^00/, "+");
@@ -28,11 +29,14 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
       const wa = normalizeWhatsapp(whatsapp);
       if (!wa) throw new Error("WhatsApp is required");
 
+      const device = getClientDeviceInfo();
+
       const { error } = await supabase.from("realtor_leads").insert({
         locale,
         whatsapp: wa,
         name: name || null,
         role,
+        ...device,
       });
 
       if (error) throw error;
