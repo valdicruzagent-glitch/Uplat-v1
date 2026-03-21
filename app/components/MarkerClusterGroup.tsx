@@ -18,10 +18,19 @@ type MarkerClusterGroupProps = L.LayerOptions &
     children?: React.ReactNode;
   };
 
-const MarkerClusterGroup = createLayerComponent<any, MarkerClusterGroupProps>(
+type MarkerClusterGroupInstance = L.LayerGroup & {
+  options: Record<string, unknown>;
+};
+
+type MarkerClusterFactory = {
+  markerClusterGroup: (opts: MarkerClusterGroupProps) => MarkerClusterGroupInstance;
+};
+
+const MarkerClusterGroup = createLayerComponent<MarkerClusterGroupInstance, MarkerClusterGroupProps>(
   function createMarkerClusterGroup(props, ctx) {
     // markerClusterGroup comes from leaflet.markercluster plugin.
-    const instance = (L as any).markerClusterGroup(props);
+    const factory = L as unknown as MarkerClusterFactory;
+    const instance = factory.markerClusterGroup(props);
     return { instance, context: { ...ctx, layerContainer: instance } };
   },
   function updateMarkerClusterGroup(layer, props, prevProps) {
