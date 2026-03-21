@@ -86,9 +86,14 @@ export async function POST(req: Request) {
   }
 
   // Insert inbound message (idempotent on twilio_message_sid when provided)
+  // Keep meta minimal to reduce retention blast radius.
   const meta = {
     lang,
-    twilio: params,
+    twilio: {
+      MessageSid: messageSid,
+      SmsStatus: params.SmsStatus || params.MessageStatus || null,
+      NumMedia: params.NumMedia || null,
+    },
   };
 
   const insertPayload: Record<string, unknown> = {
@@ -113,14 +118,24 @@ export async function POST(req: Request) {
   }
 
   // Notify Discord (best-effort)
+  const includeBody = (process.env.DISCORD_LOG_INCLUDE_BODY || "false").toLowerCase() === "true";
+
+  const maskPhone = (wa: string) => {
+    // whatsapp:+50583882287 -> whatsapp:+505****2287
+    const m = wa.match(/^(whatsapp:\+)(\d{1,3})(\d+)(\d{4})$/);
+    if (!m) return "whatsapp:+[redacted]";
+    const [, prefix, cc, mid, last4] = m;
+    return `${prefix}${cc}${"*".repeat(Math.max(0, mid.length))}${last4}`;
+  };
+
+  const redactBody = (txt: string) => txt.slice(0, 280).replace(/\d{4,}/g, (s) => "*".repeat(s.length));
+
   const summary = [
     "NEW WHATSAPP LEAD",
-    `From: ${waFrom}${profileName ? ` (${profileName})` : ""}`,
-    waTo ? `To: ${waTo}` : null,
+    `From: ${maskPhone(waFrom)}${profileName ? ` (${profileName})` : ""}`,
+    waTo ? `To: ${maskPhone(waTo)}` : null,
     `Lang: ${lang}`,
-    "---",
-    body ? `Message: ${body}` : "Message: (empty)",
-    "---",
+    includeBody ? `Message: ${redactBody(body || "")}` : "Message: (redacted)",
     `Suggested reply: ${suggested}`,
   ]
     .filter(Boolean)
