@@ -1,15 +1,17 @@
 "use client";
 
 /**
- * Public sign-in / lead-capture form for Uplat.
+ * Public onboarding / sign-in form for Uplat.
  *
  * What this file does:
- * - Captures a first identity signal before browse/publish actions.
- * - Stores role + contact locally so later steps can personalize the flow.
+ * - Makes the target V1 auth direction visible: Google first, WhatsApp verification next.
+ * - Keeps a manual fallback so lead capture still works before full auth is finished.
+ * - Stores light local context so publish flows can prefill contact data later.
  * - Creates a lightweight lead row in `realtor_leads` for manual-first operations.
  *
  * Safe edit note:
- * - Keep this step simple. It should segment the user, not become a heavy auth flow.
+ * - The Google button can be wired before the WhatsApp verification backend is complete.
+ * - Keep the fallback path alive until Twilio / verification code flows are production-ready.
  * - If the database role model changes, update the role union and insert payload together.
  */
 
@@ -31,8 +33,41 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [showManualPath, setShowManualPath] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  async function startGoogleSignIn() {
+    setErr(null);
+    setGoogleLoading(true);
+
+    try {
+      const supabase = getSupabaseClient();
+      const nextPath = locale === "en" ? "/en/start" : "/start";
+      const redirectTo = `${window.location.origin}${nextPath}`;
+
+      window.localStorage.setItem("uplat_auth_goal", "google_whatsapp");
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) throw error;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed";
+      setErr(msg);
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
+  async function submitManualLead(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
     setLoading(true);
@@ -58,6 +93,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
       // and route the user through the right publish path.
       window.localStorage.setItem("uplat_contact_whatsapp", wa);
       window.localStorage.setItem("uplat_contact_role", role);
+      window.localStorage.setItem("uplat_auth_goal", "google_whatsapp");
       if (name) window.localStorage.setItem("uplat_contact_name", name);
       setDone(true);
     } catch (e: unknown) {
@@ -73,6 +109,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
     return (
       <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
         <div>{t.thanks}</div>
+        <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">{t.whatsappVerificationNext}</div>
         <div className="mt-3">
           <a
             className="inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
@@ -86,62 +123,108 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {err ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
           {err}
         </div>
       ) : null}
 
-      <label className="text-sm">
-        <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yourName}</div>
-        <input
-          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={locale === "en" ? "Maria Lopez" : "María López"}
-        />
-      </label>
+      <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="text-sm font-semibold">{t.googlePrimaryTitle}</div>
+        <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t.googlePrimarySubtitle}</div>
 
-      <label className="text-sm">
-        <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yourWhatsapp}</div>
-        <input
-          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          value={whatsapp}
-          onChange={(e) => setWhatsapp(e.target.value)}
-          placeholder={locale === "en" ? "+505 8888 8888" : "+505 8888 8888"}
-          required
-        />
-      </label>
+        <div className="mt-4 grid gap-2 md:grid-cols-3">
+          <div className="rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+            <div className="font-medium">1. {t.googleStep}</div>
+            <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t.googleStepHint}</div>
+          </div>
+          <div className="rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+            <div className="font-medium">2. {t.whatsappStep}</div>
+            <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t.whatsappStepHint}</div>
+          </div>
+          <div className="rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+            <div className="font-medium">3. {t.publishStep}</div>
+            <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t.publishStepHint}</div>
+          </div>
+        </div>
 
-      <label className="text-sm">
-        <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.roleLabel}</div>
-        <select
-          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          value={role}
-          onChange={(e) => setRole(e.target.value as "realtor" | "agency" | "seller" | "other")}
+        <button
+          type="button"
+          onClick={startGoogleSignIn}
+          disabled={googleLoading}
+          className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
         >
-          <option value="realtor">{t.roleRealtor}</option>
-          <option value="agency">{t.roleAgency}</option>
-          <option value="seller">{t.roleSeller}</option>
-          <option value="other">{t.roleOther}</option>
-        </select>
-      </label>
+          {googleLoading ? t.loading : t.continueWithGoogle}
+        </button>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-1 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-      >
-        {loading ? t.loading : t.continue}
-      </button>
-
-      <div className="text-xs text-zinc-600 dark:text-zinc-400">
-        {locale === "en" ? "Next: submit a listing." : "Siguiente: subir una propiedad."}{" "}
-        <a className="underline" href={locale === "en" ? "/en/submit-listing" : "/submit-listing"}>
-          {locale === "en" ? "Submit listing" : "Subir propiedad"}
-        </a>
+        <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">{t.googleFootnote}</div>
       </div>
-    </form>
+
+      <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold">{t.manualFallbackTitle}</div>
+            <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t.manualFallbackSubtitle}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowManualPath((value) => !value)}
+            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+          >
+            {showManualPath ? t.hideManualPath : t.showManualPath}
+          </button>
+        </div>
+
+        {showManualPath ? (
+          <form onSubmit={submitManualLead} className="mt-4 flex flex-col gap-3">
+            <label className="text-sm">
+              <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yourName}</div>
+              <input
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={locale === "en" ? "Maria Lopez" : "María López"}
+              />
+            </label>
+
+            <label className="text-sm">
+              <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yourWhatsapp}</div>
+              <input
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
+                placeholder={locale === "en" ? "+505 8888 8888" : "+505 8888 8888"}
+                required
+              />
+            </label>
+
+            <label className="text-sm">
+              <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.roleLabel}</div>
+              <select
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                value={role}
+                onChange={(e) => setRole(e.target.value as "realtor" | "agency" | "seller" | "other")}
+              >
+                <option value="realtor">{t.roleRealtor}</option>
+                <option value="agency">{t.roleAgency}</option>
+                <option value="seller">{t.roleSeller}</option>
+                <option value="other">{t.roleOther}</option>
+              </select>
+            </label>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-1 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            >
+              {loading ? t.loading : t.continueManual}
+            </button>
+
+            <div className="text-xs text-zinc-600 dark:text-zinc-400">{t.manualFallbackFootnote}</div>
+          </form>
+        ) : null}
+      </div>
+    </div>
   );
 }
