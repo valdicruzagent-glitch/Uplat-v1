@@ -1,7 +1,7 @@
 export const en = {
   brand: "Uplat",
   title: "Uplat V1",
-  subtitle: "Explore properties on the map (Nicaragua)",
+  subtitle: "",
   browseListings: "Browse listings",
   loading: "Loading…",
   listingsCount: (n: number) => `${n} listings`,
