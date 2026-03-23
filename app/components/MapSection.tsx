@@ -211,6 +211,15 @@ export default function MapSection({
     });
   }, [computedPriceBounds]);
 
+  /**
+   * When the user changes the main browse filters, reset price selection to the
+   * new result set. Without this, the slider can stay stuck on the old subset
+   * and make the count look wrong even when the filter toggle worked.
+   */
+  useEffect(() => {
+    setPriceRange([computedPriceBounds.min, computedPriceBounds.max]);
+  }, [filters.listingType, filters.propertyType, computedPriceBounds.min, computedPriceBounds.max]);
+
   const filteredActive = useMemo(() => {
     const [minSelected, maxSelected] = priceRange;
     return activeAll.filter((listing) => {
