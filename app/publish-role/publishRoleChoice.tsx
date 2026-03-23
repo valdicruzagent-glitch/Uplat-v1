@@ -32,7 +32,7 @@ export default function PublishRoleChoice({ locale }: { locale: "es" | "en" }) {
   return (
     <div className="grid gap-3">
       <Link
-        href={basePath + "/submit-listing"}
+        href={basePath + "/signin?next=" + encodeURIComponent(basePath + "/submit-listing")}
         onClick={() => pick("realtor")}
         className="rounded-xl border border-zinc-200 bg-white p-4 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
       >
@@ -41,7 +41,7 @@ export default function PublishRoleChoice({ locale }: { locale: "es" | "en" }) {
       </Link>
 
       <Link
-        href={basePath + "/submit-listing"}
+        href={basePath + "/signin?next=" + encodeURIComponent(basePath + "/submit-listing")}
         onClick={() => pick("agency")}
         className="rounded-xl border border-zinc-200 bg-white p-4 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
       >
@@ -50,7 +50,7 @@ export default function PublishRoleChoice({ locale }: { locale: "es" | "en" }) {
       </Link>
 
       <Link
-        href={basePath + "/submit-listing"}
+        href={basePath + "/signin?next=" + encodeURIComponent(basePath + "/submit-listing")}
         onClick={() => pick("seller")}
         className="rounded-xl border border-zinc-200 bg-white p-4 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
       >

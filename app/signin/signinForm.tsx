@@ -15,7 +15,7 @@
  * - If the database role model changes, update the role union and insert payload together.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
@@ -23,6 +23,24 @@ import { getClientDeviceInfo } from "@/lib/deviceInfo";
 
 function normalizeWhatsapp(input: string) {
   return input.replace(/\s+/g, "").replace(/^00/, "+");
+}
+
+function getSafeNextPath(locale: "es" | "en") {
+  if (typeof window === "undefined") return locale === "en" ? "/en/start" : "/start";
+
+  const raw = new URLSearchParams(window.location.search).get("next");
+  if (!raw) return locale === "en" ? "/en/start" : "/start";
+  if (!raw.startsWith("/")) return locale === "en" ? "/en/start" : "/start";
+  if (raw.startsWith("//")) return locale === "en" ? "/en/start" : "/start";
+
+  const allowed = ["/start", "/publish-role", "/submit-listing", "/en/start", "/en/publish-role", "/en/submit-listing"];
+  if (!allowed.includes(raw)) return locale === "en" ? "/en/start" : "/start";
+
+  const isEnglishPath = raw.startsWith("/en/");
+  if (locale === "en" && !isEnglishPath) return "/en/start";
+  if (locale === "es" && isEnglishPath) return "/start";
+
+  return raw;
 }
 
 export default function SignInForm({ locale }: { locale: "es" | "en" }) {
@@ -35,6 +53,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showManualPath, setShowManualPath] = useState(false);
+  const nextPath = useMemo(() => getSafeNextPath(locale), [locale]);
 
   async function startGoogleSignIn() {
     setErr(null);
@@ -42,7 +61,6 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
 
     try {
       const supabase = getSupabaseClient();
-      const nextPath = locale === "en" ? "/en/start" : "/start";
       const redirectTo = `${window.location.origin}${nextPath}`;
 
       window.localStorage.setItem("uplat_auth_goal", "google_whatsapp");
@@ -105,7 +123,6 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
   }
 
   if (done) {
-    const basePath = locale === "en" ? "/en" : "";
     return (
       <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
         <div>{t.thanks}</div>
@@ -113,7 +130,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
         <div className="mt-3">
           <a
             className="inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-            href={basePath + "/start"}
+            href={nextPath}
           >
             {locale === "en" ? "Continue" : "Continuar"}
           </a>
