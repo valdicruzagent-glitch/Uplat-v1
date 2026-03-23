@@ -343,7 +343,7 @@ export default function MapSection({
         </label>
       </div>
 
-      <div className="grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-baseline justify-between gap-2">
           <div className="text-sm font-medium">{t.priceRange}</div>
           <div className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -351,27 +351,34 @@ export default function MapSection({
           </div>
         </div>
 
-        <div className="relative h-10">
-          <input
-            aria-label={t.minPrice}
-            type="range"
-            min={sliderMin}
-            max={sliderMax}
-            value={minSelected}
-            onChange={(e) => updateMin(Number(e.target.value))}
-            className="absolute inset-0 w-full"
-            disabled={sliderMin === sliderMax}
-          />
-          <input
-            aria-label={t.maxPrice}
-            type="range"
-            min={sliderMin}
-            max={sliderMax}
-            value={maxSelected}
-            onChange={(e) => updateMax(Number(e.target.value))}
-            className="absolute inset-0 w-full"
-            disabled={sliderMin === sliderMax}
-          />
+        <div className="grid gap-3">
+          <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-400">
+            <span>{t.minPrice}</span>
+            <input
+              aria-label={t.minPrice}
+              type="range"
+              min={sliderMin}
+              max={sliderMax}
+              value={minSelected}
+              onChange={(e) => updateMin(Number(e.target.value))}
+              className="w-full"
+              disabled={sliderMin === sliderMax}
+            />
+          </label>
+
+          <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-400">
+            <span>{t.maxPrice}</span>
+            <input
+              aria-label={t.maxPrice}
+              type="range"
+              min={sliderMin}
+              max={sliderMax}
+              value={maxSelected}
+              onChange={(e) => updateMax(Number(e.target.value))}
+              className="w-full"
+              disabled={sliderMin === sliderMax}
+            />
+          </label>
         </div>
 
         <div className="text-xs text-zinc-600 dark:text-zinc-400">{t.priceRangeHint}</div>
