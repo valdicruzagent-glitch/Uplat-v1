@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * Public map browse section for Uplat.
+ *
+ * What this file controls:
+ * - Loads listings from Supabase for the homepage map experience.
+ * - Applies browse filters for listing type, property type, price, and comparables.
+ * - Renders the list of visible property cards below the map.
+ *
+ * Important dependency:
+ * - `public.listings` in Supabase.
+ *
+ * Safe edit note:
+ * - This file is intentionally compatible with both the legacy listing schema
+ *   and the canonical V1 schema during migration.
+ * - Keep the compatibility helpers until the database migration is fully live.
+ * - The browse experience is map-first, so do not reintroduce city dropdowns here.
+ */
+
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -20,9 +38,8 @@ const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
 });
 
 type Filters = {
-  city: string;
-  mode: string;
-  type: string;
+  listingType: "" | "sale" | "rent";
+  propertyType: "" | "house" | "land" | "apartment";
 };
 
 type BoundsBox = {
@@ -52,6 +69,42 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+/**
+ * Compatibility helpers.
+ *
+ * Why they matter:
+ * - The live database still carries legacy columns such as `mode`, `type`,
+ *   and `cover_image_url`.
+ * - The V1 schema introduces canonical fields such as `listing_type`,
+ *   `property_type`, and `image_urls`.
+ * - These helpers let the browse UI work correctly across both versions.
+ */
+function getListingType(listing: Listing): "sale" | "rent" | string {
+  if (listing.listing_type) return listing.listing_type;
+  if (listing.mode === "buy") return "sale";
+  if (listing.mode === "rent") return "rent";
+  return "sale";
+}
+
+function getPropertyType(listing: Listing) {
+  return listing.property_type ?? listing.type ?? "house";
+}
+
+function getPrimaryImage(listing: Listing) {
+  if (listing.image_urls?.length) return listing.image_urls[0] ?? null;
+  return listing.cover_image_url ?? null;
+}
+
+function isComparable(listing: Listing) {
+  return listing.status === "comp" || listing.meta?.comparable === true;
+}
+
+function matchesFilters(listing: Listing, filters: Filters) {
+  if (filters.listingType && getListingType(listing) !== filters.listingType) return false;
+  if (filters.propertyType && getPropertyType(listing) !== filters.propertyType) return false;
+  return true;
+}
+
 export default function MapSection({
   locale,
   basePath,
@@ -62,12 +115,10 @@ export default function MapSection({
   const t = locale === "en" ? en : es;
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [filters, setFilters] = useState<Filters>({ city: "", mode: "", type: "" });
+  const [filters, setFilters] = useState<Filters>({ listingType: "", propertyType: "" });
   const [center, setCenter] = useState<[number, number] | null>(null);
-
   const [showComps, setShowComps] = useState(false);
   const [bounds, setBounds] = useState<BoundsBox | null>(null);
-
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,12 +128,11 @@ export default function MapSection({
 
       try {
         const supabase = getSupabaseClient();
-        let q = supabase.from("listings").select("*").order("created_at", { ascending: false });
-        if (filters.city) q = q.eq("city", filters.city);
-        if (filters.mode) q = q.eq("mode", filters.mode);
-        if (filters.type) q = q.eq("type", filters.type);
+        const { data, error } = await supabase
+          .from("listings")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-        const { data, error } = await q;
         if (error) {
           console.error(error);
           setErr(error.message);
@@ -101,35 +151,47 @@ export default function MapSection({
     }
 
     load();
-  }, [filters.city, filters.mode, filters.type]);
+  }, []);
+
+  const filteredBySchema = useMemo(
+    () => listings.filter((listing) => matchesFilters(listing, filters)),
+    [listings, filters]
+  );
 
   const { activeAll, compsAll } = useMemo(() => {
-    const act: Listing[] = [];
+    const active: Listing[] = [];
     const comps: Listing[] = [];
-    for (const l of listings) {
-      if ((l.status ?? "active") === "comp") comps.push(l);
-      else act.push(l);
+
+    for (const listing of filteredBySchema) {
+      if (isComparable(listing)) comps.push(listing);
+      else active.push(listing);
     }
-    return { activeAll: act, compsAll: comps };
-  }, [listings]);
+
+    return { activeAll: active, compsAll: comps };
+  }, [filteredBySchema]);
 
   const activePricedAll = useMemo(
-    () => activeAll.filter((l) => (priceNum(l.price_usd) ?? 0) > 0),
+    () => activeAll.filter((listing) => (priceNum(listing.price_usd) ?? 0) > 0),
     [activeAll]
   );
 
-  // Hybrid rule for slider range:
-  // - if there are >=5 priced active listings in current bounds → use visible range
-  // - else → use full active range
+  /**
+   * Price slider behavior:
+   * - If enough priced listings are visible in current map bounds, adapt to those.
+   * - Otherwise, fall back to the full active result set.
+   */
   const computedPriceBounds = useMemo(() => {
     const visiblePriced = bounds
-      ? activePricedAll.filter((l) => inBounds(l, bounds))
+      ? activePricedAll.filter((listing) => inBounds(listing, bounds))
       : activePricedAll;
 
-    const src = visiblePriced.length >= 5 ? visiblePriced : activePricedAll;
-    const prices = src.map((l) => priceNum(l.price_usd)).filter((p): p is number => p !== null);
+    const source = visiblePriced.length >= 5 ? visiblePriced : activePricedAll;
+    const prices = source
+      .map((listing) => priceNum(listing.price_usd))
+      .filter((value): value is number => value !== null);
 
     if (prices.length === 0) return { min: 0, max: 0 };
+
     return {
       min: Math.floor(Math.min(...prices)),
       max: Math.ceil(Math.max(...prices)),
@@ -138,11 +200,9 @@ export default function MapSection({
 
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
 
-  // When computed bounds change (pan/zoom/filters), clamp selection.
   useEffect(() => {
     const { min, max } = computedPriceBounds;
     setPriceRange((prev) => {
-      // First time init
       if (prev[0] === 0 && prev[1] === 0 && (min !== 0 || max !== 0)) return [min, max];
       return [clamp(prev[0], min, max), clamp(prev[1], min, max)].sort((a, b) => a - b) as [
         number,
@@ -152,29 +212,29 @@ export default function MapSection({
   }, [computedPriceBounds]);
 
   const filteredActive = useMemo(() => {
-    const [minSel, maxSel] = priceRange;
-    return activeAll.filter((l) => {
-      const p = priceNum(l.price_usd);
-      if (p === null) return true; // keep unknown-priced listings visible
-      return p >= minSel && p <= maxSel;
+    const [minSelected, maxSelected] = priceRange;
+    return activeAll.filter((listing) => {
+      const price = priceNum(listing.price_usd);
+      if (price === null) return true;
+      return price >= minSelected && price <= maxSelected;
     });
   }, [activeAll, priceRange]);
 
   const filteredComps = useMemo(() => {
-    const [minSel, maxSel] = priceRange;
-    return compsAll.filter((l) => {
-      const p = priceNum(l.price_usd);
-      if (p === null) return true;
-      return p >= minSel && p <= maxSel;
+    const [minSelected, maxSelected] = priceRange;
+    return compsAll.filter((listing) => {
+      const price = priceNum(listing.price_usd);
+      if (price === null) return true;
+      return price >= minSelected && price <= maxSelected;
     });
   }, [compsAll, priceRange]);
 
   const listActiveInBounds = useMemo(
-    () => filteredActive.filter((l) => inBounds(l, bounds)),
+    () => filteredActive.filter((listing) => inBounds(listing, bounds)),
     [filteredActive, bounds]
   );
   const listCompsInBounds = useMemo(
-    () => filteredComps.filter((l) => inBounds(l, bounds)),
+    () => filteredComps.filter((listing) => inBounds(listing, bounds)),
     [filteredComps, bounds]
   );
 
@@ -186,17 +246,15 @@ export default function MapSection({
 
   const sliderMin = computedPriceBounds.min;
   const sliderMax = computedPriceBounds.max;
-
-  const [minSel, maxSel] = priceRange;
+  const [minSelected, maxSelected] = priceRange;
 
   function updateMin(v: number) {
     setPriceRange((prev) => [Math.min(v, prev[1]), prev[1]]);
   }
+
   function updateMax(v: number) {
     setPriceRange((prev) => [prev[0], Math.max(v, prev[0])]);
   }
-
-  const openLabel = basePath === "/en" ? "Open" : "Ver";
 
   return (
     <section className="flex flex-col gap-4">
@@ -212,24 +270,19 @@ export default function MapSection({
           label={t.useMyLocation}
           onLocation={(lat, lng) => setCenter([lat, lng])}
         />
-        <select
-          className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          value={filters.city}
-          onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}
-        >
-          <option value="">{t.allCities}</option>
-          <option value="Managua">Managua</option>
-          <option value="San Juan del Sur">San Juan del Sur</option>
-          <option value="Granada">Granada</option>
-        </select>
 
         <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <button
             type="button"
-            onClick={() => setFilters((f) => ({ ...f, mode: f.mode === "buy" ? "" : "buy" }))}
+            onClick={() =>
+              setFilters((prev) => ({
+                ...prev,
+                listingType: prev.listingType === "sale" ? "" : "sale",
+              }))
+            }
             className={
               "px-3 py-1 text-sm transition-colors " +
-              (filters.mode === "buy"
+              (filters.listingType === "sale"
                 ? "bg-blue-600 text-white"
                 : "text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900")
             }
@@ -238,10 +291,15 @@ export default function MapSection({
           </button>
           <button
             type="button"
-            onClick={() => setFilters((f) => ({ ...f, mode: f.mode === "rent" ? "" : "rent" }))}
+            onClick={() =>
+              setFilters((prev) => ({
+                ...prev,
+                listingType: prev.listingType === "rent" ? "" : "rent",
+              }))
+            }
             className={
               "px-3 py-1 text-sm transition-colors " +
-              (filters.mode === "rent"
+              (filters.listingType === "rent"
                 ? "bg-blue-600 text-white"
                 : "text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900")
             }
@@ -252,8 +310,13 @@ export default function MapSection({
 
         <select
           className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          value={filters.type}
-          onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}
+          value={filters.propertyType}
+          onChange={(e) =>
+            setFilters((prev) => ({
+              ...prev,
+              propertyType: e.target.value as Filters["propertyType"],
+            }))
+          }
         >
           <option value="">{t.allTypes}</option>
           <option value="house">{t.house}</option>
@@ -275,7 +338,7 @@ export default function MapSection({
         <div className="flex items-baseline justify-between gap-2">
           <div className="text-sm font-medium">{t.priceRange}</div>
           <div className="text-xs text-zinc-600 dark:text-zinc-400">
-            ${Number(minSel).toLocaleString()} – ${Number(maxSel).toLocaleString()}
+            ${Number(minSelected).toLocaleString()} – ${Number(maxSelected).toLocaleString()}
           </div>
         </div>
 
@@ -285,7 +348,7 @@ export default function MapSection({
             type="range"
             min={sliderMin}
             max={sliderMax}
-            value={minSel}
+            value={minSelected}
             onChange={(e) => updateMin(Number(e.target.value))}
             className="absolute inset-0 w-full"
             disabled={sliderMin === sliderMax}
@@ -295,16 +358,14 @@ export default function MapSection({
             type="range"
             min={sliderMin}
             max={sliderMax}
-            value={maxSel}
+            value={maxSelected}
             onChange={(e) => updateMax(Number(e.target.value))}
             className="absolute inset-0 w-full"
             disabled={sliderMin === sliderMax}
           />
         </div>
 
-        <div className="text-xs text-zinc-600 dark:text-zinc-400">
-          {t.priceRangeHint}
-        </div>
+        <div className="text-xs text-zinc-600 dark:text-zinc-400">{t.priceRangeHint}</div>
       </div>
 
       <LeafletMap
@@ -313,8 +374,8 @@ export default function MapSection({
         showComps={showComps}
         center={center ?? undefined}
         basePath={basePath}
-        openLabel={openLabel}
-        onBoundsChange={(b) => setBounds(toBoundsBox(b))}
+        openLabel={basePath === "/en" ? "Open" : "Ver"}
+        onBoundsChange={(box) => setBounds(toBoundsBox(box))}
       />
 
       {err ? (
@@ -324,10 +385,10 @@ export default function MapSection({
       ) : null}
 
       <div className="grid gap-2">
-        {listActiveInBounds.map((l) => {
-          const beds = l.beds ?? null;
-          const baths = l.baths ?? null;
-          const area = l.area_m2 ?? null;
+        {listActiveInBounds.map((listing) => {
+          const beds = listing.beds ?? null;
+          const baths = listing.baths ?? null;
+          const area = listing.area_m2 ?? null;
           const stats = [
             beds !== null ? t.bedsShort(beds) : null,
             baths !== null ? t.bathsShort(baths) : null,
@@ -336,22 +397,22 @@ export default function MapSection({
 
           return (
             <Link
-              key={l.id}
-              href={`${basePath}/listing/${l.id}`}
+              key={listing.id}
+              href={`${basePath}/listing/${listing.id}`}
               className="grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
             >
-              {l.cover_image_url ? (
+              {getPrimaryImage(listing) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={l.cover_image_url}
-                  alt={l.title}
+                  src={getPrimaryImage(listing) ?? undefined}
+                  alt={listing.title}
                   className="h-40 w-full rounded-lg object-cover"
                   loading="lazy"
                 />
               ) : null}
-              <div className="font-semibold">{l.title}</div>
+              <div className="font-semibold">{listing.headline || listing.title}</div>
               <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                ${Number(l.price_usd ?? 0).toLocaleString()} • {l.city}
+                ${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}
                 {stats.length ? ` • ${stats.join(" • ")}` : ""}
               </div>
             </Link>
@@ -363,10 +424,10 @@ export default function MapSection({
             <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
               {t.compsLabel}
             </div>
-            {listCompsInBounds.map((l) => {
-              const beds = l.beds ?? null;
-              const baths = l.baths ?? null;
-              const area = l.area_m2 ?? null;
+            {listCompsInBounds.map((listing) => {
+              const beds = listing.beds ?? null;
+              const baths = listing.baths ?? null;
+              const area = listing.area_m2 ?? null;
               const stats = [
                 beds !== null ? t.bedsShort(beds) : null,
                 baths !== null ? t.bathsShort(baths) : null,
@@ -375,21 +436,21 @@ export default function MapSection({
 
               return (
                 <div
-                  key={`comp_card_${l.id}`}
+                  key={`comp_card_${listing.id}`}
                   className="grid gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-200"
                 >
-                  {l.cover_image_url ? (
+                  {getPrimaryImage(listing) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={l.cover_image_url}
-                      alt={l.title}
+                      src={getPrimaryImage(listing) ?? undefined}
+                      alt={listing.title}
                       className="h-32 w-full rounded-lg object-cover opacity-90"
                       loading="lazy"
                     />
                   ) : null}
-                  <div className="font-semibold opacity-80">{l.title}</div>
+                  <div className="font-semibold opacity-80">{listing.title}</div>
                   <div className="text-sm opacity-80">
-                    ${Number(l.price_usd ?? 0).toLocaleString()} • {l.city}
+                    ${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}
                     {stats.length ? ` • ${stats.join(" • ")}` : ""}
                   </div>
                   <div className="text-xs opacity-70">{t.compsHint}</div>

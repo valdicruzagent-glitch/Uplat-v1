@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * Public sign-in / lead-capture form for Uplat.
+ *
+ * What this file does:
+ * - Captures a first identity signal before browse/publish actions.
+ * - Stores role + contact locally so later steps can personalize the flow.
+ * - Creates a lightweight lead row in `realtor_leads` for manual-first operations.
+ *
+ * Safe edit note:
+ * - Keep this step simple. It should segment the user, not become a heavy auth flow.
+ * - If the database role model changes, update the role union and insert payload together.
+ */
+
 import { useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { en } from "@/app/i18n/en";
@@ -14,7 +27,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
   const t = locale === "en" ? en : es;
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [role, setRole] = useState<"realtor" | "seller" | "other">("realtor");
+  const [role, setRole] = useState<"realtor" | "agency" | "seller" | "other">("realtor");
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,8 +54,10 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
 
       if (error) throw error;
 
-      // store locally so submit-listing can prefill
+      // Store light identity context so later steps can prefill contact data
+      // and route the user through the right publish path.
       window.localStorage.setItem("uplat_contact_whatsapp", wa);
+      window.localStorage.setItem("uplat_contact_role", role);
       if (name) window.localStorage.setItem("uplat_contact_name", name);
       setDone(true);
     } catch (e: unknown) {
@@ -104,9 +119,10 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
         <select
           className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           value={role}
-          onChange={(e) => setRole(e.target.value as "realtor" | "seller" | "other")}
+          onChange={(e) => setRole(e.target.value as "realtor" | "agency" | "seller" | "other")}
         >
           <option value="realtor">{t.roleRealtor}</option>
+          <option value="agency">{t.roleAgency}</option>
           <option value="seller">{t.roleSeller}</option>
           <option value="other">{t.roleOther}</option>
         </select>
@@ -121,7 +137,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
       </button>
 
       <div className="text-xs text-zinc-600 dark:text-zinc-400">
-        {locale === "en" ? "Next: submit a listing." : "Siguiente: subir una propiedad."} {" "}
+        {locale === "en" ? "Next: submit a listing." : "Siguiente: subir una propiedad."}{" "}
         <a className="underline" href={locale === "en" ? "/en/submit-listing" : "/submit-listing"}>
           {locale === "en" ? "Submit listing" : "Subir propiedad"}
         </a>
