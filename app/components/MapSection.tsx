@@ -20,7 +20,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type L from "leaflet";
 
 import { getSupabaseClient } from "@/lib/supabaseClient";
@@ -208,6 +208,21 @@ export default function MapSection({
   const sliderMax = computedPriceBounds.max;
   const [minSelected, maxSelected] = priceRange;
 
+  // Refs and helper to ensure the active thumb is on top when handles overlap.
+  // We bring the pointer-down/focus input to front so users can grab either handle.
+  const minRef = useRef<HTMLInputElement | null>(null);
+  const maxRef = useRef<HTMLInputElement | null>(null);
+
+  function bringToFront(which: "min" | "max") {
+    if (which === "min") {
+      if (minRef.current) minRef.current.style.zIndex = "1000";
+      if (maxRef.current) maxRef.current.style.zIndex = "500";
+    } else {
+      if (maxRef.current) maxRef.current.style.zIndex = "1000";
+      if (minRef.current) minRef.current.style.zIndex = "500";
+    }
+  }
+
   function updateMin(v: number) { setPriceRange((prev) => [Math.min(v, prev[1]), prev[1]]); }
   function updateMax(v: number) { setPriceRange((prev) => [prev[0], Math.max(v, prev[0])]); }
 
@@ -242,26 +257,30 @@ export default function MapSection({
         <div className="relative h-10">
           {/* overlapped dual-handle inputs with z-index control and visual track */}
           <input
+            ref={(el) => { minRef.current = el }}
             aria-label={t.minPrice}
             type="range"
             min={sliderMin}
             max={sliderMax}
             value={minSelected}
             onChange={(e) => updateMin(Number(e.target.value))}
-            className="uplat-range absolute inset-0 w-full bg-transparent z-30"
-            style={{ zIndex: 999 }}
+            onPointerDown={() => bringToFront("min")}
+            onFocus={() => bringToFront("min")}
+            className="uplat-range absolute inset-0 w-full bg-transparent"
             disabled={sliderMin === sliderMax}
           />
 
           <input
+            ref={(el) => { maxRef.current = el }}
             aria-label={t.maxPrice}
             type="range"
             min={sliderMin}
             max={sliderMax}
             value={maxSelected}
             onChange={(e) => updateMax(Number(e.target.value))}
-            className="uplat-range absolute inset-0 w-full bg-transparent z-20"
-            style={{ zIndex: 1 }}
+            onPointerDown={() => bringToFront("max")}
+            onFocus={() => bringToFront("max")}
+            className="uplat-range absolute inset-0 w-full bg-transparent"
             disabled={sliderMin === sliderMax}
           />
 

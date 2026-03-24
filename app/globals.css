@@ -43,3 +43,65 @@ body {
     border-color: rgba(9, 9, 11, 0.95); /* zinc-950-ish */
   }
 }
+
+/* Dual range slider styling for homepage price handles */
+.uplat-range {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;
+  background: transparent;
+}
+
+.uplat-range::-webkit-slider-runnable-track {
+  height: 24px;
+  background: transparent;
+}
+
+.uplat-range::-moz-range-track {
+  height: 24px;
+  background: transparent;
+  border: 0;
+}
+
+.uplat-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  margin-top: 2px;
+  height: 20px;
+  width: 20px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  background: #18181b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.uplat-range::-moz-range-thumb {
+  pointer-events: auto;
+  height: 20px;
+  width: 20px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  background: #18181b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.uplat-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.uplat-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .uplat-range::-webkit-slider-thumb,
+  .uplat-range::-moz-range-thumb {
+    border-color: #09090b;
+    background: #fafafa;
+  }
+}
