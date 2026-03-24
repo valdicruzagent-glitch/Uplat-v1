@@ -168,7 +168,6 @@ export default function MapSection({
   }, [activePricedAll, bounds]);
 
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
-  const [activeHandle, setActiveHandle] = useState<'min'|'max'|null>(null);
 
   useEffect(() => {
     const { min, max } = computedPriceBounds;
@@ -242,9 +241,27 @@ export default function MapSection({
 
         <div className="relative h-10">
           {/* overlapped dual-handle inputs with z-index control and visual track */}
-          <input aria-label={t.minPrice} type="range" min={sliderMin} max={sliderMax} value={minSelected} onChange={(e)=>updateMin(Number(e.target.value))} onMouseDown={()=>setActiveHandle('min')} onTouchStart={()=>setActiveHandle('min')} className={`absolute inset-0 w-full appearance-none bg-transparent ${activeHandle==='min' ? 'z-30' : 'z-20'}`} disabled={sliderMin===sliderMax} />
+          <input
+            aria-label={t.minPrice}
+            type="range"
+            min={sliderMin}
+            max={sliderMax}
+            value={minSelected}
+            onChange={(e) => updateMin(Number(e.target.value))}
+            className="uplat-range absolute inset-0 w-full bg-transparent z-30"
+            disabled={sliderMin === sliderMax}
+          />
 
-          <input aria-label={t.maxPrice} type="range" min={sliderMin} max={sliderMax} value={maxSelected} onChange={(e)=>updateMax(Number(e.target.value))} onMouseDown={()=>setActiveHandle('max')} onTouchStart={()=>setActiveHandle('max')} className={`absolute inset-0 w-full appearance-none bg-transparent ${activeHandle==='max' ? 'z-30' : 'z-20'}`} disabled={sliderMin===sliderMax} />
+          <input
+            aria-label={t.maxPrice}
+            type="range"
+            min={sliderMin}
+            max={sliderMax}
+            value={maxSelected}
+            onChange={(e) => updateMax(Number(e.target.value))}
+            className="uplat-range absolute inset-0 w-full bg-transparent z-20"
+            disabled={sliderMin === sliderMax}
+          />
 
           <div className="absolute inset-0 flex items-center pointer-events-none">
             <div className="relative h-1 w-full rounded bg-zinc-200 dark:bg-zinc-800">
@@ -253,7 +270,6 @@ export default function MapSection({
           </div>
         </div>
 
-        <div className="text-xs text-zinc-600 dark:text-zinc-400">{t.priceRangeHint}</div>
       </div>
 
       <LeafletMap activeListings={filteredActive} compListings={filteredComps} showComps={showComps} center={center ?? undefined} basePath={basePath} openLabel={basePath==='/en' ? 'Open' : 'Ver'} onBoundsChange={(box)=>setBounds(toBoundsBox(box))} />
