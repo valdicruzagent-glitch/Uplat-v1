@@ -249,6 +249,7 @@ export default function MapSection({
             value={minSelected}
             onChange={(e) => updateMin(Number(e.target.value))}
             className="uplat-range absolute inset-0 w-full bg-transparent z-30"
+            style={{ zIndex: 999 }}
             disabled={sliderMin === sliderMax}
           />
 
@@ -260,6 +261,7 @@ export default function MapSection({
             value={maxSelected}
             onChange={(e) => updateMax(Number(e.target.value))}
             className="uplat-range absolute inset-0 w-full bg-transparent z-20"
+            style={{ zIndex: 1 }}
             disabled={sliderMin === sliderMax}
           />
 
