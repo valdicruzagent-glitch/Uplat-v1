@@ -107,7 +107,7 @@ export default function MapSection({
   const t = locale === "en" ? en : es;
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [filters, setFilters] = useState<Filters>({ listingType: "", propertyType: "" });
+  const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyType: "" });
   const [showComps, setShowComps] = useState(false);
   const [bounds, setBounds] = useState<BoundsBox | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -314,7 +314,13 @@ export default function MapSection({
           const stats = [beds !== null ? t.bedsShort(beds) : null, baths !== null ? t.bathsShort(baths) : null, area !== null ? t.areaShort(area) : null].filter(Boolean);
           return (
             <Link key={listing.id} href={`${basePath}/listing/${listing.id}`} className="grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900">
-              {getPrimaryImage(listing) && <img src={getPrimaryImage(listing) ?? undefined} alt={listing.title} className="h-40 w-full rounded-lg object-cover" loading="lazy" />}
+              <div className="relative h-40 w-full rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+  {getPrimaryImage(listing) ? (
+    <img src={getPrimaryImage(listing)!} alt={listing.title} className="h-full w-full object-cover" loading="lazy" />
+  ) : (
+    <div className="flex h-full items-center justify-center text-xs text-zinc-500">Sin imagen</div>
+  )}
+</div>
               <div className="font-semibold">{listing.headline || listing.title}</div>
               <div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
             </Link>
@@ -331,7 +337,13 @@ export default function MapSection({
               const stats = [beds !== null ? t.bedsShort(beds) : null, baths !== null ? t.bathsShort(baths) : null, area !== null ? t.areaShort(area) : null].filter(Boolean);
               return (
                 <div key={`comp_card_${listing.id}`} className="grid gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-200">
-                  {getPrimaryImage(listing) && <img src={getPrimaryImage(listing) ?? undefined} alt={listing.title} className="h-32 w-full rounded-lg object-cover opacity-90" loading="lazy" />}
+                  <div className="relative h-32 w-full rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800 opacity-90">
+  {getPrimaryImage(listing) ? (
+    <img src={getPrimaryImage(listing)!} alt={listing.title} className="h-full w-full object-cover" loading="lazy" />
+  ) : (
+    <div className="flex h-full items-center justify-center text-xs text-zinc-500 opacity-90">Sin imagen</div>
+  )}
+</div>
                   <div className="font-semibold opacity-80">{listing.title}</div>
                   <div className="text-sm opacity-80">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
                   <div className="text-xs opacity-70">{t.compsHint}</div>
