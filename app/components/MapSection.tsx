@@ -234,12 +234,20 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
   }
 
   function updateMin(v: number) {
-    const rounded = roundStep(Math.min(v, minSelected));
-    setPriceRange((prev) => [rounded, prev[1]]);
+    setPriceRange((prev) => {
+      const clamped = Math.min(v, prev[1]);
+      const rounded = roundStep(clamped);
+      const finalMin = Math.min(rounded, prev[1]);
+      return [finalMin, prev[1]];
+    });
   }
   function updateMax(v: number) {
-    const rounded = roundStep(Math.max(v, maxSelected));
-    setPriceRange((prev) => [prev[0], rounded]);
+    setPriceRange((prev) => {
+      const clamped = Math.max(v, prev[0]);
+      const rounded = roundStep(clamped);
+      const finalMax = Math.max(rounded, prev[0]);
+      return [prev[0], finalMax];
+    });
   }
 
   return (
