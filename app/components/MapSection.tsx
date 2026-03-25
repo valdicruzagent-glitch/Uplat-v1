@@ -228,75 +228,124 @@ export default function MapSection({
   function updateMax(v: number) { setPriceRange((prev) => [prev[0], Math.max(v, prev[0])]); }
 
   return (
-    <section className="flex flex-col gap-4">
+<section className="flex flex-col md:flex-row gap-4">
+    {/* Sidebar de filtros */}
+    <aside className="w-full md:w-64 flex-shrink-0 flex flex-col gap-3">
+      <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='sale'? '': 'sale'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='sale'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.buy}</button>
+        <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='rent'? '': 'rent'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='rent'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.rent}</button>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-          <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='sale'? '': 'sale'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='sale'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.buy}</button>
-          <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='rent'? '': 'rent'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='rent'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.rent}</button>
+      <select className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950 w-full" value={filters.propertyType} onChange={(e)=>setFilters(prev=>({...prev, propertyType: e.target.value as Filters['propertyType']}))}>
+        <option value="">{t.allTypes}</option>
+        <option value="house">{t.house}</option>
+        <option value="land">{t.land}</option>
+        <option value="apartment">{t.apartment}</option>
+      </select>
+
+      <div className="rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="text-xs font-medium">{t.priceRange}</div>
+          <div className="text-xs text-zinc-600 dark:text-zinc-400">${Number(minSelected).toLocaleString()} – ${Number(maxSelected).toLocaleString()}</div>
         </div>
-
-        <select className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={filters.propertyType} onChange={(e)=>setFilters(prev=>({...prev, propertyType: e.target.value as Filters['propertyType']}))}>
-          <option value="">{t.allTypes}</option>
-          <option value="house">{t.house}</option>
-          <option value="land">{t.land}</option>
-          <option value="apartment">{t.apartment}</option>
-        </select>
-        <div className="inline-flex flex-col gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950 w-64">
-          <div className="flex items-baseline justify-between gap-2">
-            <div className="text-xs font-medium">{t.priceRange}</div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">${Number(minSelected).toLocaleString()} – ${Number(maxSelected).toLocaleString()}</div>
-          </div>
-          <div className="relative h-8">
-            <input
-              ref={(el) => { minRef.current = el }}
-              aria-label={t.minPrice}
-              type="range"
-              min={sliderMin}
-              max={sliderMax}
-              value={minSelected}
-              onChange={(e) => updateMin(Number(e.target.value))}
-              onPointerDown={() => bringToFront("min")}
-              onFocus={() => bringToFront("min")}
-              className="uplat-range absolute inset-0 w-full bg-transparent"
-              disabled={sliderMin === sliderMax}
-            />
-
-            <input
-              ref={(el) => { maxRef.current = el }}
-              aria-label={t.maxPrice}
-              type="range"
-              min={sliderMin}
-              max={sliderMax}
-              value={maxSelected}
-              onChange={(e) => updateMax(Number(e.target.value))}
-              onPointerDown={() => bringToFront("max")}
-              onFocus={() => bringToFront("max")}
-              className="uplat-range absolute inset-0 w-full bg-transparent"
-              disabled={sliderMin === sliderMax}
-            />
-
-            <div className="absolute inset-0 flex items-center pointer-events-none">
-              <div className="relative h-1 w-full rounded bg-zinc-200 dark:bg-zinc-800">
-                <div className="absolute h-1 rounded bg-black dark:bg-white" style={{ left: `${((minSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%`, right: `${100-((maxSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%` }} />
-              </div>
+        <div className="relative h-8 mt-2">
+          <input
+            ref={(el) => { minRef.current = el }}
+            aria-label={t.minPrice}
+            type="range"
+            min={sliderMin}
+            max={sliderMax}
+            value={minSelected}
+            onChange={(e) => updateMin(Number(e.target.value))}
+            onPointerDown={() => bringToFront("min")}
+            onFocus={() => bringToFront("min")}
+            className="uplat-range absolute inset-0 w-full bg-transparent"
+            disabled={sliderMin === sliderMax}
+          />
+          <input
+            ref={(el) => { maxRef.current = el }}
+            aria-label={t.maxPrice}
+            type="range"
+            min={sliderMin}
+            max={sliderMax}
+            value={maxSelected}
+            onChange={(e) => updateMax(Number(e.target.value))}
+            onPointerDown={() => bringToFront("max")}
+            onFocus={() => bringToFront("max")}
+            className="uplat-range absolute inset-0 w-full bg-transparent"
+            disabled={sliderMin === sliderMax}
+          />
+          <div className="absolute inset-0 flex items-center pointer-events-none">
+            <div className="relative h-1 w-full rounded bg-zinc-200 dark:bg-zinc-800">
+              <div className="absolute h-1 rounded bg-black dark:bg-white" style={{ left: `${((minSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%`, right: `${100-((maxSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%` }} />
             </div>
           </div>
         </div>
-
-        <label className="ml-auto inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300"><input type="checkbox" checked={showComps} onChange={(e)=>setShowComps(e.target.checked)} />{t.showComps}</label>
       </div>
 
-      <LeafletMap activeListings={filteredActive} compListings={filteredComps} showComps={showComps} center={center ?? undefined} basePath={basePath} openLabel={basePath==='/en' ? 'Open' : 'Ver'} onBoundsChange={(box)=>setBounds(toBoundsBox(box))} />
+      <label className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+        <input type="checkbox" checked={showComps} onChange={(e)=>setShowComps(e.target.checked)} />
+        {t.showComps}
+      </label>
+    </aside>
 
-      {err ? (<div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">{t.errorLoadingListings(err)}</div>) : null}
+    <main className="flex-1 flex flex-col gap-4">
+      <LeafletMap
+        activeListings={listActiveInBounds}
+        compListings={listCompsInBounds}
+        showComps={showComps}
+        center={center ?? undefined}
+        basePath={basePath}
+        openLabel={basePath==='/en' ? 'Open' : 'Ver'}
+        onBoundsChange={(box)=>setBounds(toBoundsBox(box))}
+      />
 
-      <div className="grid gap-2">{listActiveInBounds.map((listing)=>{const beds=listing.beds??null;const baths=listing.baths??null;const area=listing.area_m2??null;const stats=[beds!==null? t.bedsShort(beds):null,baths!==null? t.bathsShort(baths):null,area!==null? t.areaShort(area):null].filter(Boolean);return (<Link key={listing.id} href={`${basePath}/listing/${listing.id}`} className="grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900">{getPrimaryImage(listing)?(<img src={getPrimaryImage(listing)??undefined} alt={listing.title} className="h-40 w-full rounded-lg object-cover" loading="lazy" />):null}<div className="font-semibold">{listing.headline||listing.title}</div><div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd??0).toLocaleString()} • {listing.city}{stats.length?` • ${stats.join(" • ")}`:''}</div></Link>);})}
+      {err && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+          {t.errorLoadingListings(err)}
+        </div>
+      )}
 
-        {showComps && listCompsInBounds.length ? (<div className="mt-2 grid gap-2"><div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t.compsLabel}</div>{listCompsInBounds.map((listing)=>{const beds=listing.beds??null;const baths=listing.baths??null;const area=listing.area_m2??null;const stats=[beds!==null? t.bedsShort(beds):null,baths!==null? t.bathsShort(baths):null,area!==null? t.areaShort(area):null].filter(Boolean);return (<div key={`comp_card_${listing.id}`} className="grid gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-200">{getPrimaryImage(listing)?(<img src={getPrimaryImage(listing)??undefined} alt={listing.title} className="h-32 w-full rounded-lg object-cover opacity-90" loading="lazy"/>):null}<div className="font-semibold opacity-80">{listing.title}</div><div className="text-sm opacity-80">${Number(listing.price_usd??0).toLocaleString()} • {listing.city}{stats.length?` • ${stats.join(" • ")}`:''}</div><div className="text-xs opacity-70">{t.compsHint}</div></div>);})}</div>) : null}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {listActiveInBounds.map((listing) => {
+          const beds = listing.beds ?? null;
+          const baths = listing.baths ?? null;
+          const area = listing.area_m2 ?? null;
+          const stats = [beds !== null ? t.bedsShort(beds) : null, baths !== null ? t.bathsShort(baths) : null, area !== null ? t.areaShort(area) : null].filter(Boolean);
+          return (
+            <Link key={listing.id} href={`${basePath}/listing/${listing.id}`} className="grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900">
+              {getPrimaryImage(listing) && <img src={getPrimaryImage(listing) ?? undefined} alt={listing.title} className="h-40 w-full rounded-lg object-cover" loading="lazy" />}
+              <div className="font-semibold">{listing.headline || listing.title}</div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
+            </Link>
+          );
+        })}
 
-        {!loading && listActiveInBounds.length===0 && (!showComps || listCompsInBounds.length===0) ? (<div className="text-sm text-zinc-600 dark:text-zinc-400">{t.noListings}</div>):null}
+        {showComps && listCompsInBounds.length ? (
+          <div className="mt-2 grid gap-2 md:col-span-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t.compsLabel}</div>
+            {listCompsInBounds.map((listing) => {
+              const beds = listing.beds ?? null;
+              const baths = listing.baths ?? null;
+              const area = listing.area_m2 ?? null;
+              const stats = [beds !== null ? t.bedsShort(beds) : null, baths !== null ? t.bathsShort(baths) : null, area !== null ? t.areaShort(area) : null].filter(Boolean);
+              return (
+                <div key={`comp_card_${listing.id}`} className="grid gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-200">
+                  {getPrimaryImage(listing) && <img src={getPrimaryImage(listing) ?? undefined} alt={listing.title} className="h-32 w-full rounded-lg object-cover opacity-90" loading="lazy" />}
+                  <div className="font-semibold opacity-80">{listing.title}</div>
+                  <div className="text-sm opacity-80">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
+                  <div className="text-xs opacity-70">{t.compsHint}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {!loading && listActiveInBounds.length === 0 && (!showComps || listCompsInBounds.length === 0) && (
+          <div className="text-sm text-zinc-600 dark:text-zinc-400">{t.noListings}</div>
+        )}
       </div>
-    </section>
-  );
+    </main>
+  </section>
+);
 }
