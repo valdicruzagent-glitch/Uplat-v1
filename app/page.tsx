@@ -12,7 +12,7 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-50">
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
+      <main className="flex w-full flex-col gap-6 px-4 py-10">
         <header className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-semibold tracking-tight">{es.title}</h1>
