@@ -39,7 +39,7 @@ const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
 
 type Filters = {
   listingType: "" | "sale" | "rent";
-  propertyType: "" | "house" | "land" | "apartment";
+  propertyTypes: PropertyCategory[];
 };
 
 type BoundsBox = {
@@ -95,6 +95,9 @@ function matchesFilters(listing: Listing, filters: Filters) {
   return true;
 }
 
+
+type PropertyCategory = "house" | "apartment" | "land" | "farm";
+const ALL_CATEGORIES: PropertyCategory[] = ["house","apartment","land","farm"];
 export default function MapSection({
   locale,
   basePath,
@@ -107,7 +110,8 @@ export default function MapSection({
   const t = locale === "en" ? en : es;
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyType: "" });
+  const allCategories: PropertyCategory[] = ["house","apartment","land","farm"]; // default all selected
+const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyTypes: allCategories });
   const [showComps, setShowComps] = useState(false);
   const [bounds, setBounds] = useState<BoundsBox | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -237,12 +241,28 @@ export default function MapSection({
       </div>
 
       <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Categoría</label>
-      <select className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950 w-full" value={filters.propertyType} onChange={(e)=>setFilters(prev=>({...prev, propertyType: e.target.value as Filters['propertyType']}))}>
-        <option value="">{t.allTypes}</option>
-        <option value="house">{t.house}</option>
-        <option value="land">{t.land}</option>
-        <option value="apartment">{t.apartment}</option>
-      </select>
+      <div className="flex flex-wrap gap-2">
+        {ALL_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => {
+              setFilters(prev => {
+                const selected = [...prev.propertyTypes];
+                if (selected.includes(cat)) {
+                  selected.splice(selected.indexOf(cat), 1);
+                } else {
+                  selected.push(cat);
+                }
+                return { ...prev, propertyTypes: selected };
+              });
+            }}
+            className={`px-3 py-1 text-xs sm:text-sm rounded-full transition-colors ${filters.propertyTypes.includes(cat) ? "bg-blue-600 text-white" : "bg-white border border-zinc-200 text-zinc-800 hover:bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-900"}`}
+          >
+            {t[cat]}
+          </button>
+        ))}
+      </div>
 
       <div className="rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-baseline justify-between gap-2">
