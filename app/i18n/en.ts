@@ -13,6 +13,7 @@ export const en = {
   house: "House",
   land: "Land",
   apartment: "Apartment",
+  farm: "Farm",
   useMyLocation: "Use my location",
   showComps: "Show comps",
   compsLabel: "Comps",

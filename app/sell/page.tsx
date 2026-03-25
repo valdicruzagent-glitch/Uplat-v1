@@ -1,11 +1,11 @@
-'use client';
-
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 
-export default function Sell() {
-  const search = useSearchParams();
-  const afterLogin = search.get('next') || '/sell/onboarding';
+interface SearchParams {
+  next?: string;
+}
+
+export default function SellPage({ searchParams }: { searchParams: SearchParams }) {
+  const afterLogin = searchParams.next || '/sell/onboarding';
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-zinc-50 px-6 dark:bg-black">

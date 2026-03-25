@@ -91,7 +91,7 @@ function isComparable(listing: Listing) {
 
 function matchesFilters(listing: Listing, filters: Filters) {
   if (filters.listingType && getListingType(listing) !== filters.listingType) return false;
-  if (filters.propertyType && getPropertyType(listing) !== filters.propertyType) return false;
+  if (filters.propertyTypes.length > 0 && !filters.propertyTypes.includes(getPropertyType(listing) as PropertyCategory)) return false;
   return true;
 }
 
@@ -184,7 +184,7 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
 
   useEffect(() => {
     setPriceRange([computedPriceBounds.min, computedPriceBounds.max]);
-  }, [filters.listingType, filters.propertyType, computedPriceBounds.min, computedPriceBounds.max]);
+  }, [filters.listingType, filters.propertyTypes, computedPriceBounds.min, computedPriceBounds.max]);
 
   const filteredActive = useMemo(() => {
     const [minSelected, maxSelected] = priceRange;
@@ -212,6 +212,11 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
   const sliderMin = computedPriceBounds.min;
   const sliderMax = computedPriceBounds.max;
   const [minSelected, maxSelected] = priceRange;
+  const step = filters.listingType === "rent" ? 50 : 1000;
+
+  function roundStep(v: number) {
+    return Math.round(v / step) * step;
+  }
 
   // Refs and helper to ensure the active thumb is on top when handles overlap.
   // We bring the pointer-down/focus input to front so users can grab either handle.
@@ -228,8 +233,14 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
     }
   }
 
-  function updateMin(v: number) { setPriceRange((prev) => [Math.min(v, prev[1]), prev[1]]); }
-  function updateMax(v: number) { setPriceRange((prev) => [prev[0], Math.max(v, prev[0])]); }
+  function updateMin(v: number) {
+    const rounded = roundStep(Math.min(v, minSelected));
+    setPriceRange((prev) => [rounded, prev[1]]);
+  }
+  function updateMax(v: number) {
+    const rounded = roundStep(Math.max(v, maxSelected));
+    setPriceRange((prev) => [prev[0], rounded]);
+  }
 
   return (
 <section className="flex flex-col md:flex-row gap-4">

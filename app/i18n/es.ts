@@ -13,6 +13,7 @@ export const es = {
   house: "Casa",
   land: "Terreno",
   apartment: "Apartamento",
+  farm: "Finca",
   useMyLocation: "Usar mi ubicación",
   showComps: "Ver comparables",
   compsLabel: "Comparables",
