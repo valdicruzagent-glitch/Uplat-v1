@@ -3,7 +3,7 @@ import readline from 'readline';
 
 const envPath = process.env.ENV_PATH || '.env.local';
 const envContent = require('fs').readFileSync(envPath, 'utf-8');
-const env = {};
+const env: Record<string, string> = {};
 for (const line of envContent.split('\n')) {
   const [k, ...r] = line.split('=');
   if (k && r.length) env[k.trim()] = r.join('=').trim().replace(/^"|"$/g, '');
@@ -28,8 +28,13 @@ async function check() {
   }
 
   // Check columns on listings
-  const { data: colData } = await sb.rpc('pgtable_column_names', { table_name: 'listings' }).catch(() => ({ data: [] }));
-  const cols = colData.map((c: any) => c.column_name);
+  let cols: string[] = [];
+  try {
+    const { data } = await sb.rpc('pgtable_column_names', { table_name: 'listings' });
+    cols = (data || []).map((c: any) => c.column_name);
+  } catch (e) {
+    // keep empty
+  }
   console.log('listings columns:', cols);
   const needAlter = [];
   if (!cols.includes('favorites_count')) needAlter.push('favorites_count');
@@ -45,7 +50,5 @@ async function check() {
   } catch (e) {
     console.log('increment_favorites_count missing');
   }
-
-  sb.close();
 }
 check();
