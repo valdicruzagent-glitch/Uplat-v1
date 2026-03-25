@@ -287,6 +287,7 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
             type="range"
             min={sliderMin}
             max={sliderMax}
+            step={step}
             value={minSelected}
             onChange={(e) => updateMin(Number(e.target.value))}
             onPointerDown={() => bringToFront("min")}
@@ -300,6 +301,7 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
             type="range"
             min={sliderMin}
             max={sliderMax}
+            step={step}
             value={maxSelected}
             onChange={(e) => updateMax(Number(e.target.value))}
             onPointerDown={() => bringToFront("max")}
