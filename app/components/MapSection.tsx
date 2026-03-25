@@ -272,6 +272,10 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
         <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='rent'? '': 'rent'}))} className={"flex-1 px-2 py-1 text-sm transition-colors "+(filters.listingType==='rent'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.rent}</button>
       </div>
 
+      <button type="button" className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1 text-left text-sm text-zinc-800 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900">
+        🧭 Usar mi ubicación
+      </button>
+
       <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Categoría</label>
       <div className="flex flex-wrap gap-2">
         {ALL_CATEGORIES.map((cat) => (

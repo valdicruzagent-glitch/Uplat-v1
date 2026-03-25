@@ -28,8 +28,7 @@ export default function Home() {
             <Link href="/" className="text-sm font-medium">Comprar</Link>
             <Link href="/" className="text-sm font-medium">Rentar</Link>
             <button onClick={handleSell} className="text-sm font-medium">Sell</button>
-            <button onClick={() => setAgentsOpen(true)} className="text-sm font-medium">Find an agent</button>
-            <button onClick={() => setHelpOpen(true)} className="text-sm font-medium">Get help</button>
+            <button onClick={() => setAgentsOpen(true)} className="text-sm font-medium">Encuentra un agente</button>
           </nav>
 
           {/* Mobile menu button */}
@@ -40,8 +39,12 @@ export default function Home() {
           {/* Center logo */}
           <div className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight">Uplat</div>
 
-          {/* Right CTA */}
-          <Link href="/signin" className="hidden md:inline-flex px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">Sign in</Link>
+          {/* Right nav – desktop */}
+          <div className="hidden md:flex items-center gap-4">
+            <button onClick={() => setHelpOpen(true)} className="text-sm font-medium">Obtén ayuda</button>
+            <LanguageSwitch current="es" />
+            <Link href="/signin" className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">Sign in</Link>
+          </div>
         </div>
 
         {/* Mobile menu overlay */}
@@ -54,8 +57,8 @@ export default function Home() {
               <Link href="/" className="text-base font-medium" onClick={() => setMobileOpen(false)}>Comprar</Link>
               <Link href="/" className="text-base font-medium" onClick={() => setMobileOpen(false)}>Rentar</Link>
               <button onClick={() => { handleSell(); setMobileOpen(false); }} className="text-base font-medium text-left">Sell</button>
-              <button onClick={() => { setAgentsOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left">Find an agent</button>
-              <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left">Get help</button>
+              <button onClick={() => { setAgentsOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left">Encuentra un agente</button>
+              <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left">Obtén ayuda</button>
               <Link href="/signin" className="mt-4 inline-flex justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded" onClick={() => setMobileOpen(false)}>Sign in</Link>
             </div>
           </div>
@@ -71,8 +74,8 @@ export default function Home() {
       {agentsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setAgentsOpen(false)}>
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-semibold mb-2">Find an agent</h2>
-            <p className="text-zinc-600 dark:text-zinc-300">This feature is coming soon. We're building a network of trusted agents to help you.</p>
+            <h2 className="text-xl font-semibold mb-2">Encuentra un agente</h2>
+            <p className="text-zinc-600 dark:text-zinc-300">Esta función estará disponible pronto. Estamos construyendo una red de agentes confianza para ayudarte.</p>
             <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setAgentsOpen(false)}>Close</button>
           </div>
         </div>
@@ -81,9 +84,9 @@ export default function Home() {
       {helpOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setHelpOpen(false)}>
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-semibold mb-2">Get help</h2>
-            <p className="text-zinc-600 dark:text-zinc-300 mb-2">Email us at <a href="mailto:support@uplat.app" className="text-blue-600 hover:underline">support@uplat.app</a></p>
-            <p className="text-sm text-zinc-400">We'll get back to you shortly.</p>
+            <h2 className="text-xl font-semibold mb-2">Obtén ayuda</h2>
+            <p className="text-zinc-600 dark:text-zinc-300 mb-2">Escríbenos a <a href="mailto:support@uplat.app" className="text-blue-600 hover:underline">support@uplat.app</a></p>
+            <p className="text-sm text-zinc-400">Te responderemos pronto.</p>
             <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setHelpOpen(false)}>Close</button>
           </div>
         </div>

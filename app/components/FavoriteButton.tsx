@@ -53,7 +53,7 @@ export default function FavoriteButton({ listingId, initialFavorited = false, in
       type="button"
       onClick={toggle}
       disabled={loading}
-      className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-60"
+      className="flex flex-col items-center justify-center gap-0 px-1 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-60"
       aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
     >
       <svg
@@ -64,7 +64,7 @@ export default function FavoriteButton({ listingId, initialFavorited = false, in
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
       </svg>
-      {count > 0 && <span className="text-xs text-zinc-600 dark:text-zinc-300">{count}</span>}
+      {count > 0 && <span className="text-[10px] leading-none text-zinc-600 dark:text-zinc-300">{count}</span>}
     </button>
   );
 }
