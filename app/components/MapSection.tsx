@@ -24,7 +24,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import type L from "leaflet";
 
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import UseMyLocationButton from "@/app/components/UseMyLocationButton";
+
 import type { Listing } from "@/app/types/listing";
 
 import { en } from "@/app/i18n/en";
@@ -98,15 +98,16 @@ function matchesFilters(listing: Listing, filters: Filters) {
 export default function MapSection({
   locale,
   basePath,
+  center,
 }: {
   locale: "es" | "en";
   basePath: "" | "/en";
+  center: [number, number] | null;
 }) {
   const t = locale === "en" ? en : es;
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<Filters>({ listingType: "", propertyType: "" });
-  const [center, setCenter] = useState<[number, number] | null>(null);
   const [showComps, setShowComps] = useState(false);
   const [bounds, setBounds] = useState<BoundsBox | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -228,14 +229,8 @@ export default function MapSection({
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-base font-semibold">{t.browseListings}</h2>
-        <span className="text-xs text-zinc-600 dark:text-zinc-400">{loading ? t.loading : t.listingsCount(count)}</span>
-      </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <UseMyLocationButton label={t.useMyLocation} onLocation={(lat,lng)=>setCenter([lat,lng])} />
-
         <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='sale'? '': 'sale'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='sale'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.buy}</button>
           <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='rent'? '': 'rent'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='rent'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.rent}</button>
@@ -247,50 +242,49 @@ export default function MapSection({
           <option value="land">{t.land}</option>
           <option value="apartment">{t.apartment}</option>
         </select>
+        <div className="inline-flex flex-col gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950 w-64">
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="text-xs font-medium">{t.priceRange}</div>
+            <div className="text-xs text-zinc-600 dark:text-zinc-400">${Number(minSelected).toLocaleString()} – ${Number(maxSelected).toLocaleString()}</div>
+          </div>
+          <div className="relative h-8">
+            <input
+              ref={(el) => { minRef.current = el }}
+              aria-label={t.minPrice}
+              type="range"
+              min={sliderMin}
+              max={sliderMax}
+              value={minSelected}
+              onChange={(e) => updateMin(Number(e.target.value))}
+              onPointerDown={() => bringToFront("min")}
+              onFocus={() => bringToFront("min")}
+              className="uplat-range absolute inset-0 w-full bg-transparent"
+              disabled={sliderMin === sliderMax}
+            />
 
-        <label className="ml-auto inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300"><input type="checkbox" checked={showComps} onChange={(e)=>setShowComps(e.target.checked)} />{t.showComps}</label>
-      </div>
+            <input
+              ref={(el) => { maxRef.current = el }}
+              aria-label={t.maxPrice}
+              type="range"
+              min={sliderMin}
+              max={sliderMax}
+              value={maxSelected}
+              onChange={(e) => updateMax(Number(e.target.value))}
+              onPointerDown={() => bringToFront("max")}
+              onFocus={() => bringToFront("max")}
+              className="uplat-range absolute inset-0 w-full bg-transparent"
+              disabled={sliderMin === sliderMax}
+            />
 
-      <div className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex items-baseline justify-between gap-2"><div className="text-sm font-medium">{t.priceRange}</div><div className="text-xs text-zinc-600 dark:text-zinc-400">${Number(minSelected).toLocaleString()} – ${Number(maxSelected).toLocaleString()}</div></div>
-
-        <div className="relative h-10">
-          {/* overlapped dual-handle inputs with z-index control and visual track */}
-          <input
-            ref={(el) => { minRef.current = el }}
-            aria-label={t.minPrice}
-            type="range"
-            min={sliderMin}
-            max={sliderMax}
-            value={minSelected}
-            onChange={(e) => updateMin(Number(e.target.value))}
-            onPointerDown={() => bringToFront("min")}
-            onFocus={() => bringToFront("min")}
-            className="uplat-range absolute inset-0 w-full bg-transparent"
-            disabled={sliderMin === sliderMax}
-          />
-
-          <input
-            ref={(el) => { maxRef.current = el }}
-            aria-label={t.maxPrice}
-            type="range"
-            min={sliderMin}
-            max={sliderMax}
-            value={maxSelected}
-            onChange={(e) => updateMax(Number(e.target.value))}
-            onPointerDown={() => bringToFront("max")}
-            onFocus={() => bringToFront("max")}
-            className="uplat-range absolute inset-0 w-full bg-transparent"
-            disabled={sliderMin === sliderMax}
-          />
-
-          <div className="absolute inset-0 flex items-center pointer-events-none">
-            <div className="relative h-1 w-full rounded bg-zinc-200 dark:bg-zinc-800">
-              <div className="absolute h-1 rounded bg-black dark:bg-white" style={{ left: `${((minSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%`, right: `${100-((maxSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%` }} />
+            <div className="absolute inset-0 flex items-center pointer-events-none">
+              <div className="relative h-1 w-full rounded bg-zinc-200 dark:bg-zinc-800">
+                <div className="absolute h-1 rounded bg-black dark:bg-white" style={{ left: `${((minSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%`, right: `${100-((maxSelected-sliderMin)/Math.max(1,sliderMax-sliderMin))*100}%` }} />
+              </div>
             </div>
           </div>
         </div>
 
+        <label className="ml-auto inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300"><input type="checkbox" checked={showComps} onChange={(e)=>setShowComps(e.target.checked)} />{t.showComps}</label>
       </div>
 
       <LeafletMap activeListings={filteredActive} compListings={filteredComps} showComps={showComps} center={center ?? undefined} basePath={basePath} openLabel={basePath==='/en' ? 'Open' : 'Ver'} onBoundsChange={(box)=>setBounds(toBoundsBox(box))} />
