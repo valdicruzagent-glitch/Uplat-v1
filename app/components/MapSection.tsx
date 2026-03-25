@@ -135,7 +135,7 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
           .from("listings")
-          .select("*, listing_images(*), favorites_count, is_sponsored, sponsor_rank, sponsored_until")
+          .select("*, favorites_count, is_sponsored, sponsor_rank, sponsored_until")
           .order("is_sponsored", { ascending: false })
           .order("sponsor_rank", { ascending: false })
           .order("favorites_count", { ascending: false })
