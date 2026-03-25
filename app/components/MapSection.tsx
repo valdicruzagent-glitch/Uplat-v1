@@ -231,11 +231,12 @@ export default function MapSection({
 <section className="flex flex-col md:flex-row gap-4">
     {/* Sidebar de filtros */}
     <aside className="w-full md:w-56 flex-shrink-0 flex flex-col gap-3">
-      <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='sale'? '': 'sale'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='sale'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.buy}</button>
-        <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='rent'? '': 'rent'}))} className={"px-3 py-1 text-sm transition-colors "+(filters.listingType==='rent'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.rent}</button>
+      <div className="flex overflow-hidden rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='sale'? '': 'sale'}))} className={"flex-1 px-2 py-1 text-sm transition-colors "+(filters.listingType==='sale'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.buy}</button>
+        <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='rent'? '': 'rent'}))} className={"flex-1 px-2 py-1 text-sm transition-colors "+(filters.listingType==='rent'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.rent}</button>
       </div>
 
+      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Categoría</label>
       <select className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-950 w-full" value={filters.propertyType} onChange={(e)=>setFilters(prev=>({...prev, propertyType: e.target.value as Filters['propertyType']}))}>
         <option value="">{t.allTypes}</option>
         <option value="house">{t.house}</option>
