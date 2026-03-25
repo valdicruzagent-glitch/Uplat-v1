@@ -29,6 +29,7 @@ import type { Listing } from "@/app/types/listing";
 
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
+import FavoriteButton from "@/app/components/FavoriteButton";
 
 const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
   ssr: false,
@@ -81,6 +82,15 @@ function getPropertyType(listing: Listing) {
 }
 
 function getPrimaryImage(listing: Listing) {
+  // Prefer normalized images
+  const images = listing.listing_images ?? [];
+  if (images.length > 0) {
+    const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
+    const primary = sorted.find(img => img.is_primary);
+    if (primary) return primary.image_url;
+    return sorted[0].image_url;
+  }
+  // Fallback to legacy fields
   if (listing.image_urls?.length) return listing.image_urls[0] ?? null;
   return listing.cover_image_url ?? null;
 }
@@ -125,7 +135,10 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
           .from("listings")
-          .select("*")
+          .select("*, listing_images(*), favorites_count, is_sponsored, sponsor_rank, sponsored_until")
+          .order("is_sponsored", { ascending: false })
+          .order("sponsor_rank", { ascending: false })
+          .order("favorites_count", { ascending: false })
           .order("created_at", { ascending: false });
 
         if (error) {
@@ -363,8 +376,13 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
     <div className="flex h-full items-center justify-center text-xs text-zinc-500">Sin imagen</div>
   )}
 </div>
-              <div className="font-semibold">{listing.headline || listing.title}</div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="font-semibold">{listing.headline || listing.title}</div>
+                  <div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
+                </div>
+                <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
+              </div>
             </Link>
           );
         })}

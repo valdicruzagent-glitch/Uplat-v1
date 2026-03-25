@@ -33,6 +33,9 @@ export type Listing = {
 
   city: string;
   country?: string | null;
+  department?: string | null;
+  neighborhood?: string | null;
+  address?: string | null;
   status?: "draft" | "published" | "inactive" | "archived" | "active" | "comp" | string | null;
   beds?: number | null;
   baths?: number | null;
@@ -43,4 +46,20 @@ export type Listing = {
   description?: string | null;
   created_at?: string;
   meta?: Record<string, unknown> | null;
+
+  // Normalized images
+  listing_images?: Array<{
+    id: string;
+    listing_id: string;
+    image_url: string;
+    sort_order: number;
+    is_primary: boolean;
+    created_at: string;
+  }> | null;
+
+  // V1 extensions
+  favorites_count?: number;
+  is_sponsored?: boolean;
+  sponsor_rank?: number;
+  sponsored_until?: string;
 };
