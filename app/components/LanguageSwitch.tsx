@@ -12,8 +12,20 @@ export default function LanguageSwitch({
 
   // Build target path: if current is Spanish, switching to EN adds /en prefix.
   // If current is English, switching to ES removes /en prefix.
-  const esHref = current === "es" ? pathname : pathname.startsWith("/en") ? pathname.slice(3) : pathname;
-  const enHref = current === "en" ? pathname : pathname.startsWith("/en") ? pathname : `/en${pathname === "/" ? "" : pathname}`;
+  const esHref = (() => {
+    if (current === "es") return pathname;
+    if (pathname.startsWith("/en")) {
+      const rest = pathname.slice(3);
+      return rest === "" ? "/" : rest;
+    }
+    return pathname;
+  })();
+  const enHref = (() => {
+    if (current === "en") return pathname;
+    if (pathname.startsWith("/en")) return pathname;
+    if (pathname === "/") return "/en";
+    return `/en${pathname}`;
+  })();
 
   return (
     <div className="flex items-center gap-2 text-xs">
