@@ -6,6 +6,11 @@ export default function SignInPage() {
   return (
     <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
       <div className="mx-auto flex max-w-xl flex-col gap-4">
+        <div className="flex flex-col items-center mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">Tualero</h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Encuentra tu lugar ideal</p>
+        </div>
+
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{es.signInTitle}</h1>
