@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
@@ -49,6 +49,8 @@ export default function LeafletMap(props: LeafletMapProps) {
     visibleCount,
     onMarkerHover,
   } = props;
+  const [currentZoom, setCurrentZoom] = useState<number>(6);
+
   useEffect(() => {
     // Only run on client.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -76,7 +78,7 @@ export default function LeafletMap(props: LeafletMapProps) {
     []
   );
 
-  const showPriceLabels = visibleCount !== undefined ? visibleCount <= 30 : true;
+  const showPriceLabels = (visibleCount ?? Infinity) <= 30 && currentZoom >= 11;
 
   const priceLabelIcon = useMemo(() => {
     return L.divIcon({
@@ -108,7 +110,13 @@ export default function LeafletMap(props: LeafletMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <BoundsWatcher onBoundsChange={onBoundsChange} />
+        <BoundsWatcher
+          onBoundsChange={onBoundsChange}
+          onZoomChange={(z) => {
+            setCurrentZoom(z);
+            onZoomChange?.(z);
+          }}
+        />
 
         <MarkerClusterGroup
           // Zillow-like: cluster only actives, keep comps separate.
