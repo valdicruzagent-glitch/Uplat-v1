@@ -16,6 +16,7 @@ export default function HomeEn() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string } | null>(null); // TODO: connect to real auth
 
   useEffect(() => {
     if (center) {
@@ -42,6 +43,22 @@ export default function HomeEn() {
     <div className="min-h-dvh bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-50">
       <header className="sticky top-0 z-[1001] border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+          {/* Left: burger (mobile only) */}
+          <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+
+          {/* Center brand */}
+          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight">Uplat</div>
+
+          {/* Right: mobile auth button */}
+          {user ? (
+            <div className="md:hidden text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</div>
+          ) : (
+            <Link href="/en/signin" className="md:hidden px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">Sign in</Link>
+          )}
+
+          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/en" className="text-sm font-medium">{t.buy}</Link>
             <Link href="/en" className="text-sm font-medium">{t.rent}</Link>
@@ -49,31 +66,28 @@ export default function HomeEn() {
             <button onClick={() => setAgentsOpen(true)} className="text-sm font-medium">{t.findAgent}</button>
           </nav>
 
-          <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-          </button>
-
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight">Uplat</div>
-
+          {/* Desktop right actions */}
           <div className="hidden md:flex items-center gap-4">
             <button onClick={() => setHelpOpen(true)} className="text-sm font-medium">{t.getHelp}</button>
             <LanguageSwitch current="en" />
-            <Link href="/en/signin" className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">{t.signInTitle}</Link>
+            {user ? (
+              <div className="text-sm font-medium">{user.name}</div>
+            ) : (
+              <Link href="/en/signin" className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">{t.signInTitle}</Link>
+            )}
           </div>
         </div>
 
+        {/* Mobile full-screen overlay */}
         {mobileOpen && (
           <div className="fixed inset-0 z-50 bg-zinc-950 dark:bg-zinc-950 p-6 md:hidden">
             <button className="absolute top-4 right-4" onClick={() => setMobileOpen(false)}>
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <div className="mt-12 flex flex-col gap-4">
-              <Link href="/en" className="text-base font-medium text-zinc-50" onClick={() => setMobileOpen(false)}>{t.buy}</Link>
-              <Link href="/en" className="text-base font-medium text-zinc-50" onClick={() => setMobileOpen(false)}>{t.rent}</Link>
               <button onClick={() => { handleSell(); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.sell}</button>
               <button onClick={() => { setAgentsOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.findAgent}</button>
               <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.getHelp}</button>
-              <Link href="/en/signin" className="mt-4 inline-flex justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded" onClick={() => setMobileOpen(false)}>{t.signInTitle}</Link>
             </div>
           </div>
         )}
