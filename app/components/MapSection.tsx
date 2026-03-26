@@ -389,7 +389,7 @@ export default function MapSection({
         openLabel={t.viewListing}
         onBoundsChange={(box)=>setBounds(toBoundsBox(box))}
         visibleCount={visibleMarkerCount}
-        onMarkerHover={setHoveredListingId}
+        onMarkerHover={(id) => setHoveredListingId(id)}
       />
 
       {err && (
