@@ -30,6 +30,7 @@ import type { Listing } from "@/app/types/listing";
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
 import FavoriteButton from "@/app/components/FavoriteButton";
+import { loadGuestState, saveGuestState, type GuestState } from "@/lib/guestState";
 
 const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
   ssr: false,
@@ -122,12 +123,20 @@ export default function MapSection({
   const t = locale === "en" ? en : es;
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
+  const guestState: GuestState = loadGuestState();
   const [filters, setFilters] = useState<Filters>({
-    listingType: "sale",
-    propertyTypes: ALL_CATEGORIES,
+    listingType: guestState.listingType === "rent" ? "rent" : "sale",
+    propertyTypes: guestState.propertyTypes && guestState.propertyTypes.length > 0
+      ? (guestState.propertyTypes as PropertyCategory[])
+      : ALL_CATEGORIES,
   });
   const [showComps, setShowComps] = useState(false);
-  const [bounds, setBounds] = useState<BoundsBox | null>(null);
+  const [bounds, setBounds] = useState<BoundsBox | null>(guestState.mapCenter ? {
+    south: guestState.mapCenter.lat - 0.01,
+    west: guestState.mapCenter.lng - 0.01,
+    north: guestState.mapCenter.lat + 0.01,
+    east: guestState.mapCenter.lng + 0.01,
+  } : null);
   const [err, setErr] = useState<string | null>(null);
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
 
@@ -165,6 +174,23 @@ export default function MapSection({
 
     load();
   }, []);
+
+  // Persist filters to guest state
+  useEffect(() => {
+    const lt = filters.listingType === "sale" ? "buy" : filters.listingType === "rent" ? "rent" : "buy";
+    saveGuestState({
+      listingType: lt,
+      propertyTypes: filters.propertyTypes,
+    });
+  }, [filters.listingType, filters.propertyTypes]);
+
+  // Persist map center to guest state
+  useEffect(() => {
+    if (bounds) {
+      const center = { lat: (bounds.north + bounds.south) / 2, lng: (bounds.east + bounds.west) / 2 };
+      saveGuestState({ mapCenter: center });
+    }
+  }, [bounds]);
 
   const filteredBySchema = useMemo(() => listings.filter((listing) => matchesFilters(listing, filters)), [listings, filters]);
 

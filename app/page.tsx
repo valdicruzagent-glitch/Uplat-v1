@@ -5,13 +5,23 @@ import Link from 'next/link';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import MapSection from "@/app/components/MapSection";
 import { es } from "@/app/i18n/es";
+import { loadGuestState, saveGuestState } from "@/lib/guestState";
 
 export default function Home() {
   const t = es;
-  const [center, setCenter] = useState<[number, number] | null>(null);
+  const guestState = loadGuestState();
+  const [center, setCenter] = useState<[number, number] | null>(
+    guestState.mapCenter ? [guestState.mapCenter.lat, guestState.mapCenter.lng] : null
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+
+  useEffect(() => {
+    if (center) {
+      saveGuestState({ mapCenter: { lat: center[0], lng: center[1] } });
+    }
+  }, [center]);
 
   useEffect(() => {
     if (mobileOpen) {

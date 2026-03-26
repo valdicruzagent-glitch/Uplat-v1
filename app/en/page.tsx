@@ -1,15 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import MapSection from "@/app/components/MapSection";
 import UseMyLocationButton from "@/app/components/UseMyLocationButton";
 import { en } from "@/app/i18n/en";
+import { loadGuestState, saveGuestState } from "@/lib/guestState";
 
 export default function HomeEn() {
   const t = en;
-  const [center, setCenter] = useState<[number, number] | null>(null);
+  const guestState = loadGuestState();
+  const [center, setCenter] = useState<[number, number] | null>(
+    guestState.mapCenter ? [guestState.mapCenter.lat, guestState.mapCenter.lng] : null
+  );
+
+  useEffect(() => {
+    if (center) {
+      saveGuestState({ mapCenter: { lat: center[0], lng: center[1] } });
+    }
+  }, [center]);
 
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-50">
