@@ -98,7 +98,7 @@ export default function LeafletMap(props: LeafletMapProps) {
     <div className="h-[420px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
       <MapContainer
         center={center ?? DEFAULT_CENTER}
-        zoom={center ? 12 : 8}
+        zoom={6}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
         key={`${(center ?? DEFAULT_CENTER)[0]}_${(center ?? DEFAULT_CENTER)[1]}`}
