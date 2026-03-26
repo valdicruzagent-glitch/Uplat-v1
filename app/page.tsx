@@ -58,7 +58,7 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-4">
             <button onClick={() => setHelpOpen(true)} className="text-sm font-medium">{t.getHelp}</button>
             <LanguageSwitch current="es" />
-            <Link href="/signin" className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">Sign in</Link>
+            <Link href="/signin" className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">{t.signInTitle}</Link>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export default function Home() {
               <button onClick={() => { handleSell(); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.sell}</button>
               <button onClick={() => { setAgentsOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.findAgent}</button>
               <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.getHelp}</button>
-              <Link href="/signin" className="mt-4 inline-flex justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded" onClick={() => setMobileOpen(false)}>Sign in</Link>
+              <Link href="/signin" className="mt-4 inline-flex justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded" onClick={() => setMobileOpen(false)}>{t.signInTitle}</Link>
             </div>
           </div>
         )}
