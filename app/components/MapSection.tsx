@@ -31,8 +31,9 @@ import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
 import FavoriteButton from "@/app/components/FavoriteButton";
 import { loadGuestState, saveGuestState, type GuestState } from "@/lib/guestState";
+import type { LeafletMapProps } from "@/app/components/LeafletMap";
 
-const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
+const LeafletMap = dynamic<LeafletMapProps>(() => import("@/app/components/LeafletMap"), {
   ssr: false,
   loading: () => (
     <div className="h-[420px] w-full rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950" />
