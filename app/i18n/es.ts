@@ -83,4 +83,19 @@ export const es = {
   errorLoadingListings: (msg: string) => `Error cargando propiedades: ${msg}`,
   langEs: "ES",
   langEn: "EN",
+  // Additional navigation
+  sell: "Sell",
+  findAgent: "Encuentra un agente",
+  getHelp: "Obtén ayuda",
+  // Mapa e IU
+  category: "Categoría",
+  noImage: "Sin imagen",
+  viewListing: "Ver",
+  // Modales
+  agentModalTitle: "Encuentra un agente",
+  agentModalBody: "Esta función estará disponible pronto. Estamos construyendo una red de agentes confianza para ayudarte.",
+  close: "Close",
+  helpModalTitle: "Obtén ayuda",
+  helpModalEmail: "Escríbenos a",
+  helpModalSub: "Te responderemos pronto.",
 };

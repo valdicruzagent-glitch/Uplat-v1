@@ -83,4 +83,19 @@ export const en = {
   errorLoadingListings: (msg: string) => `Error loading listings: ${msg}`,
   langEs: "ES",
   langEn: "EN",
+  // Additional navigation
+  sell: "Sell",
+  findAgent: "Find an agent",
+  getHelp: "Get help",
+  // Map & UI
+  category: "Category",
+  noImage: "No image",
+  viewListing: "View",
+  // Modals
+  agentModalTitle: "Find an agent",
+  agentModalBody: "This feature is coming soon. We're building a trusted agent network to help you.",
+  close: "Close",
+  helpModalTitle: "Get help",
+  helpModalEmail: "Email us at",
+  helpModalSub: "We'll get back to you soon.",
 };

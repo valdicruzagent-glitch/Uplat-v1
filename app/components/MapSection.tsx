@@ -30,6 +30,7 @@ import type { Listing } from "@/app/types/listing";
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
 import FavoriteButton from "@/app/components/FavoriteButton";
+import { loadGuestState, saveGuestState, type GuestState } from "@/lib/guestState";
 
 const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
   ssr: false,
@@ -112,19 +113,30 @@ export default function MapSection({
   locale,
   basePath,
   center,
+  onCenterChange,
 }: {
   locale: "es" | "en";
   basePath: "" | "/en";
   center: [number, number] | null;
+  onCenterChange?: (center: [number, number]) => void;
 }) {
   const t = locale === "en" ? en : es;
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
-  const allCategories: PropertyCategory[] = ["house","apartment","land","farm"]; // default all selected
-const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyTypes: allCategories });
+  const guestState: GuestState = loadGuestState();
+  const [filters, setFilters] = useState<Filters>({
+    listingType: guestState.listingType === "rent" ? "rent" : "sale",
+    propertyTypes: guestState.propertyTypes.length > 0 ? guestState.propertyTypes as PropertyCategory[] : ALL_CATEGORIES,
+  });
   const [showComps, setShowComps] = useState(false);
-  const [bounds, setBounds] = useState<BoundsBox | null>(null);
+  const [bounds, setBounds] = useState<BoundsBox | null>(guestState.mapCenter ? {
+    south: guestState.mapCenter.lat - 0.01,
+    west: guestState.mapCenter.lng - 0.01,
+    north: guestState.mapCenter.lat + 0.01,
+    east: guestState.mapCenter.lng + 0.01,
+  } : null);
   const [err, setErr] = useState<string | null>(null);
+  const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -160,6 +172,23 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
 
     load();
   }, []);
+
+  // Persist filters to guest state
+  useEffect(() => {
+    const lt = filters.listingType === "sale" ? "buy" : filters.listingType === "rent" ? "rent" : "buy";
+    saveGuestState({
+      listingType: lt,
+      propertyTypes: filters.propertyTypes,
+    });
+  }, [filters.listingType, filters.propertyTypes]);
+
+  // Persist map center to guest state
+  useEffect(() => {
+    if (bounds) {
+      const center = { lat: (bounds.north + bounds.south) / 2, lng: (bounds.east + bounds.west) / 2 };
+      saveGuestState({ mapCenter: center });
+    }
+  }, [bounds]);
 
   const filteredBySchema = useMemo(() => listings.filter((listing) => matchesFilters(listing, filters)), [listings, filters]);
 
@@ -220,7 +249,7 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
   const listActiveInBounds = useMemo(() => filteredActive.filter((l) => inBounds(l, bounds)), [filteredActive, bounds]);
   const listCompsInBounds = useMemo(() => filteredComps.filter((l) => inBounds(l, bounds)), [filteredComps, bounds]);
 
-  const count = useMemo(() => filteredActive.length + (showComps ? filteredComps.length : 0), [filteredActive.length, filteredComps.length, showComps]);
+  const visibleMarkerCount = useMemo(() => listActiveInBounds.length + (showComps ? listCompsInBounds.length : 0), [listActiveInBounds.length, listCompsInBounds.length, showComps]);
 
   const sliderMin = computedPriceBounds.min;
   const sliderMax = computedPriceBounds.max;
@@ -273,10 +302,10 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
       </div>
 
       <button type="button" className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1 text-left text-sm text-zinc-800 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900">
-        🧭 Usar mi ubicación
+        🧭 {t.useMyLocation}
       </button>
 
-      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Categoría</label>
+      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">{t.category}</label>
       <div className="flex flex-wrap gap-2">
         {ALL_CATEGORIES.map((cat) => (
           <button
@@ -355,8 +384,10 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
         showComps={showComps}
         center={center ?? undefined}
         basePath={basePath}
-        openLabel={basePath==='/en' ? 'Open' : 'Ver'}
+        openLabel={t.viewListing}
         onBoundsChange={(box)=>setBounds(toBoundsBox(box))}
+        visibleCount={visibleMarkerCount}
+        onMarkerHover={setHoveredListingId}
       />
 
       {err && (
@@ -365,19 +396,23 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         {listActiveInBounds.map((listing) => {
           const beds = listing.beds ?? null;
           const baths = listing.baths ?? null;
           const area = listing.area_m2 ?? null;
           const stats = [beds !== null ? t.bedsShort(beds) : null, baths !== null ? t.bathsShort(baths) : null, area !== null ? t.areaShort(area) : null].filter(Boolean);
           return (
-            <Link key={listing.id} href={`${basePath}/listing/${listing.id}`} className="grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900">
+            <Link
+              key={listing.id}
+              href={`${basePath}/listing/${listing.id}`}
+              className={`grid gap-2 rounded-xl border border-zinc-200 bg-white p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900 transition-all duration-200 ${hoveredListingId === listing.id ? 'ring-1 ring-blue-500/30 shadow-sm translateY(-1px)' : ''}`}
+            >
               <div className="relative h-40 w-full rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
   {getPrimaryImage(listing) ? (
     <img src={getPrimaryImage(listing)!} alt={listing.title} className="h-full w-full object-cover" loading="lazy" />
   ) : (
-    <div className="flex h-full items-center justify-center text-xs text-zinc-500">Sin imagen</div>
+    <div className="flex h-full items-center justify-center text-xs text-zinc-500">{t.noImage}</div>
   )}
   <div className="absolute right-2 top-2">
     <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
@@ -405,7 +440,7 @@ const [filters, setFilters] = useState<Filters>({ listingType: "sale", propertyT
   {getPrimaryImage(listing) ? (
     <img src={getPrimaryImage(listing)!} alt={listing.title} className="h-full w-full object-cover" loading="lazy" />
   ) : (
-    <div className="flex h-full items-center justify-center text-xs text-zinc-500 opacity-90">Sin imagen</div>
+    <div className="flex h-full items-center justify-center text-xs text-zinc-500 opacity-90">{t.noImage}</div>
   )}
 </div>
                   <div className="font-semibold opacity-80">{listing.title}</div>
