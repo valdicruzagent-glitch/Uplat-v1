@@ -4,7 +4,8 @@
 
 begin;
 
--- 1) Insert 5 demo realtor profiles (LATAM)
+-- 1) Insert demo realtor profiles for all countries present in listings (LATAM)
+-- Use deterministic UUIDs; on conflict do nothing to keep idempotency.
 insert into public.profiles (id, role, full_name, phone, avatar_url, bio, country, department, city)
 values
   (
@@ -61,15 +62,42 @@ values
     'Guatemala',
     'Sacatepéquez',
     'Antigua Guatemala'
-  );
+  ),
+  (
+    '550e8400-e29b-41d4-a716-446655440006'::uuid,
+    'realtor',
+    'Ricardo Morales',
+    '+503 7890 1234',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop',
+    'Agente en San Salvador, El Salvador.',
+    'El Salvador',
+    'San Salvador',
+    'San Salvador'
+  ),
+  (
+    '550e8400-e29b-41d4-a716-446655440007'::uuid,
+    'realtor',
+    'Elena Cruz',
+    '+501 6123 4567',
+    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop',
+    'Especialista en propiedades en San Pedro, Belize.',
+    'Belize',
+    'Belize',
+    'San Pedro'
+  )
+on conflict (id) do nothing;
 
--- 2) Assign all published listings to one of the 5 demo realtors (random but uniform-ish)
-update public.listings
-set profile_id = (
-  select id from public.profiles
+-- 2) Assign all published listings to a realtor from the SAME country
+-- If no realtor exists for that country, profile_id remains NULL.
+update public.listings l
+set profile_id = p.id
+from (
+  select distinct on (country) country, id
+  from public.profiles
   where role = 'realtor'
-  order by abs(hashtext(id::text)) % 5 + 1  -- pseudo-random but deterministic per row
-)
-where status = 'published';
+) p
+where l.status = 'published'
+  and l.country is not null
+  and l.country = p.country;
 
 commit;
