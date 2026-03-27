@@ -98,7 +98,7 @@ export default function LeafletMap(props: LeafletMapProps) {
 
   const defaultIcon = useMemo(() => new L.Icon.Default(), []);
 
-  const showPriceLabels = (visibleCount ?? Infinity) <= 30 && currentZoom >= 12;
+  const showPriceLabels = (visibleCount ?? Infinity) <= 30 && currentZoom >= 14;
 
   const priceLabelIcon = useMemo(() => {
     return L.divIcon({
