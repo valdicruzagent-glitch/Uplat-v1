@@ -133,13 +133,14 @@ export default function MapSection({
   });
   const [showComps, setShowComps] = useState(false);
   const [bounds, setBounds] = useState<BoundsBox | null>(null);
-    south: guestState.mapCenter.lat - 0.01,
-    west: guestState.mapCenter.lng - 0.01,
-    north: guestState.mapCenter.lat + 0.01,
-    east: guestState.mapCenter.lng + 0.01,
-  } : null);
   const [err, setErr] = useState<string | null>(null);
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
+  const hasUserMovedMap = useRef(false);
+
+  const handleBoundsChange = (b: L.LatLngBounds) => {
+    hasUserMovedMap.current = true;
+    setBounds(toBoundsBox(b));
+  };
 
   useEffect(() => {
     async function load() {
