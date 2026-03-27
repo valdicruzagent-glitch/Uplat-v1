@@ -93,6 +93,20 @@ export default function Home() {
         )}
       </header>
 
+      {/* Mobile full-screen overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-x-0 top-14 bottom-0 z-40 bg-zinc-950 dark:bg-zinc-950 p-6 md:hidden overflow-y-auto">
+          <button className="absolute top-4 right-4" onClick={() => setMobileOpen(false)}>
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <div className="mt-12 flex flex-col gap-4">
+            <button onClick={() => { handleSell(); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.sell}</button>
+            <button onClick={() => { setAgentsOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.findAgent}</button>
+            <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.getHelp}</button>
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-10">
         <MapSection locale="es" basePath="" center={center} onCenterChange={setCenter} />
       </main>
