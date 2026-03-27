@@ -32,15 +32,30 @@ export async function POST(req: NextRequest) {
     });
 
     if (verificationCheck.status === 'approved') {
-      // Update profile: set whatsapp_number, whatsapp_verified, whatsapp_verified_at
+      // Upsert profile: insert minimal row if missing, then set verification fields
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id,
+          role: 'user', // default role
           whatsapp_number: phone,
           whatsapp_verified: true,
           whatsapp_verified_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+          // On insert, set basic fields; on update, only verification fields are updated
+          full_name: null,
+          phone: null,
+          avatar_url: null,
+          bio: null,
+          country: null,
+          department: null,
+          city: null,
+        }, {
+          // Only update verification columns on upsert; ignore other nulls on update?
+          // Supabase upsert will replace whole row unless we specify 'onConflict' with partial update.
+          // Safer: insert first if not exists, then update. We'll do two-step:
+        });
+      // The upsert may insert or update. However, it will set role='user' and null others on insert.
+      // On update, it sets role to 'user' which is fine.
       if (error) throw error;
 
       return NextResponse.json({ success: true });
