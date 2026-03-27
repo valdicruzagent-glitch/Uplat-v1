@@ -249,8 +249,17 @@ export default function MapSection({
     });
   }, [compsAll, priceRange]);
 
-  const listActiveInBounds = useMemo(() => filteredActive.filter((l) => inBounds(l, bounds)), [filteredActive, bounds]);
-  const listCompsInBounds = useMemo(() => filteredComps.filter((l) => inBounds(l, bounds)), [filteredComps, bounds]);
+  const listActiveInBounds = useMemo(() => {
+    if (!hasUserMovedMap.current) return filteredActive;
+    if (!bounds) return filteredActive;
+    return filteredActive.filter((l) => inBounds(l, bounds));
+  }, [filteredActive, bounds]);
+
+  const listCompsInBounds = useMemo(() => {
+    if (!hasUserMovedMap.current) return filteredComps;
+    if (!bounds) return filteredComps;
+    return filteredComps.filter((l) => inBounds(l, bounds));
+  }, [filteredComps, bounds]);
 
   const visibleMarkerCount = useMemo(() => listActiveInBounds.length + (showComps ? listCompsInBounds.length : 0), [listActiveInBounds.length, listCompsInBounds.length, showComps]);
 
@@ -388,7 +397,7 @@ export default function MapSection({
         center={center ?? undefined}
         basePath={basePath}
         openLabel={t.viewListing}
-        onBoundsChange={(box)=>setBounds(toBoundsBox(box))}
+        onBoundsChange={handleBoundsChange}
         visibleCount={visibleMarkerCount}
         onMarkerHover={(id) => setHoveredListingId(id)}
       />
