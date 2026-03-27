@@ -20,8 +20,12 @@ export default function AgentsPageEn() {
   const [loading, setLoading] = useState(true);
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [likedAgents, setLikedAgents] = useState<Set<string>>(new Set());
+  const [reviewModalAgent, setReviewModalAgent] = useState<Profile | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewText, setReviewText] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
-  // Get current user profile
+  // Get current user
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user?.id) setCurrentProfileId(data.user.id);
@@ -32,7 +36,7 @@ export default function AgentsPageEn() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch all realtors
+  // Fetch all realtors with counts
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -55,8 +59,8 @@ export default function AgentsPageEn() {
         .eq('role', 'realtor');
 
       if (!error && data) {
-        // Fetch listing counts for published listings grouped by profile_id
         const ids = (data as any[]).map(p => p.id);
+        // listing counts
         const { data: countsData } = await supabase
           .from('listings')
           .select('profile_id')
@@ -67,9 +71,26 @@ export default function AgentsPageEn() {
           const pid = l.profile_id as string;
           countMap.set(pid, (countMap.get(pid) || 0) + 1);
         });
+        // reviews aggregates
+        const { data: reviewsData } = await supabase
+          .from('agent_reviews')
+          .select('agent_id, rating')
+          .in('agent_id', ids);
+        const reviewCountMap = new Map<string, number>();
+        const ratingSumMap = new Map<string, number>();
+        reviewsData?.forEach((r: any) => {
+          const aid = r.agent_id as string;
+          reviewCountMap.set(aid, (reviewCountMap.get(aid) || 0) + 1);
+          ratingSumMap.set(aid, (ratingSumMap.get(aid) || 0) + r.rating);
+        });
+
         const enriched: Profile[] = (data as any[]).map(p => ({
           ...p,
           listing_count: countMap.get(p.id) || 0,
+          review_count: reviewCountMap.get(p.id) || 0,
+          average_rating: ratingSumMap.has(p.id)
+            ? Number((ratingSumMap.get(p.id)! / reviewCountMap.get(p.id)!).toFixed(2))
+            : 0,
         }));
         setProfiles(enriched);
         const countrySet = new Set<string>();
@@ -86,7 +107,7 @@ export default function AgentsPageEn() {
     load();
   }, []);
 
-  // Fetch liked agents for current user
+  // Fetch liked agents
   useEffect(() => {
     if (!currentProfileId) return;
     async function loadLikes() {
@@ -102,28 +123,60 @@ export default function AgentsPageEn() {
   const toggleLike = async (agentId: string) => {
     if (!currentProfileId) return;
     const alreadyLiked = likedAgents.has(agentId);
-    // Optimistic update
     setLikedAgents(prev => {
       const next = new Set(prev);
       alreadyLiked ? next.delete(agentId) : next.add(agentId);
       return next;
     });
     setProfiles(prev => prev.map(p => p.id === agentId ? { ...p, likes_count: (p.likes_count || 0) + (alreadyLiked ? -1 : 1) } : p));
-
     try {
-      if (alreadyLiked) {
-        await supabase.from('agent_likes').delete().match({ user_id: currentProfileId, agent_id: agentId });
-      } else {
-        await supabase.from('agent_likes').insert({ user_id: currentProfileId, agent_id: agentId });
-      }
+      if (alreadyLiked) await supabase.from('agent_likes').delete().match({ user_id: currentProfileId, agent_id: agentId });
+      else await supabase.from('agent_likes').insert({ user_id: currentProfileId, agent_id: agentId });
     } catch (error) {
-      // revert on error
       setLikedAgents(prev => {
         const next = new Set(prev);
         alreadyLiked ? next.add(agentId) : next.delete(agentId);
         return next;
       });
       setProfiles(prev => prev.map(p => p.id === agentId ? { ...p, likes_count: (p.likes_count || 0) + (alreadyLiked ? 1 : -1) } : p));
+    }
+  };
+
+  const openReviewModal = (agent: Profile) => {
+    setReviewModalAgent(agent);
+    setReviewRating(0);
+    setReviewText('');
+  };
+
+  const closeReviewModal = () => {
+    setReviewModalAgent(null);
+    setReviewRating(0);
+    setReviewText('');
+  };
+
+  const submitReview = async () => {
+    if (!currentProfileId || !reviewModalAgent || reviewRating === 0) return;
+    setSubmittingReview(true);
+    try {
+      const { error } = await supabase.from('agent_reviews').upsert({
+        agent_id: reviewModalAgent.id,
+        user_id: currentProfileId,
+        rating: reviewRating,
+        text: reviewText.trim() || null,
+      }, { onConflict: 'agent_id,user_id' });
+      if (!error) {
+        setProfiles(prev => prev.map(p => {
+          if (p.id !== reviewModalAgent.id) return p;
+          const oldCount = p.review_count || 0;
+          const oldAvg = p.average_rating || 0;
+          const newCount = oldCount + 1;
+          const newAvg = Number(((oldAvg * oldCount + reviewRating) / newCount).toFixed(2));
+          return { ...p, review_count: newCount, average_rating: newAvg };
+        }));
+        closeReviewModal();
+      }
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -205,8 +258,13 @@ export default function AgentsPageEn() {
                 <p className="text-sm text-zinc-600 dark:text-zinc-300 line-clamp-2 mb-2">
                   {agent.bio || 'No bio.'}
                 </p>
-                <div className="text-xs text-zinc-500 mb-3">
+                <div className="text-xs text-zinc-500 mb-1">
                   {agent.listing_count || 0} listings
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs text-zinc-500">
+                    ⭐ {(agent.average_rating || 0).toFixed(1)} ({agent.review_count || 0} reviews)
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <button
@@ -216,8 +274,11 @@ export default function AgentsPageEn() {
                   >
                     ❤️ {agent.likes_count || 0}
                   </button>
-                  <button className="rounded bg-blue-600 py-1 px-3 text-sm font-medium text-white hover:bg-blue-700">
-                    View profile
+                  <button
+                    className="rounded bg-blue-600 py-1 px-3 text-sm font-medium text-white hover:bg-blue-700"
+                    onClick={() => openReviewModal(agent)}
+                  >
+                    Leave review
                   </button>
                 </div>
               </div>
@@ -225,6 +286,53 @@ export default function AgentsPageEn() {
           </div>
         )}
       </main>
+
+      {/* Review Modal */}
+      {reviewModalAgent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={closeReviewModal}>
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+            <h2 className="text-xl font-semibold mb-2">Leave a review</h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-4">
+              Write a review for <span className="font-medium">{reviewModalAgent.full_name}</span>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Rating</label>
+              <div className="flex gap-1">
+                {[1,2,3,4,5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={`text-2xl ${star <= reviewRating ? 'text-yellow-400' : 'text-zinc-300'}`}
+                    onClick={() => setReviewRating(star)}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Comment (optional)</label>
+              <textarea
+                className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                rows={3}
+                value={reviewText}
+                onChange={e => setReviewText(e.target.value)}
+                placeholder="Your experience with this agent..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="px-4 py-2 text-sm rounded border border-zinc-300" onClick={closeReviewModal}>Cancel</button>
+              <button
+                className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                onClick={submitReview}
+                disabled={submittingReview || reviewRating === 0}
+              >
+                {submittingReview ? 'Submitting...' : 'Submit review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

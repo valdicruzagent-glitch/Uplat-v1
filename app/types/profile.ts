@@ -16,4 +16,6 @@ export type Profile = {
   agency_id?: string | null;
   likes_count?: number;
   listing_count?: number;
+  review_count?: number;
+  average_rating?: number;
 };
