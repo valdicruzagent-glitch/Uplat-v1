@@ -84,7 +84,7 @@ export const es = {
   langEs: "ES",
   langEn: "EN",
   // Additional navigation
-  sell: "Sell",
+  sell: "Vender",
   findAgent: "Encuentra un agente",
   getHelp: "Obtén ayuda",
   // Mapa e IU
