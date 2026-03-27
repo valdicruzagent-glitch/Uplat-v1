@@ -19,8 +19,17 @@ import FavoriteButton from "@/app/components/FavoriteButton";
  * - Keep the compatibility helpers until the migration is fully deployed.
  */
 function getSortedImages(listing: Record<string, unknown>) {
-  const images = Array.isArray(listing.listing_images) ? listing.listing_images : [];
-  return [...images].sort((a: any, b: any) => a.sort_order - b.sort_order);
+  // Use image_urls array; each item is a URL string
+  const urls = Array.isArray(listing.image_urls) ? listing.image_urls : [];
+  // Map to expected shape for ImageGallery: { id, image_url, sort_order, is_primary }
+  return urls.map((url: string, idx: number) => ({
+    id: `img-${idx}`,
+    image_url: url,
+    sort_order: idx,
+    is_primary: idx === 0,
+    listing_id: listing.id as string,
+    created_at: new Date().toISOString(),
+  }));
 }
 
 function getListingType(listing: Record<string, unknown>) {
@@ -49,7 +58,6 @@ export default async function ListingPage({
     .from("listings")
     .select(`
       *,
-      listing_images(*),
       favorites_count,
       is_sponsored,
       sponsor_rank,
