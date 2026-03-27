@@ -96,6 +96,8 @@ export default function LeafletMap(props: LeafletMapProps) {
     []
   );
 
+  const defaultIcon = useMemo(() => new L.Icon.Default(), []);
+
   const showPriceLabels = (visibleCount ?? Infinity) <= 30 && currentZoom >= 10;
 
   const priceLabelIcon = useMemo(() => {
@@ -148,52 +150,30 @@ export default function LeafletMap(props: LeafletMapProps) {
         >
           {activeListings.map((l) => {
             const price = Number(l.price_usd ?? 0);
-            if (showPriceLabels) {
-              const icon = L.divIcon({
-                className: "uplat-price-marker",
-                html: `<div style="
-                  background: white;
-                  color: #111;
-                  border-radius: 999px;
-                  padding: 4px 10px;
-                  font-size: 13px;
-                  font-weight: 700;
-                  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                  white-space: nowrap;
-                  text-align: center;
-                ">${formatCompactPrice(price)}</div>`,
-                iconSize: [70, 28],
-                iconAnchor: [35, 14],
-              });
-              return (
-                <Marker
-                  key={l.id}
-                  position={[l.lat, l.lng]}
-                  icon={icon}
-                  eventHandlers={{
-                    click: () => { window.location.href = `${basePath}/listing/${l.id}`; },
-                    mouseover: () => onMarkerHover?.(l.id),
-                    mouseout: () => onMarkerHover?.(null),
-                  }}
-                >
-                  <Popup>
-                    <div className="font-semibold">{l.title}</div>
-                    <div className="text-xs opacity-80">
-                      ${price.toLocaleString()} • {l.city}
-                    </div>
-                    <Link className="text-xs underline" href={`${basePath}/listing/${l.id}`}>
-                      {openLabel}
-                    </Link>
-                  </Popup>
-                </Marker>
-              );
-            }
+            const icon = showPriceLabels
+              ? L.divIcon({
+                  className: "uplat-price-marker",
+                  html: `<div style="
+                    background: white;
+                    color: #111;
+                    border-radius: 999px;
+                    padding: 4px 10px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    white-space: nowrap;
+                    text-align: center;
+                  ">${formatCompactPrice(price)}</div>`,
+                  iconSize: [70, 28],
+                  iconAnchor: [35, 14],
+                })
+              : defaultIcon;
 
-            // Default marker without price label
             return (
               <Marker
                 key={l.id}
                 position={[l.lat, l.lng]}
+                icon={icon}
                 eventHandlers={{
                   click: () => { window.location.href = `${basePath}/listing/${l.id}`; },
                   mouseover: () => onMarkerHover?.(l.id),
