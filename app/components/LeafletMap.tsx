@@ -185,6 +185,17 @@ export default function LeafletMap(props: LeafletMapProps) {
                   <div className="text-xs opacity-80">
                     ${price.toLocaleString()} • {l.city}
                   </div>
+                  {/* Ownership */}
+                  {(l as any).profiles?.[0] && (() => {
+                    const p = (l as any).profiles[0];
+                    if (p.role === 'realtor') {
+                      const agency = p.agencies?.[0]?.name;
+                      return agency
+                        ? <div className="text-xs opacity-70">{p.full_name} • {agency}</div>
+                        : <div className="text-xs opacity-70">{p.full_name}</div>;
+                    }
+                    return <div className="text-xs opacity-70">Listed by owner</div>;
+                  })()}
                   <Link className="text-xs underline" href={`${basePath}/listing/${l.id}`}>
                     {openLabel}
                   </Link>
@@ -202,6 +213,17 @@ export default function LeafletMap(props: LeafletMapProps) {
                   <div className="text-xs opacity-70">
                     ${Number(l.price_usd ?? 0).toLocaleString()} • {l.city}
                   </div>
+                  {/* Ownership */}
+                  {(l as any).profiles?.[0] && (() => {
+                    const p = (l as any).profiles[0];
+                    if (p.role === 'realtor') {
+                      const agency = p.agencies?.[0]?.name;
+                      return agency
+                        ? <div className="text-xs opacity-60">{p.full_name} • {agency}</div>
+                        : <div className="text-xs opacity-60">{p.full_name}</div>;
+                    }
+                    return <div className="text-xs opacity-60">Listed by owner</div>;
+                  })()}
                 </Popup>
               </Marker>
             ))

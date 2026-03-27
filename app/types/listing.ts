@@ -65,6 +65,13 @@ export type Listing = {
 
   // Agent ownership
   profile_id?: string | null;
+  profiles?: {
+    id: string;
+    full_name: string | null;
+    role: string | null;
+    agency_id: string | null;
+    agencies?: { name: string }[] | null;
+  } | null;
 
   // Features
   has_pool?: boolean;

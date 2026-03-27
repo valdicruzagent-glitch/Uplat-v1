@@ -151,7 +151,20 @@ export default function MapSection({
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
           .from("listings")
-          .select("*, favorites_count, is_sponsored, sponsor_rank, sponsored_until")
+          .select(`
+            *,
+            favorites_count,
+            is_sponsored,
+            sponsor_rank,
+            sponsored_until,
+            profiles (
+              id,
+              full_name,
+              role,
+              agency_id,
+              agencies (name)
+            )
+          `)
           .order("is_sponsored", { ascending: false })
           .order("sponsor_rank", { ascending: false })
           .order("favorites_count", { ascending: false })
@@ -434,6 +447,17 @@ export default function MapSection({
               <div className="flex-1">
                 <div className="font-semibold">{listing.headline || listing.title}</div>
                 <div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
+                {/* Ownership */}
+                {(listing as any).profiles?.[0] && (() => {
+                  const p = (listing as any).profiles[0];
+                  if (p.role === 'realtor') {
+                    const agency = p.agencies?.[0]?.name;
+                    return agency
+                      ? <div className="text-xs text-zinc-500">{p.full_name} • {agency}</div>
+                      : <div className="text-xs text-zinc-500">{p.full_name}</div>;
+                  }
+                  return <div className="text-xs text-zinc-500">{t.listedByOwner || 'Listed by owner'}</div>;
+                })()}
               </div>
             </Link>
           );
@@ -458,6 +482,17 @@ export default function MapSection({
 </div>
                   <div className="font-semibold opacity-80">{listing.title}</div>
                   <div className="text-sm opacity-80">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
+                  {/* Ownership for comps */}
+                  {(listing as any).profiles?.[0] && (() => {
+                    const p = (listing as any).profiles[0];
+                    if (p.role === 'realtor') {
+                      const agency = p.agencies?.[0]?.name;
+                      return agency
+                        ? <div className="text-xs opacity-70">{p.full_name} • {agency}</div>
+                        : <div className="text-xs opacity-70">{p.full_name}</div>;
+                    }
+                    return <div className="text-xs opacity-70">{t.listedByOwner || 'Listed by owner'}</div>;
+                  })()}
                   <div className="text-xs opacity-70">{t.compsHint}</div>
                 </div>
               );
