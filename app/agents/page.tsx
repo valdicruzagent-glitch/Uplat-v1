@@ -183,11 +183,20 @@ export default function AgentsPage() {
   };
 
   const filtered = useMemo(() => {
-    return profiles.filter(p => {
+    let arr = profiles.filter(p => {
       if (selectedCountry && p.country !== selectedCountry) return false;
       if (selectedDepartment && p.department !== selectedDepartment) return false;
       return true;
     });
+
+    // Weighted ranking score
+    const weights = { rating: 0.5, likes: 0.3, listings: 0.2 };
+    const rank = (p: Profile) =>
+      ((p.average_rating ?? 0) * Math.log10((p.review_count ?? 0) + 1) * weights.rating) +
+      ((p.likes_count ?? 0) * weights.likes) +
+      ((p.listing_count ?? 0) * weights.listings);
+
+    return arr.sort((a, b) => rank(b) - rank(a));
   }, [profiles, selectedCountry, selectedDepartment]);
 
   return (
