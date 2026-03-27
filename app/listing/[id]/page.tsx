@@ -176,6 +176,8 @@ export default async function ListingPage({
                 submitting: "Enviando...",
                 success: "¡Consulta enviada!",
                 error: "Error al enviar. Intenta de nuevo.",
+                signInToInquire: "Inicia sesión para preguntar por esta propiedad",
+                signInButton: "Iniciar sesión",
               }}
             />
             <a

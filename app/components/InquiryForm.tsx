@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -20,18 +21,66 @@ interface InquiryFormProps {
     submitting: string;
     success: string;
     error: string;
+    signInToInquire: string;
+    signInButton: string;
   };
 }
 
 export default function InquiryForm({ listingId, agentId, locale, translations }: InquiryFormProps) {
+  const router = useRouter();
   const [message, setMessage] = useState('');
   const [waFrom, setWaFrom] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const logged = !!data.user;
+      setIsLoggedIn(logged);
+      setAuthChecked(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      setAuthChecked(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const ensureProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: 'Not authenticated' };
+    const { error } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        role: 'user',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
+      });
+    if (error && error.code !== '23505') {
+      return { ok: false, error: error.message };
+    }
+    return { ok: true };
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
+
+    if (!isLoggedIn) {
+      router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+
+    // Ensure profile exists
+    const profileResult = await ensureProfile();
+    if (!profileResult.ok) {
+      setErrorMsg(profileResult.error || 'Auth error');
+      setStatus('error');
+      return;
+    }
+
     setStatus('submitting');
     setErrorMsg('');
     try {
@@ -52,6 +101,22 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
       setStatus('error');
     }
   };
+
+  if (!authChecked) return <p className="text-sm">Loading...</p>;
+
+  if (!isLoggedIn) {
+    return (
+      <div className="mt-4 p-4 border rounded-lg bg-zinc-50 dark:bg-zinc-900 text-center">
+        <p className="text-sm mb-2">{translations.signInToInquire}</p>
+        <button
+          onClick={() => router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`) }
+          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          {translations.signInButton}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form className="mt-4 space-y-3" onSubmit={handleSubmit}>

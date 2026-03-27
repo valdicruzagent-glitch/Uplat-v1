@@ -161,6 +161,8 @@ export default async function ListingPageEn({
                 submitting: "Sending...",
                 success: "Inquiry sent!",
                 error: "Failed to send. Try again.",
+                signInToInquire: "Sign in to ask about this property",
+                signInButton: "Sign in",
               }}
             />
             <a

@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import type { Profile } from '@/app/types/profile';
 import LanguageSwitch from '@/app/components/LanguageSwitch';
+import { useEnsureProfile } from '@/app/hooks/useEnsureProfile';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +26,8 @@ export default function AgentsPageEn() {
   const [reviewRating, setReviewRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const router = useRouter();
+  const { ensureProfile } = useEnsureProfile();
 
   // Get current user
   useEffect(() => {
@@ -123,7 +127,11 @@ export default function AgentsPageEn() {
   }, [currentProfileId]);
 
   const toggleLike = async (agentId: string) => {
-    if (!currentProfileId) return;
+    if (!currentProfileId) {
+      router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    await ensureProfile();
     const alreadyLiked = likedAgents.has(agentId);
     setLikedAgents(prev => {
       const next = new Set(prev);
@@ -145,6 +153,11 @@ export default function AgentsPageEn() {
   };
 
   const openReviewModal = (agent: Profile) => {
+    if (!currentProfileId) {
+      router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    ensureProfile().catch(() => {});
     setReviewModalAgent(agent);
     setReviewRating(0);
     setReviewText('');
@@ -158,6 +171,8 @@ export default function AgentsPageEn() {
 
   const submitReview = async () => {
     if (!currentProfileId || !reviewModalAgent || reviewRating === 0) return;
+    // Ensure profile exists for FK
+    await ensureProfile();
     setSubmittingReview(true);
     try {
       const { error } = await supabase.from('agent_reviews').upsert({

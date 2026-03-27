@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import type { Profile } from '@/app/types/profile';
 import LanguageSwitch from '@/app/components/LanguageSwitch';
+import { useEnsureProfile } from '@/app/hooks/useEnsureProfile';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +26,8 @@ export default function AgentsPage() {
   const [reviewRating, setReviewRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const router = useRouter();
+  const { ensureProfile } = useEnsureProfile();
 
   // Get current user
   useEffect(() => {
@@ -123,7 +127,13 @@ export default function AgentsPage() {
   }, [currentProfileId]);
 
   const toggleLike = async (agentId: string) => {
-    if (!currentProfileId) return;
+    if (!currentProfileId) {
+      router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    // Ensure profile exists for FK
+    await ensureProfile();
+
     const alreadyLiked = likedAgents.has(agentId);
     setLikedAgents(prev => {
       const next = new Set(prev);
@@ -145,6 +155,12 @@ export default function AgentsPage() {
   };
 
   const openReviewModal = (agent: Profile) => {
+    if (!currentProfileId) {
+      router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    // Ensure profile exists before opening
+    ensureProfile().catch(() => {});
     setReviewModalAgent(agent);
     setReviewRating(0);
     setReviewText('');
@@ -158,6 +174,8 @@ export default function AgentsPage() {
 
   const submitReview = async () => {
     if (!currentProfileId || !reviewModalAgent || reviewRating === 0) return;
+    // Ensure profile exists for FK
+    await ensureProfile();
     setSubmittingReview(true);
     try {
       const { error } = await supabase.from('agent_reviews').upsert({
@@ -170,7 +188,6 @@ export default function AgentsPage() {
         // Refresh aggregates locally
         setProfiles(prev => prev.map(p => {
           if (p.id !== reviewModalAgent.id) return p;
-          // Recompute roughly; a refetch would be cleaner but this works for now
           const oldCount = p.review_count || 0;
           const oldAvg = p.average_rating || 0;
           const newCount = oldCount + 1;
