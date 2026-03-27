@@ -13,6 +13,7 @@ export type Profile = {
   city: string | null;
   created_at: string;
   updated_at: string;
+  agency_id?: string | null;
   // Filled after counting listings
   listing_count: number;
 };
