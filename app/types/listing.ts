@@ -62,4 +62,7 @@ export type Listing = {
   is_sponsored?: boolean;
   sponsor_rank?: number;
   sponsored_until?: string;
+
+  // Agent ownership
+  profile_id?: string | null;
 };
