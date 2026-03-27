@@ -123,9 +123,12 @@ export default function AgentsPage() {
             disabled={!selectedCountry}
           >
             <option value="">Todos los departamentos</option>
-            {departments
-              .filter(d => !selectedCountry || filtered.some(p => p.department === d && p.country === selectedCountry))
-              .map(d => (
+            {Array.from(new Set(
+              profiles
+                .filter(p => !selectedCountry || p.country === selectedCountry)
+                .map(p => p.department)
+                .filter((d): d is string => !!d)
+            )).sort().map(d => (
               <option key={d} value={d}>{d}</option>
             ))}
           </select>
