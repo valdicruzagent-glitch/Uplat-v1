@@ -47,7 +47,21 @@ export default async function ListingPage({
 
   const { data: listing, error } = await supabase
     .from("listings")
-    .select("*, listing_images(*), favorites_count, is_sponsored, sponsor_rank, sponsored_until")
+    .select(`
+      *,
+      listing_images(*),
+      favorites_count,
+      is_sponsored,
+      sponsor_rank,
+      sponsored_until,
+      profiles (
+        id,
+        full_name,
+        role,
+        agency_id,
+        agencies (name, country, department, city)
+      )
+    `)
     .eq("id", id)
     .single();
 
@@ -118,6 +132,23 @@ export default async function ListingPage({
           {typeof listing.baths === "number" ? ` • ${es.bathsShort(listing.baths)}` : ""}
           {typeof listing.area_m2 === "number" ? ` • ${es.areaShort(listing.area_m2)}` : ""}
         </p>
+
+        {/* Listing ownership */}
+        {(listing as any).profiles?.[0] && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {(listing as any).profiles[0].role === 'realtor' ? (
+              <>
+                <span className="font-medium">{(listing as any).profiles[0].full_name}</span>
+                {(listing as any).profiles[0].agencies?.[0] && (
+                  <>,&nbsp;{(listing as any).profiles[0].agencies[0].name}</>
+                )}
+              </>
+            ) : (
+              <>{es.listedByOwner || 'Listed by owner'}</>
+            )}
+          </p>
+        )}
+
         <TrackListingView listingId={listing.id} locale="es" />
 
         {listing.description ? <p className="text-sm leading-6">{listing.description}</p> : null}

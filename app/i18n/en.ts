@@ -100,4 +100,6 @@ export const en = {
   helpModalTitle: "Get help",
   helpModalEmail: "Email us at",
   helpModalSub: "We'll get back to you soon.",
+  // Listing ownership
+  listedByOwner: "Listed by owner",
 };

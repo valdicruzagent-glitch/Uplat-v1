@@ -6,18 +6,6 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import ImageGallery from "@/app/components/ImageGallery";
 import FavoriteButton from "@/app/components/FavoriteButton";
 
-/**
- * Public listing detail page (English).
- *
- * What this file does:
- * - Loads one listing from Supabase.
- * - Renders the English detail experience.
- * - Builds the WhatsApp call to action for lead capture.
- *
- * Safe edit note:
- * - This file supports both canonical V1 fields and legacy fields during migration.
- * - Keep the compatibility helpers until the migration is fully deployed.
- */
 function getSortedImages(listing: Record<string, unknown>) {
   const images = Array.isArray(listing.listing_images) ? listing.listing_images : [];
   return [...images].sort((a: any, b: any) => a.sort_order - b.sort_order);
@@ -47,7 +35,21 @@ export default async function ListingPageEn({
 
   const { data: listing, error } = await supabase
     .from("listings")
-    .select("*, listing_images(*), favorites_count, is_sponsored, sponsor_rank, sponsored_until")
+    .select(`
+      *,
+      listing_images(*),
+      favorites_count,
+      is_sponsored,
+      sponsor_rank,
+      sponsored_until,
+      profiles (
+        id,
+        full_name,
+        role,
+        agency_id,
+        agencies (name, country, department, city)
+      )
+    `)
     .eq("id", id)
     .single();
 
@@ -71,7 +73,6 @@ export default async function ListingPageEn({
   const title = listing.headline || listing.title;
   const propertyType = getPropertyType(listing);
   const listingType = getListingType(listing);
-  // Image handling with listing_images
   const sortedImages = getSortedImages(listing);
   const hasMultiple = sortedImages.length > 0;
   const primaryIdx = sortedImages.findIndex((img: any) => img.is_primary);
@@ -118,6 +119,23 @@ export default async function ListingPageEn({
           {typeof listing.baths === "number" ? ` • ${en.bathsShort(listing.baths)}` : ""}
           {typeof listing.area_m2 === "number" ? ` • ${en.areaShort(listing.area_m2)}` : ""}
         </p>
+
+        {/* Listing ownership */}
+        {(listing as any).profiles?.[0] && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {(listing as any).profiles[0].role === 'realtor' ? (
+              <>
+                <span className="font-medium">{(listing as any).profiles[0].full_name}</span>
+                {(listing as any).profiles[0].agencies?.[0] && (
+                  <>,&nbsp;{(listing as any).profiles[0].agencies[0].name}</>
+                )}
+              </>
+            ) : (
+              <>{en.listedByOwner || 'Listed by owner'}</>
+            )}
+          </p>
+        )}
+
         <TrackListingView listingId={listing.id} locale="en" />
 
         {listing.description ? <p className="text-sm leading-6">{listing.description}</p> : null}
