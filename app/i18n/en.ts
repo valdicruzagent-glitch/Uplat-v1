@@ -79,7 +79,6 @@ export const en = {
   photosLabel: "Photo links (optional)",
   send: "Send",
   sentOk: "Received. We'll review and message you on WhatsApp.",
-  noListings: "No listings yet. Seed a few in Supabase → table listings.",
   errorLoadingListings: (msg: string) => `Error loading listings: ${msg}`,
   langEs: "ES",
   langEn: "EN",
@@ -91,6 +90,9 @@ export const en = {
   category: "Category",
   noImage: "No image",
   viewListing: "View",
+  // Empty state
+  noListings: "No properties found in this view.",
+  noListingsSub: "Move the map or adjust the filters.",
   // Modals
   agentModalTitle: "Find an agent",
   agentModalBody: "This feature is coming soon. We're building a trusted agent network to help you.",

@@ -79,7 +79,6 @@ export const es = {
   photosLabel: "Links de fotos (opcional)",
   send: "Enviar",
   sentOk: "Recibido. Revisaremos tu propiedad y te escribimos por WhatsApp.",
-  noListings: "Aún no hay propiedades. Agrega algunas en Supabase → tabla listings.",
   errorLoadingListings: (msg: string) => `Error cargando propiedades: ${msg}`,
   langEs: "ES",
   langEn: "EN",
@@ -91,6 +90,9 @@ export const es = {
   category: "Categoría",
   noImage: "Sin imagen",
   viewListing: "Ver",
+  // Empty state
+  noListings: "No encontramos propiedades en esta vista.",
+  noListingsSub: "Mueve el mapa o ajusta los filtros.",
   // Modales
   agentModalTitle: "Encuentra un agente",
   agentModalBody: "Esta función estará disponible pronto. Estamos construyendo una red de agentes confianza para ayudarte.",

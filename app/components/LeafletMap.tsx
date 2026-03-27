@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
 import MarkerClusterGroup from "@/app/components/MarkerClusterGroup";
 
 import "leaflet/dist/leaflet.css";
@@ -11,15 +11,31 @@ import type { Listing } from "@/app/types/listing";
 
 const DEFAULT_CENTER: [number, number] = [12.1364, -86.2514]; // Managua-ish
 
-function BoundsWatcher({ onBoundsChange, onZoomChange }: { onBoundsChange: (b: L.LatLngBounds) => void; onZoomChange?: (zoom: number) => void }) {
+function BoundsWatcher({ onBoundsChange, onZoomChange, onMapReady }: { onBoundsChange: (b: L.LatLngBounds) => void; onZoomChange?: (zoom: number) => void; onMapReady?: (map: L.Map) => void }) {
   useMapEvents({
     moveend: (e) => onBoundsChange(e.target.getBounds()),
     zoomend: (e) => {
       onBoundsChange(e.target.getBounds());
       if (onZoomChange) onZoomChange(e.target.getZoom());
     },
-    load: (e) => onBoundsChange(e.target.getBounds()),
+    load: (e) => {
+      onBoundsChange(e.target.getBounds());
+      if (onMapReady) onMapReady(e.target);
+    },
   });
+  return null;
+}
+
+function FitBoundsOnMount({ listings }: { listings: Listing[] }) {
+  const map = useMap();
+  const fittedRef = useRef(false);
+  useEffect(() => {
+    if (listings.length > 0 && !fittedRef.current) {
+      fittedRef.current = true;
+      const bounds = L.latLngBounds(listings.map((l) => [l.lat, l.lng]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+    }
+  }, [listings, map]);
   return null;
 }
 
@@ -34,6 +50,7 @@ export type LeafletMapProps = {
   onZoomChange?: (zoom: number) => void;
   visibleCount?: number;
   onMarkerHover?: (id: string | null) => void;
+  onMapReady?: (map: L.Map) => void;
 };
 
 export default function LeafletMap(props: LeafletMapProps) {
@@ -48,6 +65,7 @@ export default function LeafletMap(props: LeafletMapProps) {
     onZoomChange,
     visibleCount,
     onMarkerHover,
+    onMapReady,
   } = props;
   const [currentZoom, setCurrentZoom] = useState<number>(7);
 
@@ -116,7 +134,10 @@ export default function LeafletMap(props: LeafletMapProps) {
             setCurrentZoom(z);
             onZoomChange?.(z);
           }}
+          onMapReady={onMapReady}
         />
+
+        <FitBoundsOnMount listings={activeListings} />
 
         <MarkerClusterGroup
           // Zillow-like: cluster only actives, keep comps separate.

@@ -21,7 +21,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useRef } from "react";
-import type L from "leaflet";
 
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
@@ -32,6 +31,7 @@ import { es } from "@/app/i18n/es";
 import FavoriteButton from "@/app/components/FavoriteButton";
 import { loadGuestState, saveGuestState, type GuestState } from "@/lib/guestState";
 import type { LeafletMapProps } from "@/app/components/LeafletMap";
+import type L from "leaflet";
 
 const LeafletMap = dynamic<LeafletMapProps>(() => import("@/app/components/LeafletMap"), {
   ssr: false,
@@ -456,7 +456,10 @@ export default function MapSection({
         ) : null}
 
         {!loading && listActiveInBounds.length === 0 && (!showComps || listCompsInBounds.length === 0) && (
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">{t.noListings}</div>
+          <div className="col-span-full text-center py-12">
+            <p className="text-zinc-700 dark:text-zinc-200">{t.noListings}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t.noListingsSub}</p>
+          </div>
         )}
       </div>
     </main>
