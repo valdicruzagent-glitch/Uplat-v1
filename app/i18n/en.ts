@@ -102,4 +102,18 @@ export const en = {
   helpModalSub: "We'll get back to you soon.",
   // Listing ownership
   listedByOwner: "Listed by owner",
+  // WhatsApp verification
+  waVerifyTitle: "Verify your WhatsApp",
+  waVerifyDesc: "To ensure inquiry quality and prevent spam, please verify your WhatsApp number.",
+  waPhonePlaceholder: "+1 234 567 8900",
+  waSendCode: "Send code",
+  waSending: "Sending...",
+  waCodePlaceholder: "6-digit code",
+  waVerifyCode: "Verify code",
+  waVerifying: "Verifying...",
+  waVerifiedBadge: "✓ WhatsApp verified",
+  waResendCode: "Resend code",
+  waErrorRequired: "Phone number is required",
+  waErrorSend: "Failed to send code. Try again.",
+  waErrorVerify: "Invalid code. Try again.",
 };

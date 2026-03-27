@@ -178,6 +178,17 @@ export default async function ListingPage({
                 error: "Error al enviar. Intenta de nuevo.",
                 signInToInquire: "Inicia sesión para preguntar por esta propiedad",
                 signInButton: "Iniciar sesión",
+                // WhatsApp verification
+                waVerifyTitle: "Verifica tu WhatsApp",
+                waVerifyDesc: "Para garantizar la seguridad y calidad de las consultas, necesitas verificar tu número de WhatsApp.",
+                waPhonePlaceholder: "+1 234 567 8900",
+                waSendCode: "Enviar código",
+                waSending: "Enviando...",
+                waCodePlaceholder: "Código de 6 dígitos",
+                waVerifyCode: "Verificar código",
+                waVerifying: "Verificando...",
+                waVerifiedBadge: "✓ WhatsApp verificado",
+                waResendCode: "Reenviar código",
               }}
             />
             <a

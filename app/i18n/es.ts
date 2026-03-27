@@ -102,4 +102,18 @@ export const es = {
   helpModalSub: "Te responderemos pronto.",
   // Listing ownership
   listedByOwner: "Listado por el propietario",
+  // WhatsApp verification
+  waVerifyTitle: "Verifica tu WhatsApp",
+  waVerifyDesc: "Para garantizar la seguridad y calidad de las consultas, necesitas verificar tu número de WhatsApp.",
+  waPhonePlaceholder: "+1 234 567 8900",
+  waSendCode: "Enviar código",
+  waSending: "Enviando...",
+  waCodePlaceholder: "Código de 6 dígitos",
+  waVerifyCode: "Verificar código",
+  waVerifying: "Verificando...",
+  waVerifiedBadge: "✓ WhatsApp verificado",
+  waResendCode: "Reenviar código",
+  waErrorRequired: "El número es requerido",
+  waErrorSend: "Error al enviar código. Intenta de nuevo.",
+  waErrorVerify: "Código inválido. Intenta de nuevo.",
 };

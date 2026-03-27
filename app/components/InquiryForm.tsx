@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import WhatsAppVerification from './WhatsAppVerification';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +24,17 @@ interface InquiryFormProps {
     error: string;
     signInToInquire: string;
     signInButton: string;
+    // WhatsApp verification
+    waVerifyTitle: string;
+    waVerifyDesc: string;
+    waPhonePlaceholder: string;
+    waSendCode: string;
+    waSending: string;
+    waCodePlaceholder: string;
+    waVerifyCode: string;
+    waVerifying: string;
+    waVerifiedBadge: string;
+    waResendCode: string;
   };
 }
 
@@ -34,52 +46,35 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
   const [errorMsg, setErrorMsg] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profile, setProfile] = useState<{ whatsapp_verified?: boolean } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const logged = !!data.user;
       setIsLoggedIn(logged);
+      if (logged) {
+        supabase.from('profiles').select('whatsapp_verified').eq('id', data.user!.id).single()
+          .then(({ data }) => setProfile(data || null));
+      }
       setAuthChecked(true);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
+      const logged = !!session;
+      setIsLoggedIn(logged);
+      if (logged && session.user) {
+        supabase.from('profiles').select('whatsapp_verified').eq('id', session.user.id).single()
+          .then(({ data }) => setProfile(data || null));
+      } else {
+        setProfile(null);
+      }
       setAuthChecked(true);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const ensureProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { ok: false, error: 'Not authenticated' };
-    const { error } = await supabase
-      .from('profiles')
-      .insert({
-        id: user.id,
-        role: 'user',
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
-      });
-    if (error && error.code !== '23505') {
-      return { ok: false, error: error.message };
-    }
-    return { ok: true };
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
-
-    if (!isLoggedIn) {
-      router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-
-    // Ensure profile exists
-    const profileResult = await ensureProfile();
-    if (!profileResult.ok) {
-      setErrorMsg(profileResult.error || 'Auth error');
-      setStatus('error');
-      return;
-    }
 
     setStatus('submitting');
     setErrorMsg('');
@@ -118,6 +113,34 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
     );
   }
 
+  // If logged in but WhatsApp not verified, show verification flow
+  if (profile?.whatsapp_verified === false) {
+    return (
+      <div className="mt-4">
+        <WhatsAppVerification
+          locale={locale}
+          translations={{
+            title: translations.waVerifyTitle,
+            description: translations.waVerifyDesc,
+            phonePlaceholder: translations.waPhonePlaceholder,
+            sendCode: translations.waSendCode,
+            sending: translations.waSending,
+            codePlaceholder: translations.waCodePlaceholder,
+            verifyCode: translations.waVerifyCode,
+            verifying: translations.waVerifying,
+            verifiedBadge: translations.waVerifiedBadge,
+            resendCode: translations.waResendCode,
+          }}
+          onVerified={() => {
+            // Optionally refresh profile or show success then show form
+            setProfile({ whatsapp_verified: true });
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Verified: show inquiry form
   return (
     <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
       <div>
