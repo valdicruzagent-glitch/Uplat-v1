@@ -95,7 +95,7 @@ export default function HomeEn() {
 
       {/* Mobile full-screen overlay */}
       {mobileOpen && (
-        <div className="fixed inset-x-0 top-14 bottom-0 z-40 bg-zinc-950/90 backdrop-blur-sm p-6 md:hidden overflow-y-auto">
+        <div className="fixed inset-x-0 top-14 bottom-0 z-40 bg-zinc-950/95 p-6 md:hidden overflow-y-auto">
           <button className="absolute top-4 right-4" onClick={() => setMobileOpen(false)}>
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -110,10 +110,10 @@ export default function HomeEn() {
               <span>→</span> {t.getHelp}
             </button>
           </div>
-          <div className="mt-12 flex justify-center gap-4 text-sm text-zinc-400">
-            <Link href="/" className="hover:text-zinc-200">{t.langEs}</Link>
-            <span>/</span>
-            <Link href="/en" className="hover:text-zinc-200">{t.langEn}</Link>
+          <div className="mt-12 flex justify-center gap-6 text-base">
+            <Link href="/" className="text-zinc-400 hover:text-zinc-200">{t.langEs}</Link>
+            <span className="text-zinc-600">/</span>
+            <Link href="/en" className="text-blue-400 font-medium">{t.langEn}</Link>
           </div>
         </div>
       )}
