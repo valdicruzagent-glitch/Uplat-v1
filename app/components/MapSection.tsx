@@ -132,7 +132,7 @@ export default function MapSection({
       : ALL_CATEGORIES,
   });
   const [showComps, setShowComps] = useState(false);
-  const [bounds, setBounds] = useState<BoundsBox | null>(guestState.mapCenter ? {
+  const [bounds, setBounds] = useState<BoundsBox | null>(null);
     south: guestState.mapCenter.lat - 0.01,
     west: guestState.mapCenter.lng - 0.01,
     north: guestState.mapCenter.lat + 0.01,
