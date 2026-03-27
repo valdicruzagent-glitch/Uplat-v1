@@ -5,6 +5,7 @@ import { es } from "@/app/i18n/es";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import ImageGallery from "@/app/components/ImageGallery";
 import FavoriteButton from "@/app/components/FavoriteButton";
+import InquiryForm from "@/app/components/InquiryForm";
 
 /**
  * Public listing detail page (Spanish).
@@ -161,16 +162,32 @@ export default async function ListingPage({
 
         {listing.description ? <p className="text-sm leading-6">{listing.description}</p> : null}
 
-        {listing.status !== "archived" ? (
-          <a
-            className="mt-2 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-            href={wa}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {es.contactWhatsapp}
-          </a>
-        ) : null}
+        {listing.status !== "archived" && (
+          <>
+            <InquiryForm
+              listingId={listing.id}
+              agentId={(listing as any).profiles?.[0]?.id || null}
+              locale="es"
+              translations={{
+                askAbout: "Preguntar por esta propiedad",
+                messagePlaceholder: "Tu mensaje...",
+                waPlaceholder: "Tu WhatsApp (opcional)",
+                submit: "Enviar consulta",
+                submitting: "Enviando...",
+                success: "¡Consulta enviada!",
+                error: "Error al enviar. Intenta de nuevo.",
+              }}
+            />
+            <a
+              className="mt-2 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              href={wa}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {es.contactWhatsapp}
+            </a>
+          </>
+        )}
       </div>
     </main>
   );

@@ -5,6 +5,7 @@ import { en } from "@/app/i18n/en";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import ImageGallery from "@/app/components/ImageGallery";
 import FavoriteButton from "@/app/components/FavoriteButton";
+import InquiryForm from "@/app/components/InquiryForm";
 
 function getSortedImages(listing: Record<string, unknown>) {
   const urls = Array.isArray(listing.image_urls) ? listing.image_urls : [];
@@ -146,16 +147,32 @@ export default async function ListingPageEn({
 
         {listing.description ? <p className="text-sm leading-6">{listing.description}</p> : null}
 
-        {listing.status !== "archived" ? (
-          <a
-            className="mt-2 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-            href={wa}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {en.contactWhatsapp}
-          </a>
-        ) : null}
+        {listing.status !== "archived" && (
+          <>
+            <InquiryForm
+              listingId={listing.id}
+              agentId={(listing as any).profiles?.[0]?.id || null}
+              locale="en"
+              translations={{
+                askAbout: "Ask about this property",
+                messagePlaceholder: "Your message...",
+                waPlaceholder: "Your WhatsApp (optional)",
+                submit: "Send inquiry",
+                submitting: "Sending...",
+                success: "Inquiry sent!",
+                error: "Failed to send. Try again.",
+              }}
+            />
+            <a
+              className="mt-2 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              href={wa}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {en.contactWhatsapp}
+            </a>
+          </>
+        )}
       </div>
     </main>
   );
