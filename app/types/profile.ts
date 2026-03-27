@@ -18,4 +18,9 @@ export type Profile = {
   listing_count?: number;
   review_count?: number;
   average_rating?: number;
+  agencies?: {
+    name: string;
+    is_verified: boolean;
+    status_tier: string;
+  } | null;
 };

@@ -54,7 +54,9 @@ export default function AgentsPageEn() {
           city,
           created_at,
           updated_at,
-          likes_count
+          likes_count,
+          agency_id,
+          agencies (name, is_verified, status_tier)
         `)
         .eq('role', 'realtor');
 
@@ -270,6 +272,24 @@ export default function AgentsPageEn() {
                 <div className="text-xs text-zinc-500 mb-1">
                   {agent.listing_count || 0} listings
                 </div>
+                {/* Agency badges */}
+                {agent.agencies && (
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-xs text-zinc-500">{agent.agencies.name}</span>
+                    {agent.agencies.is_verified && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">✓ Verified</span>
+                    )}
+                    {agent.agencies.status_tier && agent.agencies.status_tier !== 'standard' && (
+                      <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                        agent.agencies.status_tier === 'silver' ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300' :
+                        agent.agencies.status_tier === 'gold' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
+                        'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                      }`}>
+                        {agent.agencies.status_tier}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xs text-zinc-500">
                     ⭐ {(agent.average_rating || 0).toFixed(1)} ({agent.review_count || 0} reviews)
