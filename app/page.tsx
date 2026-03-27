@@ -60,10 +60,8 @@ export default function Home() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-sm font-medium">{t.buy}</Link>
-            <Link href="/" className="text-sm font-medium">{t.rent}</Link>
+            <Link href="/agents" className="text-sm font-medium">{t.findAgent}</Link>
             <button onClick={handleSell} className="text-sm font-medium">{t.sell}</button>
-            <button onClick={() => setAgentsOpen(true)} className="text-sm font-medium">{t.findAgent}</button>
           </nav>
 
           {/* Desktop right actions */}
@@ -86,7 +84,7 @@ export default function Home() {
             </button>
             <div className="mt-12 flex flex-col gap-4">
               <button onClick={() => { handleSell(); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.sell}</button>
-              <button onClick={() => { setAgentsOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.findAgent}</button>
+              <Link href="/agents" onClick={() => setMobileOpen(false)} className="text-base font-medium text-left text-zinc-50">{t.findAgent}</Link>
               <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.getHelp}</button>
             </div>
           </div>
@@ -103,9 +101,9 @@ export default function Home() {
             <button onClick={() => { handleSell(); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
               <span>→</span> {t.sell}
             </button>
-            <button onClick={() => { setAgentsOpen(true); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+            <Link href="/agents" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
               <span>→</span> {t.findAgent}
-            </button>
+            </Link>
             <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
               <span>→</span> {t.getHelp}
             </button>
