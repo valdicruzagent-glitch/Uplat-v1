@@ -14,6 +14,6 @@ export type Profile = {
   created_at: string;
   updated_at: string;
   agency_id?: string | null;
-  // Filled after counting listings
-  listing_count: number;
+  likes_count?: number;
+  listing_count?: number;
 };

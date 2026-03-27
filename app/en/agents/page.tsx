@@ -18,7 +18,21 @@ export default function AgentsPageEn() {
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
+  const [likedAgents, setLikedAgents] = useState<Set<string>>(new Set());
 
+  // Get current user profile
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.id) setCurrentProfileId(data.user.id);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentProfileId(session?.user?.id ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch all realtors
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -36,24 +50,26 @@ export default function AgentsPageEn() {
           city,
           created_at,
           updated_at,
-          listings:listings(count)
+          likes_count
         `)
         .eq('role', 'realtor');
 
       if (!error && data) {
+        // Fetch listing counts for published listings grouped by profile_id
+        const ids = (data as any[]).map(p => p.id);
+        const { data: countsData } = await supabase
+          .from('listings')
+          .select('profile_id')
+          .eq('status', 'published')
+          .in('profile_id', ids);
+        const countMap = new Map<string, number>();
+        countsData?.forEach((l: any) => {
+          const pid = l.profile_id as string;
+          countMap.set(pid, (countMap.get(pid) || 0) + 1);
+        });
         const enriched: Profile[] = (data as any[]).map(p => ({
-          id: p.id,
-          role: p.role,
-          full_name: p.full_name,
-          phone: p.phone,
-          avatar_url: p.avatar_url,
-          bio: p.bio,
-          country: p.country,
-          department: p.department,
-          city: p.city,
-          created_at: p.created_at,
-          updated_at: p.updated_at,
-          listing_count: (p.listings as { count: number }[]).reduce((sum, l) => sum + (l.count || 0), 0),
+          ...p,
+          listing_count: countMap.get(p.id) || 0,
         }));
         setProfiles(enriched);
         const countrySet = new Set<string>();
@@ -69,6 +85,47 @@ export default function AgentsPageEn() {
     }
     load();
   }, []);
+
+  // Fetch liked agents for current user
+  useEffect(() => {
+    if (!currentProfileId) return;
+    async function loadLikes() {
+      const { data } = await supabase
+        .from('agent_likes')
+        .select('agent_id')
+        .eq('user_id', currentProfileId);
+      setLikedAgents(new Set((data || []).map(l => l.agent_id)));
+    }
+    loadLikes();
+  }, [currentProfileId]);
+
+  const toggleLike = async (agentId: string) => {
+    if (!currentProfileId) return;
+    const alreadyLiked = likedAgents.has(agentId);
+    // Optimistic update
+    setLikedAgents(prev => {
+      const next = new Set(prev);
+      alreadyLiked ? next.delete(agentId) : next.add(agentId);
+      return next;
+    });
+    setProfiles(prev => prev.map(p => p.id === agentId ? { ...p, likes_count: (p.likes_count || 0) + (alreadyLiked ? -1 : 1) } : p));
+
+    try {
+      if (alreadyLiked) {
+        await supabase.from('agent_likes').delete().match({ user_id: currentProfileId, agent_id: agentId });
+      } else {
+        await supabase.from('agent_likes').insert({ user_id: currentProfileId, agent_id: agentId });
+      }
+    } catch (error) {
+      // revert on error
+      setLikedAgents(prev => {
+        const next = new Set(prev);
+        alreadyLiked ? next.add(agentId) : next.delete(agentId);
+        return next;
+      });
+      setProfiles(prev => prev.map(p => p.id === agentId ? { ...p, likes_count: (p.likes_count || 0) + (alreadyLiked ? 1 : -1) } : p));
+    }
+  };
 
   const filtered = useMemo(() => {
     return profiles.filter(p => {
@@ -149,11 +206,20 @@ export default function AgentsPageEn() {
                   {agent.bio || 'No bio.'}
                 </p>
                 <div className="text-xs text-zinc-500 mb-3">
-                  {agent.listing_count} listings
+                  {agent.listing_count || 0} listings
                 </div>
-                <button className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                  View profile
-                </button>
+                <div className="flex items-center justify-between">
+                  <button
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-sm ${likedAgents.has(agent.id) ? 'bg-red-50 text-red-600' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'}`}
+                    onClick={() => toggleLike(agent.id)}
+                    disabled={!currentProfileId}
+                  >
+                    ❤️ {agent.likes_count || 0}
+                  </button>
+                  <button className="rounded bg-blue-600 py-1 px-3 text-sm font-medium text-white hover:bg-blue-700">
+                    View profile
+                  </button>
+                </div>
               </div>
             ))}
           </div>
