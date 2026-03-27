@@ -80,7 +80,7 @@ export default function HomeEn() {
 
         {/* Mobile full-screen overlay */}
         {mobileOpen && (
-          <div className="fixed inset-0 z-50 bg-zinc-950 dark:bg-zinc-950 p-6 md:hidden">
+          <div className="fixed inset-x-0 top-14 bottom-0 z-50 bg-zinc-950 dark:bg-zinc-950 p-6 md:hidden overflow-y-auto">
             <button className="absolute top-4 right-4" onClick={() => setMobileOpen(false)}>
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
