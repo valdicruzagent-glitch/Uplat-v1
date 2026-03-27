@@ -65,4 +65,8 @@ export type Listing = {
 
   // Agent ownership
   profile_id?: string | null;
+
+  // Features
+  has_pool?: boolean;
+  is_waterfront?: boolean;
 };

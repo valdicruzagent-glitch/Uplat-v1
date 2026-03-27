@@ -100,4 +100,22 @@ where l.status = 'published'
   and l.country is not null
   and l.country = p.country;
 
+-- 3) Set feature flags on a few demo listings to showcase pool/waterfront
+-- Waterfront: listings in coastal cities near beach areas
+update public.listings
+set is_waterfront = true
+where status = 'published'
+  and city in ('San Juan del Sur', 'Tamarindo', 'Boquete', 'Panama City', 'Antigua Guatemala')
+  and (meta->>'demo')::boolean is true
+  limit 10;  -- safe: update only up to 10 demo rows
+
+-- Pool: larger houses/apartments with beds >= 3 and area >= 150 m2
+update public.listings
+set has_pool = true
+where status = 'published'
+  and beds >= 3
+  and area_m2 >= 150
+  and (meta->>'demo')::boolean is true
+  limit 10;
+
 commit;
