@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import termsES from '@/content/legal/terms.es';
 import termsEN from '@/content/legal/terms.en';
+import { ensureProfileExists, getOnboardingProgress } from '@/app/lib/onboarding-progress';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,7 +45,6 @@ interface OnboardingProps {
 }
 
 type Step = 'phone' | 'code' | 'terms' | 'role' | 'done';
-
 const steps: Step[] = ['phone', 'code', 'terms', 'role'];
 
 export default function OnboardingClient({ locale, translations }: OnboardingProps) {
@@ -56,19 +56,42 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState<'user' | 'realtor' | 'agency' | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   const currentStepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
 
-  // Ensure user is logged in
+  // Bootstrap: ensure profile exists and resume from database state
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push(`/signin?redirect=${encodeURIComponent('/onboarding')}`);
+        return;
       }
+
+      // Ensure a profile row exists
+      await ensureProfileExists();
+
+      // Determine current progress
+      const progress = await getOnboardingProgress();
+      setStep(progress.step);
+      if (progress.phone) setPhone(progress.phone);
+
+      // If fully complete, redirect immediately
+      if (progress.step === 'role') {
+        // Need to check if role field is set (completion)
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role) {
+          if (profile.role === 'user') router.push('/');
+          else router.push('/user-settings');
+          return;
+        }
+      }
+
+      setInitializing(false);
     };
-    checkAuth();
+    init();
   }, [router]);
 
   // If role is selected, complete onboarding
@@ -86,6 +109,14 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
     setStatus('loading');
     setErrorMsg('');
     try {
+      // Store phone number in profile (staging before verification)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          whatsapp_number: phone.trim(),
+        });
+      }
       const res = await fetch('/api/verify/whatsapp/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -159,6 +190,14 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       setStatus('error');
     }
   };
+
+  if (initializing) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading...</p>
+      </div>
+    );
+  }
 
   if (step === 'done') {
     return (
