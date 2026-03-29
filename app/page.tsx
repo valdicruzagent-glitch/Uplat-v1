@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import MapSection from "@/app/components/MapSection";
@@ -23,17 +24,41 @@ export default function Home() {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [user, setUser] = useState<{ name?: string } | null>(null);
+  const router = useRouter();
 
-  // Real auth state
+  // Real auth state + onboarding completion check
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '' } : null);
-    });
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user ? { name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || '' } : null);
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setUser(null);
+        return;
+      }
+      // Check profile completion
+      const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', user.id).single();
+      const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
+      if (!isComplete) {
+        router.replace('/onboarding');
+      } else {
+        setUser({ name: user.user_metadata?.full_name || user.email?.split('@')[0] || '' });
+      }
+    };
+    checkAuth();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        return;
+      }
+      const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', session.user.id).single();
+      const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
+      if (!isComplete) {
+        router.replace('/onboarding');
+      } else {
+        setUser({ name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '' });
+      }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (center) {
