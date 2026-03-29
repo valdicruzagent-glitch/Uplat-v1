@@ -11,17 +11,24 @@ const VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID!;
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    console.log('[WhatsApp check] Authorization header exists:', !!authHeader);
+    const isBearer = authHeader?.startsWith('Bearer ');
+    console.log('[WhatsApp check] Bearer prefix:', isBearer);
+    if (!isBearer) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const accessToken = authHeader.slice('Bearer '.length);
+    console.log('[WhatsApp check] Token length:', accessToken.length);
 
+    const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+    console.log('[WhatsApp check] SUPABASE_SERVICE_ROLE_KEY exists:', hasServiceKey);
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    console.log('[WhatsApp check] getUser result:', user ? { userId: user.id } : null, 'error:', authError);
     if (authError || !user) {
       console.error('WhatsApp check auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
