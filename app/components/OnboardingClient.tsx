@@ -120,6 +120,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       const res = await fetch('/api/verify/whatsapp/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ phone: phone.trim() }),
       });
       const json = await res.json();
@@ -142,6 +143,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       const res = await fetch('/api/verify/whatsapp/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ phone: phone.trim(), code: code.trim() }),
       });
       const json = await res.json();
