@@ -45,6 +45,8 @@ interface OnboardingProps {
 
 type Step = 'phone' | 'code' | 'terms' | 'role' | 'done';
 
+const steps: Step[] = ['phone', 'code', 'terms', 'role'];
+
 export default function OnboardingClient({ locale, translations }: OnboardingProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('phone');
@@ -54,6 +56,9 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState<'user' | 'realtor' | 'agency' | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const currentStepIndex = steps.indexOf(step);
+  const totalSteps = steps.length;
 
   // Ensure user is logged in
   useEffect(() => {
@@ -177,20 +182,36 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         <h1 className="text-2xl font-bold tracking-tight">Tualero</h1>
       </div>
 
-      <div className="w-full max-w-md space-y-4">
+      {/* Step indicator */}
+      <div className="w-full max-w-md mb-6">
+        <div className="flex justify-between text-xs text-zinc-500 mb-2">
+          <span>{locale === 'es' ? 'Paso' : 'Step'} {currentStepIndex + 1} {locale === 'es' ? 'de' : 'of'} {totalSteps}</span>
+          <span>{Math.round(((currentStepIndex + 1) / totalSteps) * 100)}%</span>
+        </div>
+        <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+          <div
+            className="h-full bg-blue-600 transition-all duration-300"
+            style={{ width: `${((currentStepIndex + 1) / totalSteps) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="w-full max-w-md space-y-6">
         {step === 'phone' && (
           <>
-            <h2 className="text-xl font-semibold">{translations.stepPhoneTitle}</h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepPhoneDesc}</p>
+            <div>
+              <h2 className="text-xl font-semibold mb-1">{translations.stepPhoneTitle}</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepPhoneDesc}</p>
+            </div>
             <input
               type="tel"
-              className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
               placeholder={translations.phonePlaceholder}
               value={phone}
               onChange={e => setPhone(e.target.value)}
             />
             <button
-              className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               onClick={sendCode}
               disabled={status === 'loading' || !phone.trim()}
             >
@@ -201,17 +222,19 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
         {step === 'code' && (
           <>
-            <h2 className="text-xl font-semibold">{translations.stepCodeTitle}</h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepCodeDesc} {phone}</p>
+            <div>
+              <h2 className="text-xl font-semibold mb-1">{translations.stepCodeTitle}</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepCodeDesc} {phone}</p>
+            </div>
             <input
               type="text"
-              className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
               placeholder={translations.codePlaceholder}
               value={code}
               onChange={e => setCode(e.target.value)}
             />
             <button
-              className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               onClick={verifyCode}
               disabled={status === 'loading' || !code.trim()}
             >
@@ -219,7 +242,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
             </button>
             <button
               type="button"
-              className="text-xs underline"
+              className="text-xs underline text-zinc-600"
               onClick={() => { setStep('phone'); setCode(''); }}
             >
               {translations.resendCode}
@@ -229,22 +252,24 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
         {step === 'terms' && (
           <>
-            <h2 className="text-xl font-semibold">{translations.termsTitle}</h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.termsDescription}</p>
-            <div className="rounded border p-3 text-sm bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 max-h-80 overflow-y-auto whitespace-pre-wrap">
+            <div>
+              <h2 className="text-xl font-semibold mb-1">{translations.termsTitle}</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.termsDescription}</p>
+            </div>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 text-sm leading-relaxed overflow-y-auto max-h-80 whitespace-pre-wrap">
               {locale === 'es' ? termsES : termsEN}
             </div>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-start gap-3 text-sm">
               <input
                 type="checkbox"
                 checked={termsAccepted}
                 onChange={e => setTermsAccepted(e.target.checked)}
-                className="rounded border-zinc-300"
+                className="mt-0.5 rounded border-zinc-300"
               />
-              {translations.termsAccept}
+              <span>{translations.termsAccept}</span>
             </label>
             <button
-              className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               onClick={() => { if (termsAccepted) setStep('role'); }}
               disabled={!termsAccepted}
             >
@@ -255,22 +280,24 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
         {step === 'role' && (
           <>
-            <h2 className="text-xl font-semibold">{translations.stepRoleTitle}</h2>
-            <div className="space-y-2">
+            <div>
+              <h2 className="text-xl font-semibold mb-1">{translations.stepRoleTitle}</h2>
+            </div>
+            <div className="space-y-3">
               <button
-                className="w-full rounded border p-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
                 onClick={() => setRole('user')}
               >
                 {translations.roleUser}
               </button>
               <button
-                className="w-full rounded border p-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
                 onClick={() => setRole('realtor')}
               >
                 {translations.roleRealtor}
               </button>
               <button
-                className="w-full rounded border p-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
                 onClick={() => setRole('agency')}
               >
                 {translations.roleAgency}
@@ -279,7 +306,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
           </>
         )}
 
-        {status === 'error' && <p className="text-sm text-red-600">{errorMsg}</p>}
+        {status === 'error' && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">{errorMsg}</p>}
       </div>
     </div>
   );
