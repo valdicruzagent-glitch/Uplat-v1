@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     console.log('[WhatsApp start] route invoked');
     // Read Bearer token from Authorization header
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const accessToken = authHeader.slice('Bearer '.length);

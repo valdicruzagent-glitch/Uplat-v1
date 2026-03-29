@@ -13,9 +13,7 @@ export async function POST(req: NextRequest) {
     console.log('[WhatsApp check] route invoked');
     const authHeader = req.headers.get('Authorization');
     console.log('[WhatsApp check] Authorization header exists:', !!authHeader);
-    const isBearer = authHeader?.startsWith('Bearer ');
-    console.log('[WhatsApp check] Bearer prefix:', isBearer);
-    if (!isBearer) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const accessToken = authHeader.slice('Bearer '.length);

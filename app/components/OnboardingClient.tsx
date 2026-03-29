@@ -109,17 +109,25 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
     setStatus('loading');
     setErrorMsg('');
     try {
-      // Store phone number in profile (staging before verification)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // Store phone number in profile (staging before verification)
       await supabase.from('profiles').upsert({
         id: user.id,
         whatsapp_number: phone.trim(),
       });
 
-      // Get access token for Bearer auth
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('No session');
+      if (!session?.access_token) throw new Error('No access token');
+
+      // Debug logs
+      console.log('[OnboardingClient] sendCode: session exists:', !!session);
+      console.log('[OnboardingClient] sendCode: access_token exists:', !!session.access_token);
+      console.log('[OnboardingClient] sendCode: location:', window.location.origin + window.location.pathname);
+      const startUrl = window.location.origin + '/api/verify/whatsapp/start';
+      console.log('[OnboardingClient] sendCode: requesting URL:', startUrl);
+      console.log('[OnboardingClient] sendCode: Authorization header set: Bearer <token>');
 
       const res = await fetch('/api/verify/whatsapp/start', {
         method: 'POST',
@@ -146,16 +154,22 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
     setStatus('loading');
     setErrorMsg('');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const accessToken = user.access_token;
-      if (!accessToken) throw new Error('No access token');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
+      // Debug logs
+      console.log('[OnboardingClient] verifyCode: session exists:', !!session);
+      console.log('[OnboardingClient] verifyCode: access_token exists:', !!session.access_token);
+      console.log('[OnboardingClient] verifyCode: location:', window.location.origin + window.location.pathname);
+      const checkUrl = window.location.origin + '/api/verify/whatsapp/check';
+      console.log('[OnboardingClient] verifyCode: requesting URL:', checkUrl);
+      console.log('[OnboardingClient] verifyCode: Authorization header set: Bearer <token>');
 
       const res = await fetch('/api/verify/whatsapp/check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ phone: phone.trim(), code: code.trim() }),
       });
