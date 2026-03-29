@@ -6,6 +6,12 @@ import LanguageSwitch from "@/app/components/LanguageSwitch";
 import MapSection from "@/app/components/MapSection";
 import { es } from "@/app/i18n/es";
 import { loadGuestState, saveGuestState } from "@/lib/guestState";
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function Home() {
   const t = es;
@@ -16,7 +22,18 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string } | null>(null); // TODO: connect to real auth
+  const [user, setUser] = useState<{ name?: string } | null>(null);
+
+  // Real auth state
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '' } : null);
+    });
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user ? { name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || '' } : null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (center) {
@@ -49,7 +66,7 @@ export default function Home() {
           </button>
 
           {/* Center brand */}
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight">Uplat</div>
+          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight">Tualero</div>
 
           {/* Right: mobile auth button */}
           {user ? (
@@ -75,20 +92,6 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        {/* Mobile full-screen overlay */}
-        {mobileOpen && (
-          <div className="fixed inset-x-0 top-14 bottom-0 z-50 bg-zinc-950 dark:bg-zinc-950 p-6 md:hidden overflow-y-auto">
-            <button className="absolute top-4 right-4" onClick={() => setMobileOpen(false)}>
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <div className="mt-12 flex flex-col gap-4">
-              <button onClick={() => { handleSell(); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.sell}</button>
-              <Link href="/agents" onClick={() => setMobileOpen(false)} className="text-base font-medium text-left text-zinc-50">{t.findAgent}</Link>
-              <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="text-base font-medium text-left text-zinc-50">{t.getHelp}</button>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Mobile full-screen overlay */}
@@ -134,7 +137,7 @@ export default function Home() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setHelpOpen(false)}>
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <h2 className="text-xl font-semibold mb-2">{t.helpModalTitle}</h2>
-            <p className="text-zinc-600 dark:text-zinc-300 mb-2">{t.helpModalEmail} <a href="mailto:support@uplat.app" className="text-blue-600 hover:underline">support@uplat.app</a></p>
+            <p className="text-zinc-600 dark:text-zinc-300 mb-2">{t.helpModalEmail} <a href="mailto:support@tualero.app" className="text-blue-600 hover:underline">support@tualero.app</a></p>
             <p className="text-sm text-zinc-400">{t.helpModalSub}</p>
             <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setHelpOpen(false)}>{t.close}</button>
           </div>

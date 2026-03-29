@@ -136,8 +136,14 @@ export default function MapSection({
   const [err, setErr] = useState<string | null>(null);
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
   const hasUserMovedMap = useRef(false);
+  const firstBoundsRef = useRef(true);
 
   const handleBoundsChange = (b: L.LatLngBounds) => {
+    if (firstBoundsRef.current) {
+      firstBoundsRef.current = false;
+      setBounds(toBoundsBox(b));
+      return;
+    }
     hasUserMovedMap.current = true;
     setBounds(toBoundsBox(b));
   };
