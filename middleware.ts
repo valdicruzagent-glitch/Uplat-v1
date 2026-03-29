@@ -29,10 +29,10 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Check profile completeness: role and whatsapp_verified must be present
-  const { data: profile } = await supabase.from('profiles').select('role, whatsapp_verified').eq('id', user.id).maybeSingle();
+  // Check profile completeness: role, whatsapp_verified, and terms acceptance must be present
+  const { data: profile } = await supabase.from('profiles').select('role, whatsapp_verified, terms_accepted').eq('id', user.id).maybeSingle();
 
-  const isComplete = profile?.whatsapp_verified && profile?.role;
+  const isComplete = profile?.whatsapp_verified && profile?.role && profile?.terms_accepted;
 
   const onboardingPath = '/onboarding';
   const path = request.nextUrl.pathname;

@@ -134,6 +134,10 @@ export const es = {
   onboardingErrorSend: "Error al enviar código. Intenta de nuevo.",
   onboardingErrorVerify: "Código inválido. Intenta de nuevo.",
   onboardingErrorSave: "Error al guardar el perfil. Intenta de nuevo.",
+  // Terms step
+  termsTitle: "Términos de Uso",
+  termsDescription: "Por favor lee y acepta nuestros Términos de Uso para continuar.",
+  termsAccept: "Acepto los Términos de Uso",
   // Onboarding aliases for component props
   phonePlaceholder: "+1 234 567 8900",
   sendCode: "Enviar código",

@@ -19,9 +19,13 @@ interface OnboardingProps {
     sendCode: string;
     sending: string;
     stepCodeTitle: string;
+    stepCodeDesc: string;
     codePlaceholder: string;
     verifyCode: string;
     verifying: string;
+    termsTitle: string;
+    termsDescription: string;
+    termsAccept: string;
     stepRoleTitle: string;
     roleUser: string;
     roleRealtor: string;
@@ -37,7 +41,7 @@ interface OnboardingProps {
   };
 }
 
-type Step = 'phone' | 'code' | 'role' | 'done';
+type Step = 'phone' | 'code' | 'terms' | 'role' | 'done';
 
 export default function OnboardingClient({ locale, translations }: OnboardingProps) {
   const router = useRouter();
@@ -47,6 +51,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState<'user' | 'realtor' | 'agency' | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Ensure user is logged in
   useEffect(() => {
@@ -103,8 +108,8 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || translations.errorVerify);
-      // Verification succeeded; now wait for role selection
-      setStep('role');
+      // Verification succeeded; proceed to terms
+      setStep('terms');
       setStatus('idle');
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -118,7 +123,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Upsert profile with full_name (from user metadata), role, and WhatsApp verification
+      // Upsert profile with full_name, role, WhatsApp verification, and Terms acceptance
       const { error } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
@@ -126,6 +131,9 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         whatsapp_number: phone.trim(),
         whatsapp_verified: true,
         whatsapp_verified_at: new Date().toISOString(),
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: '1.0',
         updated_at: new Date().toISOString(),
       });
       if (error) throw error;
@@ -136,8 +144,8 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       // Redirect after brief delay
       setTimeout(() => {
         if (role === 'user') router.push('/');
-        else if (role === 'realtor') router.push('/agents');
-        else if (role === 'agency') router.push('/'); // temporary; agencies page pending
+        else if (role === 'realtor') router.push('/user-settings');
+        else if (role === 'agency') router.push('/user-settings');
       }, 500);
     } catch (err: any) {
       setErrorMsg(translations.errorSaveProfile);
@@ -147,8 +155,8 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
   if (step === 'done') {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-zinc-50 dark:bg-black p-6">
-        <div className="max-w-md w-full space-y-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6">
+        <div className="max-w-md w-full space-y-4 text-center">
           <div className="p-4 border rounded-lg bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">
             {translations.verifiedBadge}
           </div>
@@ -161,12 +169,16 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-zinc-50 dark:bg-black p-6">
-      <div className="max-w-md w-full space-y-4">
-        <h1 className="text-2xl font-bold">{translations.title}</h1>
+    <div className="min-h-dvh flex flex-col items-center bg-zinc-50 dark:bg-black p-6">
+      {/* Uplat logo/branding - centered, minimal */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">Uplat</h1>
+      </div>
 
+      <div className="w-full max-w-md space-y-4">
         {step === 'phone' && (
           <>
+            <h2 className="text-xl font-semibold">{translations.stepPhoneTitle}</h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepPhoneDesc}</p>
             <input
               type="tel"
@@ -187,7 +199,8 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
         {step === 'code' && (
           <>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepCodeTitle} {phone}</p>
+            <h2 className="text-xl font-semibold">{translations.stepCodeTitle}</h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepCodeDesc} {phone}</p>
             <input
               type="text"
               className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
@@ -212,9 +225,36 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
           </>
         )}
 
+        {step === 'terms' && (
+          <>
+            <h2 className="text-xl font-semibold">{translations.termsTitle}</h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.termsDescription}</p>
+            <div className="rounded border p-3 text-sm bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800">
+              <p className="mb-2"><strong>Terms of Use</strong></p>
+              <p className="mb-2">These are the canonical terms of use for Uplat. By using our marketplace, you agree to abide by these rules. We reserve the right to suspend or terminate accounts that violate these terms.</p>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={e => setTermsAccepted(e.target.checked)}
+                className="rounded border-zinc-300"
+              />
+              {translations.termsAccept}
+            </label>
+            <button
+              className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              onClick={() => { if (termsAccepted) setStep('role'); }}
+              disabled={!termsAccepted}
+            >
+              {translations.finish}
+            </button>
+          </>
+        )}
+
         {step === 'role' && (
           <>
-            <p className="text-sm font-medium">{translations.stepRoleTitle}</p>
+            <h2 className="text-xl font-semibold">{translations.stepRoleTitle}</h2>
             <div className="space-y-2">
               <button
                 className="w-full rounded border p-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
