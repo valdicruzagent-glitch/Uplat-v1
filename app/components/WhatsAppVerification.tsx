@@ -20,8 +20,8 @@ interface WhatsAppVerificationProps {
     codePlaceholder: string;
     verifyCode: string;
     verifying: string;
-    success: string;
-    error: string;
+    success?: string;
+    error?: string;
     verifiedBadge: string;
     resendCode: string;
   };

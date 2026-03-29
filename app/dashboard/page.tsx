@@ -1,4 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -27,7 +27,19 @@ interface Stats {
 }
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(c => cookieStore.set(c.name, c.value, c.options));
+        },
+      },
+    }
+  );
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/signin?redirect=${encodeURIComponent('/dashboard')}`);
 
@@ -84,21 +96,21 @@ export default async function DashboardPage() {
     supabase.from('listings').select('id, title, status, created_at').order('created_at', { ascending: false }).limit(10),
   ]);
 
-  const ratings = agentReviewsForAvg.data?.map((r: any) => r.rating as number) || [];
+  const ratings = (agentReviewsForAvg ?? []).map((r: any) => r.rating as number);
   const avgAgentRating = ratings.length ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
 
   const listingInquiryMap = new Map<string, number>();
-  topListingsData.data?.forEach((l: any) => {
+  (topListingsData ?? []).forEach((l: any) => {
     const count = (l.listing_inquiries as any[])?.length || 0;
     listingInquiryMap.set(l.id, count);
   });
-  const topListingsByInquiries = (topListingsData.data || [])
+  const topListingsByInquiries = (topListingsData ?? [])
     .map((l: any) => ({ id: l.id, title: l.title, inquiry_count: listingInquiryMap.get(l.id) || 0 }))
     .sort((a: any, b: any) => b.inquiry_count - a.inquiry_count)
     .slice(0, 5);
 
   const countryCounts = new Map<string, number>();
-  topCountriesData.data?.forEach((l: any) => {
+  (topCountriesData ?? []).forEach((l: any) => {
     const c = l.country as string;
     if (c) countryCounts.set(c, (countryCounts.get(c) || 0) + 1);
   });
@@ -107,7 +119,7 @@ export default async function DashboardPage() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  const recentInquiries = (recentInquiriesData.data || []).map((r: any) => ({
+  const recentInquiries = (recentInquiriesData ?? []).map((r: any) => ({
     id: r.id,
     listing_title: r.listing?.title || null,
     agent_name: r.listing?.profiles?.full_name || null,
@@ -115,22 +127,22 @@ export default async function DashboardPage() {
   }));
 
   const stats: Stats = {
-    totalListings: totalListings.count || 0,
-    publishedListings: publishedListings.count || 0,
-    totalUsers: totalUsers.count || 0,
-    totalAgents: totalAgents.count || 0,
-    totalAgencies: totalAgencies.count || 0,
-    totalInquiries: totalInquiries.count || 0,
-    inquiriesToday: inquiriesToday.count || 0,
-    inquiriesLast7Days: inquiriesLast7Days.count || 0,
-    inquiriesLast30Days: inquiriesLast30Days.count || 0,
-    avgInquiriesPerPublishedListing: (publishedListings.count || 0) > 0 ? (totalInquiries.count || 0) / (publishedListings.count || 0) : 0,
+    totalListings: totalListings ?? 0,
+    publishedListings: publishedListings ?? 0,
+    totalUsers: totalUsers ?? 0,
+    totalAgents: totalAgents ?? 0,
+    totalAgencies: totalAgencies ?? 0,
+    totalInquiries: totalInquiries ?? 0,
+    inquiriesToday: inquiriesToday ?? 0,
+    inquiriesLast7Days: inquiriesLast7Days ?? 0,
+    inquiriesLast30Days: inquiriesLast30Days ?? 0,
+    avgInquiriesPerPublishedListing: (publishedListings ?? 0) > 0 ? (totalInquiries ?? 0) / (publishedListings ?? 0) : 0,
     waVerifiedUsers: waVerifiedUsersData?.length || 0,
-    verifiedAgencies: verifiedAgencies.count || 0,
-    totalAgentLikes: totalAgentLikes.count || 0,
-    totalAgentReviews: totalAgentReviews.count || 0,
+    verifiedAgencies: verifiedAgencies ?? 0,
+    totalAgentLikes: totalAgentLikes ?? 0,
+    totalAgentReviews: totalAgentReviews ?? 0,
     avgAgentRating: avgAgentRating,
-    topAgents: (topAgentsData.data || []).map((a: any) => ({
+    topAgents: (topAgentsData ?? []).map((a: any) => ({
       id: a.id,
       full_name: a.full_name,
       average_rating: a.average_rating || 0,
@@ -141,13 +153,13 @@ export default async function DashboardPage() {
     topListingsByInquiries,
     topCountriesByPublishedListings,
     recentInquiries,
-    recentUsers: (recentUsersData.data || []).map((u: any) => ({
+    recentUsers: (recentUsersData ?? []).map((u: any) => ({
       id: u.id,
       full_name: u.full_name,
       email: u.email,
       created_at: u.created_at,
     })),
-    recentListings: (recentListingsData.data || []).map((l: any) => ({
+    recentListings: (recentListingsData ?? []).map((l: any) => ({
       id: l.id,
       title: l.title,
       status: l.status,
