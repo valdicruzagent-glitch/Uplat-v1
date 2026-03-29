@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import WhatsAppVerification from './WhatsAppVerification';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,17 +23,6 @@ interface InquiryFormProps {
     error: string;
     signInToInquire: string;
     signInButton: string;
-    // WhatsApp verification
-    waVerifyTitle: string;
-    waVerifyDesc: string;
-    waPhonePlaceholder: string;
-    waSendCode: string;
-    waSending: string;
-    waCodePlaceholder: string;
-    waVerifyCode: string;
-    waVerifying: string;
-    waVerifiedBadge: string;
-    waResendCode: string;
   };
 }
 
@@ -46,31 +34,44 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
   const [errorMsg, setErrorMsg] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profile, setProfile] = useState<{ whatsapp_verified?: boolean } | null>(null);
+  const [profile, setProfile] = useState<{ whatsapp_verified?: boolean; role?: string } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const logged = !!data.user;
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const logged = !!user;
       setIsLoggedIn(logged);
-      if (logged) {
-        supabase.from('profiles').select('whatsapp_verified').eq('id', data.user!.id).single()
-          .then(({ data }) => setProfile(data || null));
+      if (logged && user) {
+        const { data } = await supabase.from('profiles').select('whatsapp_verified, role').eq('id', user.id).single();
+        setProfile(data);
+        // If profile exists but onboarding incomplete, redirect to onboarding
+        if (data && (!data.whatsapp_verified || !data.role)) {
+          router.push('/onboarding');
+        }
+      } else {
+        setProfile(null);
       }
       setAuthChecked(true);
-    });
+    };
+    checkAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const logged = !!session;
       setIsLoggedIn(logged);
-      if (logged && session.user) {
-        supabase.from('profiles').select('whatsapp_verified').eq('id', session.user.id).single()
-          .then(({ data }) => setProfile(data || null));
+      if (logged && session?.user) {
+        supabase.from('profiles').select('whatsapp_verified, role').eq('id', session.user.id).single()
+          .then(({ data }) => {
+            setProfile(data);
+            if (data && (!data.whatsapp_verified || !data.role)) {
+              router.push('/onboarding');
+            }
+          });
       } else {
         setProfile(null);
       }
       setAuthChecked(true);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,34 +114,13 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
     );
   }
 
-  // If logged in but WhatsApp not verified, show verification flow
-  if (profile?.whatsapp_verified === false) {
-    return (
-      <div className="mt-4">
-        <WhatsAppVerification
-          locale={locale}
-          translations={{
-            title: translations.waVerifyTitle,
-            description: translations.waVerifyDesc,
-            phonePlaceholder: translations.waPhonePlaceholder,
-            sendCode: translations.waSendCode,
-            sending: translations.waSending,
-            codePlaceholder: translations.waCodePlaceholder,
-            verifyCode: translations.waVerifyCode,
-            verifying: translations.waVerifying,
-            verifiedBadge: translations.waVerifiedBadge,
-            resendCode: translations.waResendCode,
-          }}
-          onVerified={() => {
-            // Optionally refresh profile or show success then show form
-            setProfile({ whatsapp_verified: true });
-          }}
-        />
-      </div>
-    );
+  // If logged in but profile incomplete (should be caught by middleware), as fallback redirect
+  if (profile && (!profile.whatsapp_verified || !profile.role)) {
+    // Redirect already issued in effect; render nothing to avoid flash
+    return null;
   }
 
-  // Verified: show inquiry form
+  // Show inquiry form
   return (
     <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
       <div>

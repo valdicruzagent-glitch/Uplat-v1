@@ -1,0 +1,31 @@
+import OnboardingClient from '@/app/components/OnboardingClient';
+import { en } from '@/app/i18n/en';
+
+const onboardingTranslations = {
+  title: en.onboardingTitle,
+  stepPhoneTitle: en.onboardingStepPhoneTitle,
+  stepPhoneDesc: en.onboardingStepPhoneDesc,
+  phonePlaceholder: en.phonePlaceholder,
+  sendCode: en.sendCode,
+  sending: en.sending,
+  stepCodeTitle: en.onboardingStepCodeTitle,
+  codePlaceholder: en.codePlaceholder,
+  verifyCode: en.verifyCode,
+  verifying: en.verifying,
+  stepRoleTitle: en.onboardingStepRoleTitle,
+  roleUser: en.onboardingRoleUser,
+  roleRealtor: en.onboardingRoleRealtor,
+  roleAgency: en.onboardingRoleAgency,
+  finish: en.onboardingFinish,
+  finishing: en.onboardingFinishing,
+  verifiedBadge: en.onboardingVerifiedBadge,
+  resendCode: en.resendCode,
+  errorRequired: en.onboardingErrorRequired,
+  errorSend: en.onboardingErrorSend,
+  errorVerify: en.onboardingErrorVerify,
+  errorSaveProfile: en.onboardingErrorSave,
+};
+
+export default function OnboardingPage() {
+  return <OnboardingClient locale="en" translations={onboardingTranslations} />;
+}

@@ -163,17 +163,6 @@ export default async function ListingPageEn({
                 error: "Failed to send. Try again.",
                 signInToInquire: "Sign in to ask about this property",
                 signInButton: "Sign in",
-                // WhatsApp verification
-                waVerifyTitle: "Verify your WhatsApp",
-                waVerifyDesc: "To ensure inquiry quality and prevent spam, please verify your WhatsApp number.",
-                waPhonePlaceholder: "+1 234 567 8900",
-                waSendCode: "Send code",
-                waSending: "Sending...",
-                waCodePlaceholder: "6-digit code",
-                waVerifyCode: "Verify code",
-                waVerifying: "Verifying...",
-                waVerifiedBadge: "✓ WhatsApp verified",
-                waResendCode: "Resend code",
               }}
             />
             <a
