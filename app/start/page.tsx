@@ -1,8 +1,37 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import { es } from "@/app/i18n/es";
 import StartChoice from "@/app/start/startChoice";
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function StartPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', user.id).single();
+      const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
+      if (!isComplete) {
+        router.replace('/onboarding');
+      } else {
+        // If complete, redirect to home (or agents if realtor/agency)
+        if (profile?.role === 'user') router.replace('/');
+        else router.replace('/user-settings');
+      }
+    };
+    check();
+  }, [router]);
+
   return (
     <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
       <div className="mx-auto flex max-w-xl flex-col gap-4">
