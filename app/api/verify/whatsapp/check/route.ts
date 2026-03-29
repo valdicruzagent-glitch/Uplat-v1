@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     const verificationCheck = await client.verify.services(VERIFY_SERVICE_SID).verificationChecks.create({
-      to: `whatsapp:${phone}`,
+      to: phone.trim(),
       code,
     });
 

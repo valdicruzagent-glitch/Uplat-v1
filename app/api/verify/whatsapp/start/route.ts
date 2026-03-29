@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     await client.verify.services(VERIFY_SERVICE_SID).verifications.create({
-      to: `whatsapp:${phone}`,
+      to: phone.trim(),
       channel: 'whatsapp',
     });
 
