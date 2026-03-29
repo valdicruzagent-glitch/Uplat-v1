@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import Twilio from 'twilio';
 
 const client = Twilio(
@@ -10,23 +10,24 @@ const VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID!;
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient(
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        global: {
-          headers: {
-            cookie: req.headers.get('cookie') ?? '',
+        cookies: {
+          getAll: () => {
+            return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
           },
+          setAll: () => {}, // no-op; we don't set cookies in these routes
         },
       }
     );
 
     const cookieHeader = req.headers.get('cookie');
-    console.log('[WhatsApp start] Cookie header present:', !!cookieHeader);
+    console.log('[WhatsApp start] Cookie header present:', !!cookieHeader, 'cookies count:', req.cookies.getAll().length);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('[WhatsApp start] getUser result:', { user: user?.id, authError });
+    console.log('[WhatsApp start] getUser result:', { userId: user?.id, authError });
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

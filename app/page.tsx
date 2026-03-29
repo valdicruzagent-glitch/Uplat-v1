@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import MapSection from "@/app/components/MapSection";
@@ -24,11 +23,10 @@ export default function Home() {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [user, setUser] = useState<{ name?: string } | null>(null);
-  const router = useRouter();
 
-  // Real auth state + onboarding completion check
+  // Real auth state: only set user if onboarding complete
   useEffect(() => {
-    const checkAuth = async () => {
+    const setAuthUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setUser(null);
@@ -37,13 +35,13 @@ export default function Home() {
       // Check profile completion
       const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', user.id).single();
       const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
-      if (!isComplete) {
-        router.replace('/onboarding');
-      } else {
+      if (isComplete) {
         setUser({ name: user.user_metadata?.full_name || user.email?.split('@')[0] || '' });
+      } else {
+        setUser(null); // incomplete -> treat as guest for header
       }
     };
-    checkAuth();
+    setAuthUser();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!session?.user) {
         setUser(null);
@@ -51,14 +49,14 @@ export default function Home() {
       }
       const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', session.user.id).single();
       const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
-      if (!isComplete) {
-        router.replace('/onboarding');
-      } else {
+      if (isComplete) {
         setUser({ name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '' });
+      } else {
+        setUser(null);
       }
     });
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (center) {
