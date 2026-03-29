@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import Twilio from 'twilio';
 
 const client = Twilio(
@@ -10,26 +10,22 @@ const VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID!;
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServerClient(
+    // Read Bearer token from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const accessToken = authHeader.slice('Bearer '.length);
+
+    // Create Supabase client with service role to validate token
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => {
-            return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
-          },
-          setAll: () => {}, // no-op; we don't set cookies in these routes
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY! // required for server-side token validation
     );
 
-    const cookieHeader = req.headers.get('cookie');
-    console.log('[WhatsApp start] Cookie header present:', !!cookieHeader, 'cookies count:', req.cookies.getAll().length);
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('[WhatsApp start] getUser result:', { userId: user?.id, authError });
-
-    if (!user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (authError || !user) {
+      console.error('WhatsApp start auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

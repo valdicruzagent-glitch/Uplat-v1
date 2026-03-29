@@ -111,16 +111,22 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
     try {
       // Store phone number in profile (staging before verification)
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('profiles').upsert({
-          id: user.id,
-          whatsapp_number: phone.trim(),
-        });
-      }
+      if (!user) throw new Error('Not authenticated');
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        whatsapp_number: phone.trim(),
+      });
+
+      // Get access token for Bearer auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No session');
+
       const res = await fetch('/api/verify/whatsapp/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ phone: phone.trim() }),
       });
       const json = await res.json();
@@ -140,10 +146,17 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
     setStatus('loading');
     setErrorMsg('');
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const accessToken = user.access_token;
+      if (!accessToken) throw new Error('No access token');
+
       const res = await fetch('/api/verify/whatsapp/check', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ phone: phone.trim(), code: code.trim() }),
       });
       const json = await res.json();
