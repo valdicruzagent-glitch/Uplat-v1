@@ -10,6 +10,7 @@ const VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID!;
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('[WhatsApp check] route invoked');
     const authHeader = req.headers.get('Authorization');
     console.log('[WhatsApp check] Authorization header exists:', !!authHeader);
     const isBearer = authHeader?.startsWith('Bearer ');
