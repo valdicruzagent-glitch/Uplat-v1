@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import termsES from '@/content/legal/terms.es';
+import termsEN from '@/content/legal/terms.en';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -170,9 +172,9 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
   return (
     <div className="min-h-dvh flex flex-col items-center bg-zinc-50 dark:bg-black p-6">
-      {/* Uplat logo/branding - centered, minimal */}
+      {/* Tualero logo/branding - centered, minimal */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Uplat</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Tualero</h1>
       </div>
 
       <div className="w-full max-w-md space-y-4">
@@ -229,9 +231,8 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
           <>
             <h2 className="text-xl font-semibold">{translations.termsTitle}</h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.termsDescription}</p>
-            <div className="rounded border p-3 text-sm bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800">
-              <p className="mb-2"><strong>Terms of Use</strong></p>
-              <p className="mb-2">These are the canonical terms of use for Uplat. By using our marketplace, you agree to abide by these rules. We reserve the right to suspend or terminate accounts that violate these terms.</p>
+            <div className="rounded border p-3 text-sm bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 max-h-80 overflow-y-auto whitespace-pre-wrap">
+              {locale === 'es' ? termsES : termsEN}
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input
