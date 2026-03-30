@@ -139,7 +139,7 @@ export const es = {
   termsDescription: "Por favor lee y acepta nuestros Términos de Uso para continuar.",
   termsAccept: "Acepto los Términos de Uso",
   // Onboarding aliases for component props
-  phonePlaceholder: "+1 234 567 8900",
+  phonePlaceholder: "123 456 7890",
   sendCode: "Enviar código",
   sending: "Enviando...",
   codePlaceholder: "Código de 6 dígitos",

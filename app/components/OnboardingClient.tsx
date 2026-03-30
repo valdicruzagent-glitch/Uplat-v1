@@ -12,6 +12,41 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// Countries list for LATAM + US
+type Country = {
+  name: string;
+  code: string;
+  dialCode: string;
+  flag: string;
+};
+
+const COUNTRIES: Country[] = [
+  { name: 'United States', code: 'US', dialCode: '1', flag: '🇺🇸' },
+  { name: 'Mexico', code: 'MX', dialCode: '52', flag: '🇲🇽' },
+  { name: 'Guatemala', code: 'GT', dialCode: '502', flag: '🇬🇹' },
+  { name: 'Honduras', code: 'HN', dialCode: '504', flag: '🇭🇳' },
+  { name: 'El Salvador', code: 'SV', dialCode: '503', flag: '🇸🇻' },
+  { name: 'Nicaragua', code: 'NI', dialCode: '505', flag: '🇳🇮' },
+  { name: 'Costa Rica', code: 'CR', dialCode: '506', flag: '🇨🇷' },
+  { name: 'Panama', code: 'PA', dialCode: '507', flag: '🇵🇦' },
+  { name: 'Colombia', code: 'CO', dialCode: '57', flag: '🇨🇴' },
+  { name: 'Argentina', code: 'AR', dialCode: '54', flag: '🇦🇷' },
+  { name: 'Brazil', code: 'BR', dialCode: '55', flag: '🇧🇷' },
+];
+
+function splitPhoneNumber(fullNumber: string): { country: Country; local: string } | null {
+  if (!fullNumber.startsWith('+')) return null;
+  const digits = fullNumber.slice(1);
+  const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
+  for (const c of sorted) {
+    if (digits.startsWith(c.dialCode)) {
+      const local = digits.slice(c.dialCode.length);
+      return { country: c, local };
+    }
+  }
+  return null;
+}
+
 interface OnboardingProps {
   locale: 'es' | 'en';
   translations: {
@@ -41,7 +76,9 @@ const steps: Step[] = ['phone', 'terms', 'role'];
 export default function OnboardingClient({ locale, translations }: OnboardingProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('phone');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(''); // full E.164 number
+  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
+  const [localPhone, setLocalPhone] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState<'user' | 'realtor' | 'agency' | null>(null);
@@ -51,7 +88,6 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
   const currentStepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
 
-  // Bootstrap: ensure profile exists and resume from database state
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -64,9 +100,17 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
       const progress = await getOnboardingProgress();
       setStep(progress.step as Step);
-      if (progress.phone) setPhone(progress.phone);
+      if (progress.phone) {
+        setPhone(progress.phone);
+        const parsed = splitPhoneNumber(progress.phone);
+        if (parsed) {
+          setSelectedCountry(parsed.country);
+          setLocalPhone(parsed.local);
+        } else {
+          setLocalPhone(progress.phone.replace(/^\+/, ''));
+        }
+      }
 
-      // If fully complete, redirect immediately
       if (progress.step === 'role') {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
         if (profile?.role) {
@@ -81,7 +125,6 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
     init();
   }, [router]);
 
-  // If role is selected, complete onboarding
   useEffect(() => {
     if (role) {
       completeOnboarding();
@@ -89,7 +132,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
   }, [role]);
 
   const continueFromPhone = async () => {
-    if (!phone.trim()) {
+    if (!localPhone.trim()) {
       setErrorMsg(translations.errorRequired);
       return;
     }
@@ -99,10 +142,14 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Simply store the phone number
+      // Combine into full E.164 number
+      const fullPhone = `+${selectedCountry.dialCode}${localPhone.replace(/\D/g, '')}`;
+      setPhone(fullPhone);
+
+      // Upsert phone number only
       const { error } = await supabase.from('profiles').upsert({
         id: user.id,
-        whatsapp_number: phone.trim(),
+        whatsapp_number: fullPhone,
       });
       if (error) throw error;
 
@@ -124,7 +171,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         id: user.id,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
         role,
-        whatsapp_number: phone.trim() || null,
+        whatsapp_number: phone.trim(),
         terms_accepted: true,
         terms_accepted_at: new Date().toISOString(),
         terms_version: '1.0',
@@ -194,17 +241,35 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
               <h2 className="text-xl font-semibold mb-1">{translations.stepPhoneTitle}</h2>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepPhoneDesc}</p>
             </div>
-            <input
-              type="tel"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
-              placeholder={translations.phonePlaceholder}
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-            />
+            <div className="space-y-3">
+              {/* Country selector */}
+              <select
+                className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
+                value={selectedCountry.code}
+                onChange={(e) => {
+                  const country = COUNTRIES.find(c => c.code === e.target.value);
+                  if (country) setSelectedCountry(country);
+                }}
+              >
+                {COUNTRIES.map(c => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.name} (+{c.dialCode})
+                  </option>
+                ))}
+              </select>
+              {/* Local phone input */}
+              <input
+                type="tel"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
+                placeholder={translations.phonePlaceholder}
+                value={localPhone}
+                onChange={e => setLocalPhone(e.target.value)}
+              />
+            </div>
             <button
               className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               onClick={continueFromPhone}
-              disabled={status === 'loading' || !phone.trim()}
+              disabled={status === 'loading' || !localPhone.trim()}
             >
               {status === 'loading' ? translations.sending : translations.continue}
             </button>
