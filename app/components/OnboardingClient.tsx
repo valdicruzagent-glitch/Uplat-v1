@@ -119,7 +119,6 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState<'user' | 'realtor' | 'agency' | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [termsLang, setTermsLang] = useState<'es' | 'en'>(initialLocale);
   const [initializing, setInitializing] = useState(true);
 
   const t = uiLocale === 'es' ? es : en;
@@ -335,25 +334,8 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
               <h2 className="text-xl font-semibold mb-1">{t.termsTitle}</h2>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">{t.termsDescription}</p>
             </div>
-            {/* Terms language toggle */}
-            <div className="flex justify-end">
-              <div className="flex gap-2">
-                <button
-                  className={`text-sm px-3 py-1 rounded ${termsLang === 'es' ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700'}`}
-                  onClick={() => setTermsLang('es')}
-                >
-                  ES
-                </button>
-                <button
-                  className={`text-sm px-3 py-1 rounded ${termsLang === 'en' ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700'}`}
-                  onClick={() => setTermsLang('en')}
-                >
-                  EN
-                </button>
-              </div>
-            </div>
             <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 text-sm leading-relaxed overflow-y-auto max-h-80 whitespace-pre-wrap">
-              {termsLang === 'es' ? termsES : termsEN}
+              {uiLocale === 'es' ? termsES : termsEN}
             </div>
             <label className="flex items-start gap-3 text-sm">
               <input
@@ -383,11 +365,11 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
               {roleOptions.map(opt => (
                 <button
                   key={opt.value}
-                  className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
+                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 text-left shadow-sm hover:shadow-md hover:border-blue-500 dark:hover:border-blue-500 transition-all"
                   onClick={() => setRole(opt.value)}
                 >
-                  <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">{opt.labels[uiLocale].title}</div>
-                  <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{opt.labels[uiLocale].subtitle}</div>
+                  <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{opt.labels[uiLocale].title}</div>
+                  <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{opt.labels[uiLocale].subtitle}</div>
                 </button>
               ))}
             </div>
