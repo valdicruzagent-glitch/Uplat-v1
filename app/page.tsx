@@ -23,6 +23,7 @@ export default function Home() {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [user, setUser] = useState<{ name?: string } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Real auth state: only set user if onboarding complete
   useEffect(() => {
@@ -109,7 +110,18 @@ export default function Home() {
             <button onClick={() => setHelpOpen(true)} className="text-sm font-medium">{t.getHelp}</button>
             <LanguageSwitch current="es" />
             {user ? (
-              <div className="text-sm font-medium">{user.name}</div>
+              <div className="relative">
+                <button className="text-sm font-medium" onClick={() => setMenuOpen(o => !o)}>
+                  {user.name}
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border rounded-lg shadow-lg z-50">
+                    <Link href="/user-settings" className="block px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => setMenuOpen(false)}>Profile</Link>
+                    <Link href="/dashboard" className="block px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+                    <button className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => { supabase.auth.signOut(); setMenuOpen(false); }}>Log out</button>
+                  </div>
+                )}
+              </div>
             ) : (
               <Link href="/signin" className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">{t.signInTitle}</Link>
             )}
@@ -133,6 +145,19 @@ export default function Home() {
             <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
               <span>→</span> {t.getHelp}
             </button>
+            {user && (
+              <>
+                <Link href="/user-settings" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+                  <span>→</span> Profile
+                </Link>
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+                  <span>→</span> Dashboard
+                </Link>
+                <button onClick={() => { supabase.auth.signOut(); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+                  <span>→</span> Log out
+                </button>
+              </>
+            )}
           </div>
           <div className="mt-12 flex justify-center gap-6 text-base">
             <Link href="/" className="text-blue-400 font-medium">{t.langEs}</Link>

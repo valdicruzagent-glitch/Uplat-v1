@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import { es } from "@/app/i18n/es";
@@ -14,23 +14,34 @@ const supabase = createClient(
 
 export default function StartPage() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setChecking(false);
+        return;
+      }
       const { data: profile } = await supabase.from('profiles').select('whatsapp_number, terms_accepted, role').eq('id', user.id).single();
       const isComplete = profile?.whatsapp_number && profile?.terms_accepted && profile?.role;
       if (!isComplete) {
         router.replace('/onboarding');
       } else {
-        // If complete, redirect to home (or agents if realtor/agency)
         if (profile?.role === 'user') router.replace('/');
         else router.replace('/user-settings');
       }
     };
     check();
   }, [router]);
+
+  if (checking) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-zinc-50 dark:bg-black">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading…</p>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
