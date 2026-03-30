@@ -146,4 +146,17 @@ export const en = {
   verifyCode: "Verify code",
   verifying: "Verifying...",
   resendCode: "Resend code",
+  // Submit listing new fields
+  countryLabel: "Country",
+  cityLabel: "City",
+  typeLabel: "Type",
+  // SiteHeader
+  agents: "Agents",
+  signIn: "Sign in",
+  myAccount: "My account",
+  profile: "Profile",
+  dashboard: "Dashboard",
+  logout: "Log out",
+  helpTitle: "Help",
+  helpText: "Need help? Contact us.",
 };

@@ -1,4 +1,4 @@
-import LanguageSwitch from "@/app/components/LanguageSwitch";
+import SiteHeader from "@/app/components/SiteHeader";
 import Link from "next/link";
 import TrackListingView from "@/app/components/TrackListingView";
 import { es } from "@/app/i18n/es";
@@ -8,22 +8,8 @@ import FavoriteButton from "@/app/components/FavoriteButton";
 import InquiryForm from "@/app/components/InquiryForm";
 import ListingMap from "@/app/components/ListingMap";
 
-/**
- * Public listing detail page (Spanish).
- *
- * What this file does:
- * - Loads one listing from Supabase.
- * - Renders the property detail view.
- * - Builds the WhatsApp call to action for lead capture.
- *
- * Safe edit note:
- * - This file supports both canonical V1 fields and legacy fields during migration.
- * - Keep the compatibility helpers until the migration is fully deployed.
- */
 function getSortedImages(listing: Record<string, unknown>) {
-  // Use image_urls array; each item is a URL string
   const urls = Array.isArray(listing.image_urls) ? listing.image_urls : [];
-  // Map to expected shape for ImageGallery: { id, image_url, sort_order, is_primary }
   return urls.map((url: string, idx: number) => ({
     id: `img-${idx}`,
     image_url: url,
@@ -53,9 +39,7 @@ export default async function ListingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
   const supabase = getSupabaseClient();
-
   const { data: listing, error } = await supabase
     .from("listings")
     .select(`
@@ -73,17 +57,15 @@ export default async function ListingPage({
 
   if (error || !listing) {
     return (
-      <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
-        <div className="mx-auto max-w-2xl">
-          <div className="flex items-center justify-between gap-4">
-            <Link className="text-sm underline" href="/">
-              {es.back}
-            </Link>
-            <LanguageSwitch current="es" />
-          </div>
-          <h1 className="mt-4 text-xl font-semibold">{es.listingNotFound}</h1>
-        </div>
-      </main>
+      <>
+        <SiteHeader locale="es" />
+        <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-10">
+          <Link className="text-sm underline" href="/">
+            {es.back}
+          </Link>
+          <h1 className="text-xl font-semibold">{es.listingNotFound}</h1>
+        </main>
+      </>
     );
   }
 
@@ -91,7 +73,6 @@ export default async function ListingPage({
   const title = listing.headline || listing.title;
   const propertyType = getPropertyType(listing);
   const listingType = getListingType(listing);
-  // Image handling with listing_images
   const sortedImages = getSortedImages(listing);
   const hasMultiple = sortedImages.length > 0;
   const primaryIdx = sortedImages.findIndex((img: any) => img.is_primary);
@@ -102,32 +83,22 @@ export default async function ListingPage({
     return typeof listing.cover_image_url === "string" ? listing.cover_image_url : null;
   })();
   const contactWhatsapp = typeof listing.contact_whatsapp === "string" ? listing.contact_whatsapp : "505XXXXXXXX";
-
-  const msg = encodeURIComponent(
-    `Hola, estoy interesado en: ${listing.title} en ${listing.city}. Precio: ${priceText}.`
-  );
+  const msg = encodeURIComponent(`Hola, estoy interesado en: ${listing.title} en ${listing.city}. Precio: ${priceText}.`);
   const wa = `https://wa.me/${contactWhatsapp.replace(/\D/g, "")}?text=${msg}`;
 
   return (
-    <main className="min-h-dvh bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-black dark:text-zinc-50">
-      <div className="mx-auto flex max-w-2xl flex-col gap-3">
+    <>
+      <SiteHeader locale="es" />
+      <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-10">
         {hasMultiple ? (
           <ImageGallery images={sortedImages} initialIndex={initialIndex} />
         ) : fallbackPrimaryImage ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={fallbackPrimaryImage}
-            alt={String(title)}
-            className="h-64 w-full rounded-xl object-cover"
-          />
+          <img src={fallbackPrimaryImage} alt={String(title)} className="h-64 w-full rounded-xl object-cover" />
         ) : null}
-        <div className="flex items-center justify-between gap-4">
-          <Link className="text-sm underline" href="/">
-            {es.back}
-          </Link>
-          <LanguageSwitch current="es" />
-        </div>
-
+        <Link className="text-sm underline" href="/">
+          {es.back}
+        </Link>
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
@@ -139,7 +110,7 @@ export default async function ListingPage({
           {typeof listing.area_m2 === "number" ? ` • ${es.areaShort(listing.area_m2)}` : ""}
         </p>
 
-        {/* Listing ownership - trust block */}
+        {/* Ownership */}
         {(listing as any).profiles?.[0] && (
           <div className="mt-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4">
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Inmobiliaria</p>
@@ -158,15 +129,9 @@ export default async function ListingPage({
 
         {listing.description ? <p className="text-sm leading-6">{listing.description}</p> : null}
 
-        {/* Map */}
         {typeof listing.lat === 'number' && typeof listing.lng === 'number' && (
           <div className="mt-6">
-            <ListingMap
-              lat={listing.lat}
-              lng={listing.lng}
-              title={title}
-              price={priceText}
-            />
+            <ListingMap lat={listing.lat} lng={listing.lng} title={title} price={priceText} />
           </div>
         )}
 
@@ -198,7 +163,7 @@ export default async function ListingPage({
             </a>
           </>
         )}
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

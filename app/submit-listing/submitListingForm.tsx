@@ -14,6 +14,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
   const [title, setTitle] = useState("");
   const [priceUsd, setPriceUsd] = useState<string>("");
+  const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [mode, setMode] = useState("");
   const [type, setType] = useState("");
@@ -64,6 +65,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         contact_name: contactName || null,
         title,
         price_usd: Number.isFinite(price) ? price : null,
+        country: country || null,
         city: city || null,
         mode: mode || null,
         type: type || null,
@@ -139,7 +141,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         />
       </label>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-4">
         <label className="text-sm">
           <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.priceUsd}</div>
           <input
@@ -152,21 +154,27 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         </label>
 
         <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">City</div>
-          <select
+          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.countryLabel}</div>
+          <input
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          >
-            <option value="">—</option>
-            <option value="Managua">Managua</option>
-            <option value="San Juan del Sur">San Juan del Sur</option>
-            <option value="Granada">Granada</option>
-          </select>
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="Nicaragua"
+          />
         </label>
 
         <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">Type</div>
+          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.cityLabel}</div>
+          <input
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Managua"
+          />
+        </label>
+
+        <label className="text-sm">
+          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.typeLabel}</div>
           <select
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
             value={type}

@@ -130,6 +130,24 @@ export default function MapSection({
   const hasUserMovedMap = useRef(false);
   const firstBoundsRef = useRef(true);
 
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setErr("Geolocation not supported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const newCenter: [number, number] = [latitude, longitude];
+        if (onCenterChange) onCenterChange(newCenter);
+      },
+        geoErr => {
+        console.error(geoErr);
+        setErr("Unable to retrieve location");
+      }
+    );
+  };
+
   const handleBoundsChange = (b: L.LatLngBounds) => {
     if (firstBoundsRef.current) {
       firstBoundsRef.current = false;
@@ -317,7 +335,7 @@ export default function MapSection({
         <button type="button" onClick={()=>setFilters(prev=>({...prev, listingType: prev.listingType==='rent'? '': 'rent'}))} className={"flex-1 px-2 py-1 text-sm transition-colors "+(filters.listingType==='rent'? 'bg-blue-600 text-white':'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900')}>{t.rent}</button>
       </div>
 
-      <button type="button" className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1 text-left text-sm text-zinc-800 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900">
+      <button type="button" onClick={handleUseMyLocation} className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1 text-left text-sm text-zinc-800 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900">
         🧭 {t.useMyLocation}
       </button>
 
