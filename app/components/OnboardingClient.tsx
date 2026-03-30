@@ -207,6 +207,7 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
         role,
         phone: phone.trim(),
+        email: user.email,
         terms_accepted: true,
         terms_accepted_at: new Date().toISOString(),
         terms_version: '1.0',

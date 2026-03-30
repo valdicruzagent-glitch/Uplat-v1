@@ -16,9 +16,8 @@ export async function ensureProfileExists(): Promise<string | null> {
 
   const { error } = await supabase.from('profiles').insert({
     id: user.id,
+    email: user.email,
     full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
-    whatsapp_verified: false,
-    terms_accepted: false,
   });
   if (error && error.code !== '23505') {
     console.error('Failed to ensure profile:', error.message);
