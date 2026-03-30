@@ -27,6 +27,7 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [waFrom, setWaFrom] = useState('');
+  const [phoneReadonly, setPhoneReadonly] = useState(false);
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
@@ -41,7 +42,10 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
       if (logged && user) {
         const { data } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).single();
         setProfile(data);
-        // If profile exists but onboarding incomplete, redirect to onboarding
+        if (data?.phone) {
+          setWaFrom(data.phone);
+          setPhoneReadonly(true);
+        }
         if (data && (!data.phone || !data.terms_accepted || !data.role)) {
           router.push('/onboarding');
         }
@@ -58,6 +62,10 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
         supabase.from('profiles').select('phone, terms_accepted, role').eq('id', session.user.id).single()
           .then(({ data }) => {
             setProfile(data);
+            if (data?.phone) {
+              setWaFrom(data.phone);
+              setPhoneReadonly(true);
+            }
             if (data && (!data.phone || !data.terms_accepted || !data.role)) {
               router.push('/onboarding');
             }
@@ -88,7 +96,8 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
       if (error) throw error;
       setStatus('success');
       setMessage('');
-      setWaFrom('');
+      // If phone is readonly, we keep it; otherwise clear field
+      if (!phoneReadonly) setWaFrom('');
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to send inquiry');
       setStatus('error');
@@ -132,13 +141,19 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">{translations.waPlaceholder}</label>
-        <input
-          type="tel"
-          className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-          value={waFrom}
-          onChange={e => setWaFrom(e.target.value)}
-          placeholder="+1 234 567 8900"
-        />
+        {phoneReadonly ? (
+          <div className="rounded border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800">
+            {waFrom}
+          </div>
+        ) : (
+          <input
+            type="tel"
+            className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            value={waFrom}
+            onChange={e => setWaFrom(e.target.value)}
+            placeholder="+1 234 567 8900"
+          />
+        )}
       </div>
       <button
         type="submit"

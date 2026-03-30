@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import ImageGallery from "@/app/components/ImageGallery";
 import FavoriteButton from "@/app/components/FavoriteButton";
 import InquiryForm from "@/app/components/InquiryForm";
+import ListingMap from "@/app/components/ListingMap";
 
 /**
  * Public listing detail page (Spanish).
@@ -59,10 +60,6 @@ export default async function ListingPage({
     .from("listings")
     .select(`
       *,
-      favorites_count,
-      is_sponsored,
-      sponsor_rank,
-      sponsored_until,
       profiles (
         id,
         full_name,
@@ -142,25 +139,36 @@ export default async function ListingPage({
           {typeof listing.area_m2 === "number" ? ` • ${es.areaShort(listing.area_m2)}` : ""}
         </p>
 
-        {/* Listing ownership */}
+        {/* Listing ownership - trust block */}
         {(listing as any).profiles?.[0] && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {(listing as any).profiles[0].role === 'realtor' ? (
-              <>
-                <span className="font-medium">{(listing as any).profiles[0].full_name}</span>
-                {(listing as any).profiles[0].agencies?.[0] && (
-                  <>,&nbsp;{(listing as any).profiles[0].agencies[0].name}</>
-                )}
-              </>
-            ) : (
-              <>{es.listedByOwner || 'Listed by owner'}</>
-            )}
-          </p>
+          <div className="mt-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Inmobiliaria</p>
+            <p className="font-medium">
+              {(listing as any).profiles[0].full_name}
+              {(listing as any).profiles[0].agencies?.[0] && (
+                <span className="ml-2 font-normal text-zinc-600 dark:text-zinc-400">
+                  • {(listing as any).profiles[0].agencies[0].name}
+                </span>
+              )}
+            </p>
+          </div>
         )}
 
         <TrackListingView listingId={listing.id} locale="es" />
 
         {listing.description ? <p className="text-sm leading-6">{listing.description}</p> : null}
+
+        {/* Map */}
+        {typeof listing.lat === 'number' && typeof listing.lng === 'number' && (
+          <div className="mt-6">
+            <ListingMap
+              lat={listing.lat}
+              lng={listing.lng}
+              title={title}
+              price={priceText}
+            />
+          </div>
+        )}
 
         {listing.status !== "archived" && (
           <>
