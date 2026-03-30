@@ -19,8 +19,8 @@ export default function StartPage() {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', user.id).single();
-      const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
+      const { data: profile } = await supabase.from('profiles').select('whatsapp_number, terms_accepted, role').eq('id', user.id).single();
+      const isComplete = profile?.whatsapp_number && profile?.terms_accepted && profile?.role;
       if (!isComplete) {
         router.replace('/onboarding');
       } else {

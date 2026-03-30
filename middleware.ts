@@ -25,19 +25,20 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // Not logged in: allow
     return response;
   }
 
-  // Check profile completeness: role, whatsapp_verified, and terms acceptance must be present
-  const { data: profile } = await supabase.from('profiles').select('role, whatsapp_verified, terms_accepted').eq('id', user.id).maybeSingle();
+  // Check profile completeness: phone collected, role, and terms acceptance must be present
+  const { data: profile } = await supabase.from('profiles')
+    .select('role, whatsapp_number, terms_accepted')
+    .eq('id', user.id)
+    .maybeSingle();
 
-  const isComplete = profile?.whatsapp_verified && profile?.role && profile?.terms_accepted;
+  const isComplete = profile?.whatsapp_number && profile?.role && profile?.terms_accepted;
 
   const onboardingPath = '/onboarding';
   const path = request.nextUrl.pathname;
 
-  // Exclude onboarding, sign-in, sign-up, static, and API routes from redirection
   const excluded = ['/onboarding', '/signin', '/signup', '/api', '/_next', '/favicon.ico'];
   if (excluded.some(p => path.startsWith(p))) {
     return response;

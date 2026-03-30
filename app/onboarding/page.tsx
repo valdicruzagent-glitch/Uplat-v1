@@ -6,7 +6,7 @@ const onboardingTranslations = {
   stepPhoneTitle: es.onboardingStepPhoneTitle,
   stepPhoneDesc: es.onboardingStepPhoneDesc,
   phonePlaceholder: es.phonePlaceholder,
-  sendCode: es.sendCode,
+  continue: es.continue, // for the phone step button
   sending: es.sending,
   stepCodeTitle: es.onboardingStepCodeTitle,
   stepCodeDesc: es.onboardingStepCodeDesc,
@@ -25,8 +25,6 @@ const onboardingTranslations = {
   verifiedBadge: es.onboardingVerifiedBadge,
   resendCode: es.resendCode,
   errorRequired: es.onboardingErrorRequired,
-  errorSend: es.onboardingErrorSend,
-  errorVerify: es.onboardingErrorVerify,
   errorSaveProfile: es.onboardingErrorSave,
 };
 

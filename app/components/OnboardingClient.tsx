@@ -19,13 +19,8 @@ interface OnboardingProps {
     stepPhoneTitle: string;
     stepPhoneDesc: string;
     phonePlaceholder: string;
-    sendCode: string;
+    continue: string;
     sending: string;
-    stepCodeTitle: string;
-    stepCodeDesc: string;
-    codePlaceholder: string;
-    verifyCode: string;
-    verifying: string;
     termsTitle: string;
     termsDescription: string;
     termsAccept: string;
@@ -34,24 +29,19 @@ interface OnboardingProps {
     roleRealtor: string;
     roleAgency: string;
     finish: string;
-    finishing: string;
     verifiedBadge: string;
-    resendCode: string;
     errorRequired: string;
-    errorSend: string;
-    errorVerify: string;
     errorSaveProfile: string;
   };
 }
 
-type Step = 'phone' | 'code' | 'terms' | 'role' | 'done';
-const steps: Step[] = ['phone', 'code', 'terms', 'role'];
+type Step = 'phone' | 'terms' | 'role' | 'done';
+const steps: Step[] = ['phone', 'terms', 'role'];
 
 export default function OnboardingClient({ locale, translations }: OnboardingProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState<'user' | 'realtor' | 'agency' | null>(null);
@@ -70,17 +60,14 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         return;
       }
 
-      // Ensure a profile row exists
       await ensureProfileExists();
 
-      // Determine current progress
       const progress = await getOnboardingProgress();
-      setStep(progress.step);
+      setStep(progress.step as Step);
       if (progress.phone) setPhone(progress.phone);
 
       // If fully complete, redirect immediately
       if (progress.step === 'role') {
-        // Need to check if role field is set (completion)
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
         if (profile?.role) {
           if (profile.role === 'user') router.push('/');
@@ -101,7 +88,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
     }
   }, [role]);
 
-  const sendCode = async () => {
+  const continueFromPhone = async () => {
     if (!phone.trim()) {
       setErrorMsg(translations.errorRequired);
       return;
@@ -112,70 +99,13 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Store phone number in profile (staging before verification)
-      await supabase.from('profiles').upsert({
+      // Simply store the phone number
+      const { error } = await supabase.from('profiles').upsert({
         id: user.id,
         whatsapp_number: phone.trim(),
       });
+      if (error) throw error;
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('No access token');
-
-      // Debug logs
-      console.log('[OnboardingClient] sendCode: session exists:', !!session);
-      console.log('[OnboardingClient] sendCode: access_token exists:', !!session.access_token);
-      console.log('[OnboardingClient] sendCode: location:', window.location.origin + window.location.pathname);
-      const startUrl = window.location.origin + '/api/verify/whatsapp/start';
-      console.log('[OnboardingClient] sendCode: requesting URL:', startUrl);
-      console.log('[OnboardingClient] sendCode: Authorization header set: Bearer <token>');
-
-      const res = await fetch('/api/verify/whatsapp/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ phone: phone.trim() }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || translations.errorSend);
-      setStep('code');
-    } catch (err: any) {
-      setErrorMsg(err.message);
-      setStatus('error');
-    }
-  };
-
-  const verifyCode = async () => {
-    if (!code.trim()) {
-      setErrorMsg(translations.errorRequired);
-      return;
-    }
-    setStatus('loading');
-    setErrorMsg('');
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Not authenticated');
-
-      // Debug logs
-      console.log('[OnboardingClient] verifyCode: session exists:', !!session);
-      console.log('[OnboardingClient] verifyCode: access_token exists:', !!session.access_token);
-      console.log('[OnboardingClient] verifyCode: location:', window.location.origin + window.location.pathname);
-      const checkUrl = window.location.origin + '/api/verify/whatsapp/check';
-      console.log('[OnboardingClient] verifyCode: requesting URL:', checkUrl);
-      console.log('[OnboardingClient] verifyCode: Authorization header set: Bearer <token>');
-
-      const res = await fetch('/api/verify/whatsapp/check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ phone: phone.trim(), code: code.trim() }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || translations.errorVerify);
-      // Verification succeeded; proceed to terms
       setStep('terms');
       setStatus('idle');
     } catch (err: any) {
@@ -190,14 +120,11 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Upsert profile with full_name, role, WhatsApp verification, and Terms acceptance
       const { error } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
         role,
-        whatsapp_number: phone.trim(),
-        whatsapp_verified: true,
-        whatsapp_verified_at: new Date().toISOString(),
+        whatsapp_number: phone.trim() || null,
         terms_accepted: true,
         terms_accepted_at: new Date().toISOString(),
         terms_version: '1.0',
@@ -208,11 +135,9 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       setStep('done');
       setStatus('idle');
 
-      // Redirect after brief delay
       setTimeout(() => {
         if (role === 'user') router.push('/');
-        else if (role === 'realtor') router.push('/user-settings');
-        else if (role === 'agency') router.push('/user-settings');
+        else if (role === 'realtor' || role === 'agency') router.push('/user-settings');
       }, 500);
     } catch (err: any) {
       setErrorMsg(translations.errorSaveProfile);
@@ -245,12 +170,10 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
   return (
     <div className="min-h-dvh flex flex-col items-center bg-zinc-50 dark:bg-black p-6">
-      {/* Tualero logo/branding - centered, minimal */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Tualero</h1>
       </div>
 
-      {/* Step indicator */}
       <div className="w-full max-w-md mb-6">
         <div className="flex justify-between text-xs text-zinc-500 mb-2">
           <span>{locale === 'es' ? 'Paso' : 'Step'} {currentStepIndex + 1} {locale === 'es' ? 'de' : 'of'} {totalSteps}</span>
@@ -280,40 +203,10 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
             />
             <button
               className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
-              onClick={sendCode}
+              onClick={continueFromPhone}
               disabled={status === 'loading' || !phone.trim()}
             >
-              {status === 'loading' ? translations.sending : translations.sendCode}
-            </button>
-          </>
-        )}
-
-        {step === 'code' && (
-          <>
-            <div>
-              <h2 className="text-xl font-semibold mb-1">{translations.stepCodeTitle}</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepCodeDesc} {phone}</p>
-            </div>
-            <input
-              type="text"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
-              placeholder={translations.codePlaceholder}
-              value={code}
-              onChange={e => setCode(e.target.value)}
-            />
-            <button
-              className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
-              onClick={verifyCode}
-              disabled={status === 'loading' || !code.trim()}
-            >
-              {status === 'loading' ? translations.verifying : translations.verifyCode}
-            </button>
-            <button
-              type="button"
-              className="text-xs underline text-zinc-600"
-              onClick={() => { setStep('phone'); setCode(''); }}
-            >
-              {translations.resendCode}
+              {status === 'loading' ? translations.sending : translations.continue}
             </button>
           </>
         )}

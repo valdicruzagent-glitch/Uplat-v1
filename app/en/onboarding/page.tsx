@@ -6,7 +6,7 @@ const onboardingTranslations = {
   stepPhoneTitle: en.onboardingStepPhoneTitle,
   stepPhoneDesc: en.onboardingStepPhoneDesc,
   phonePlaceholder: en.phonePlaceholder,
-  sendCode: en.sendCode,
+  continue: en.continue,
   sending: en.sending,
   stepCodeTitle: en.onboardingStepCodeTitle,
   stepCodeDesc: en.onboardingStepCodeDesc,

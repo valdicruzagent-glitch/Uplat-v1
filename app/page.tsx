@@ -33,8 +33,8 @@ export default function Home() {
         return;
       }
       // Check profile completion
-      const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', user.id).single();
-      const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
+      const { data: profile } = await supabase.from('profiles').select('whatsapp_number, terms_accepted, role').eq('id', user.id).single();
+      const isComplete = profile?.whatsapp_number && profile?.terms_accepted && profile?.role;
       if (isComplete) {
         setUser({ name: user.user_metadata?.full_name || user.email?.split('@')[0] || '' });
       } else {
@@ -47,8 +47,8 @@ export default function Home() {
         setUser(null);
         return;
       }
-      const { data: profile } = await supabase.from('profiles').select('whatsapp_verified, terms_accepted, role').eq('id', session.user.id).single();
-      const isComplete = profile?.whatsapp_verified && profile?.terms_accepted && profile?.role;
+      const { data: profile } = await supabase.from('profiles').select('whatsapp_number, terms_accepted, role').eq('id', session.user.id).single();
+      const isComplete = profile?.whatsapp_number && profile?.terms_accepted && profile?.role;
       if (isComplete) {
         setUser({ name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '' });
       } else {
