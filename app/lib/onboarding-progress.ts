@@ -15,6 +15,7 @@ export async function ensureProfileExists(): Promise<string | null> {
     id: user.id,
     email: user.email,
     full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
+    avatar_url: user.user_metadata?.picture || null,
   });
   if (error && error.code !== '23505') {
     console.error('Failed to ensure profile:', error.message);

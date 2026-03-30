@@ -205,6 +205,7 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
         role,
         phone: phone.trim(),
         email: user.email,
+        avatar_url: user.user_metadata?.picture || null,
         terms_accepted: true,
         terms_accepted_at: new Date().toISOString(),
         terms_version: '1.0',

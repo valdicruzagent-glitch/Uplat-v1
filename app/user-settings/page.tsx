@@ -50,7 +50,10 @@ export default function UserSettingsPage() {
       <header className="sticky top-0 z-[1001] border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <div className="text-lg font-bold tracking-tight">Tualero</div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {profile?.avatar_url && (
+              <img src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+            )}
             <span className="text-sm font-medium">{profile?.full_name || profile?.email}</span>
           </div>
         </div>

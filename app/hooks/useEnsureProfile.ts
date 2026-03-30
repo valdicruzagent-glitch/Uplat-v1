@@ -16,6 +16,8 @@ export function useEnsureProfile() {
         id: user.id,
         role: 'user',
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
+        avatar_url: user.user_metadata?.picture || null,
+        email: user.email,
       });
     if (error && error.code !== '23505') {
       return { ok: false, error: error.message };

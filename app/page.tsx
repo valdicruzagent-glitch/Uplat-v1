@@ -19,7 +19,7 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [user, setUser] = useState<{ name?: string } | null>(null);
+  const [user, setUser] = useState<{ name?: string; avatar_url?: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -32,10 +32,13 @@ export default function Home() {
         return;
       }
       // Check profile completion
-      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).maybeSingle();
+      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role, avatar_url').eq('id', user.id).maybeSingle();
       const isComplete = profile?.phone && profile?.terms_accepted && profile?.role;
       if (isComplete) {
-        setUser({ name: user.user_metadata?.full_name || user.email?.split('@')[0] || '' });
+        setUser({ 
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+          avatar_url: profile?.avatar_url || null
+        });
       } else {
         setUser(null); // incomplete -> treat as guest for header
       }
@@ -46,10 +49,13 @@ export default function Home() {
         setUser(null);
         return;
       }
-      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', session.user.id).maybeSingle();
+      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role, avatar_url').eq('id', session.user.id).maybeSingle();
       const isComplete = profile?.phone && profile?.terms_accepted && profile?.role;
       if (isComplete) {
-        setUser({ name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '' });
+        setUser({ 
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '',
+          avatar_url: profile?.avatar_url || null
+        });
       } else {
         setUser(null);
       }
@@ -108,7 +114,12 @@ export default function Home() {
 
           {/* Right: mobile auth button */}
           {user ? (
-            <div className="md:hidden text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</div>
+            <div className="md:hidden flex items-center gap-2">
+              {user.avatar_url && (
+                <img src={user.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+              )}
+              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</div>
+            </div>
           ) : (
             <Link href="/signin" className="md:hidden px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">Entrar</Link>
           )}
@@ -125,7 +136,10 @@ export default function Home() {
             <LanguageSwitch current="es" />
             {user ? (
               <div className="relative" ref={menuRef}>
-                <button className="text-sm font-medium" onClick={() => setMenuOpen(o => !o)}>
+                <button className="text-sm font-medium flex items-center gap-2" onClick={() => setMenuOpen(o => !o)}>
+                  {user.avatar_url && (
+                    <img src={user.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+                  )}
                   {user.name}
                 </button>
                 {menuOpen && (
