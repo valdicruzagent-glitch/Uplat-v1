@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import MapSection from "@/app/components/MapSection";
@@ -24,6 +24,7 @@ export default function Home() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [user, setUser] = useState<{ name?: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Real auth state: only set user if onboarding complete
   useEffect(() => {
@@ -76,6 +77,22 @@ export default function Home() {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: Event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [menuOpen]);
+
   const handleSell = () => {
     window.location.href = '/signin?next=/sell';
   };
@@ -110,7 +127,7 @@ export default function Home() {
             <button onClick={() => setHelpOpen(true)} className="text-sm font-medium">{t.getHelp}</button>
             <LanguageSwitch current="es" />
             {user ? (
-              <div className="relative">
+              <div className="relative" ref={menuRef}>
                 <button className="text-sm font-medium" onClick={() => setMenuOpen(o => !o)}>
                   {user.name}
                 </button>
