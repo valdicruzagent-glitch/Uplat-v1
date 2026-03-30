@@ -43,12 +43,13 @@ where image_urls is null;
 update public.listings
 set published_at = coalesce(published_at, created_at)
 where published_at is null
-  and coalesce(status, 'active') in ('active', 'published');
+  and status in ('active', 'live', 'published');
 
 -- 3) Normalize status to locked V1 values
 update public.listings
 set status = case
   when status = 'active' then 'published'
+  when status = 'live' then 'published'
   when status = 'comp' then 'archived'
   when status in ('draft', 'published', 'inactive', 'archived') then status
   when status is null then 'draft'

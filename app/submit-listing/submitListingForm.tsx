@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
@@ -23,6 +23,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const websiteFieldRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setContactWhatsapp(window.localStorage.getItem("uplat_contact_whatsapp") ?? "");
@@ -32,10 +33,18 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    setLoading(true);
 
     try {
       const supabase = getSupabaseClient();
+
+      // Honeypot check – reject if filled (bot)
+      const hp = websiteFieldRef.current?.value ?? "";
+      if (hp.trim() !== "") {
+        console.warn("Honeypot triggered – submission rejected");
+        setDone(true);
+        return;
+      }
+
       if (!contactWhatsapp) throw new Error("WhatsApp is required");
       if (!title) throw new Error("Title is required");
 
@@ -43,18 +52,24 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
       const device = getClientDeviceInfo();
 
+      const photoLinksArray = photoLinks
+        ? photoLinks.split('\n').map(l => l.trim()).filter(Boolean)
+        : null;
+
+      setLoading(true);
+
       const { error } = await supabase.from("listing_submissions").insert({
         locale,
         contact_whatsapp: contactWhatsapp,
         contact_name: contactName || null,
         title,
-        price_usd: Number.isFinite(price ?? NaN) ? price : null,
+        price_usd: Number.isFinite(price) ? price : null,
         city: city || null,
         mode: mode || null,
         type: type || null,
         description: description || null,
-        photo_links: photoLinks || null,
-        ...device,
+        photo_links: photoLinksArray,
+        device_info: device,
       });
 
       if (error) throw error;
@@ -77,6 +92,16 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
+      {/* Hidden honeypot field */}
+      <div style={{ display: 'none' }}>
+        <input
+          ref={websiteFieldRef}
+          name="website"
+          autoComplete="off"
+          tabIndex={-1}
+        />
+      </div>
+
       {err ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
           {err}

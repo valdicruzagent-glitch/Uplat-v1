@@ -84,21 +84,13 @@ function getPropertyType(listing: Listing) {
 }
 
 function getPrimaryImage(listing: Listing) {
-  // Prefer normalized images
-  const images = listing.listing_images ?? [];
-  if (images.length > 0) {
-    const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
-    const primary = sorted.find(img => img.is_primary);
-    if (primary) return primary.image_url;
-    return sorted[0].image_url;
-  }
-  // Fallback to legacy fields
+  // V1: prefer image_urls array, fallback to cover_image_url
   if (listing.image_urls?.length) return listing.image_urls[0] ?? null;
   return listing.cover_image_url ?? null;
 }
 
 function isComparable(listing: Listing) {
-  return listing.status === "comp" || listing.meta?.comparable === true;
+  return listing.status === "archived" || listing.meta?.comparable === true;
 }
 
 function matchesFilters(listing: Listing, filters: Filters) {
@@ -155,10 +147,18 @@ export default function MapSection({
 
       try {
         const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("listings")
-          .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url')
-          .order("created_at", { ascending: false });
+        let data: any[] | null = null;
+        let error: any = null;
+        for (let i = 0; i < 2; i++) {
+          const res = await supabase
+            .from("listings")
+            .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url, headline, listing_type, property_type, image_urls, beds, baths, area_m2, status, contact_whatsapp, updated_at, published_at, country')
+            .order("created_at", { ascending: false });
+          data = res.data;
+          error = res.error;
+          if (!error || error?.status !== 401) break;
+          await supabase.auth.signOut();
+        }
 
         if (error) {
           console.error(error);
