@@ -11,16 +11,20 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-type DashboardTab = 'favorites' | 'agents' | 'inquiries';
+type DashboardTab = 'inquiries' | 'favorites' | 'agents';
+
+type Inquiry = any;
+type FavoriteListing = any;
+type SavedAgent = any;
 
 export default function UserDashboard() {
   const router = useRouter();
   const t = es;
   const [user, setUser] = useState<{ name?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>('inquiries');
-  const [favorites, setFavorites] = useState<any[]>([]);
-  const [savedAgents, setSavedAgents] = useState<any[]>([]);
-  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
+  const [savedAgents, setSavedAgents] = useState<SavedAgent[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,10 +36,57 @@ export default function UserDashboard() {
       }
       setUser({ name: user.user_metadata?.full_name || user.email?.split('@')[0] });
 
-      // Placeholder: fetch real data in next steps
-      setFavorites([]);
-      setSavedAgents([]);
-      setInquiries([]);
+      // Parallel fetch
+      const [inqRes, favRes, agentsRes] = await Promise.all([
+        supabase
+          .from('listing_inquiries')
+          .select(`
+            id,
+            created_at,
+            listing:listings(title),
+            agent:profiles!listing_inquiries_agent_id_fkey(full_name)
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('listing_favorites')
+          .select(`
+            id,
+            listing_id,
+            listing:listings(title)
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('agent_likes')
+          .select(`
+            id,
+            agent_id,
+            agent:profiles!agent_likes_agent_id_fkey(full_name)
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+      ]);
+
+      // Map inquiries
+      const mappedInquiries: Inquiry[] = (inqRes.data || []).map((i: any) => ({
+        id: i.id,
+        listing_title: i.listing?.title || 'Propiedad eliminada',
+        agent_name: i.agent?.full_name || 'Agente',
+        created_at: i.created_at,
+      }));
+      setInquiries(mappedInquiries);
+
+      // Map favorites
+      setFavorites(favRes.data || []);
+
+      // Map saved agents
+      setSavedAgents((agentsRes.data || []).map((a: any) => ({
+        id: a.id,
+        agent_id: a.agent_id,
+        profiles: a.agent,
+      })));
+
       setLoading(false);
     };
     fetchData();
@@ -117,14 +168,14 @@ export default function UserDashboard() {
             {favorites.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-zinc-600 dark:text-zinc-400">No has marcado favoritos aún.</p>
-                <p className="text-sm text-zinc-500 mt-1">Guarda agentes o propiedades para encontrarlos rápido.</p>
+                <p className="text-sm text-zinc-500 mt-1">Guarda propiedades para encontrarlas rápido.</p>
               </div>
             ) : (
               <ul className="space-y-4">
                 {favorites.map(f => (
                   <li key={f.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
-                    <div className="font-medium">{f.name}</div>
-                    <div className="text-sm text-zinc-500">{f.type}</div>
+                    <div className="font-medium">{f.listing?.title || 'Propiedad eliminada'}</div>
+                    <div className="text-sm text-zinc-500">ID: {f.listing_id}</div>
                   </li>
                 ))}
               </ul>
@@ -144,8 +195,7 @@ export default function UserDashboard() {
               <ul className="space-y-4">
                 {savedAgents.map(a => (
                   <li key={a.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
-                    <div className="font-medium">{a.full_name}</div>
-                    <div className="text-sm text-zinc-500">{a.specialty}</div>
+                    <div className="font-medium">{a.agent?.full_name || 'Agente'}</div>
                   </li>
                 ))}
               </ul>

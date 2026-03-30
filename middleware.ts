@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
 
   // Check profile completeness: phone collected, role, and terms acceptance must be present
   const { data: profile } = await supabase.from('profiles')
-    .select('role, whatsapp_number, terms_accepted')
+    .select('role, whatsapp_number, terms_accepted, is_admin')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -38,6 +38,17 @@ export async function middleware(request: NextRequest) {
 
   const onboardingPath = '/onboarding';
   const path = request.nextUrl.pathname;
+
+  // Admin routes: require is_admin
+  if (path.startsWith('/admin')) {
+    if (!profile?.is_admin) {
+      // Not admin; redirect to home
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+    return response; // admin allowed
+  }
 
   const excluded = ['/onboarding', '/signin', '/signup', '/api', '/_next', '/favicon.ico'];
   if (excluded.some(p => path.startsWith(p))) {
