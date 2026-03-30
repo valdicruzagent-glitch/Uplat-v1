@@ -110,7 +110,7 @@ export default function Home() {
           </button>
 
           {/* Center brand */}
-          <div className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight">Tualero</div>
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight">Tualero</Link>
 
           {/* Right: mobile auth button */}
           {user ? (
