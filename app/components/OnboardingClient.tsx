@@ -184,7 +184,7 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
 
       const { error } = await supabase.from('profiles').upsert({
         id: user.id,
-        whatsapp_number: fullPhone,
+        phone: fullPhone,
       });
       if (error) throw error;
 
@@ -206,7 +206,7 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
         id: user.id,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
         role,
-        whatsapp_number: phone.trim(),
+        phone: phone.trim(),
         terms_accepted: true,
         terms_accepted_at: new Date().toISOString(),
         terms_version: '1.0',

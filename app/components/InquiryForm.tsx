@@ -34,7 +34,7 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
   const [errorMsg, setErrorMsg] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profile, setProfile] = useState<{ whatsapp_number?: string; terms_accepted?: boolean; role?: string } | null>(null);
+  const [profile, setProfile] = useState<{ phone?: string; terms_accepted?: boolean; role?: string } | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -42,10 +42,10 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
       const logged = !!user;
       setIsLoggedIn(logged);
       if (logged && user) {
-        const { data } = await supabase.from('profiles').select('whatsapp_number, terms_accepted, role').eq('id', user.id).single();
+        const { data } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).single();
         setProfile(data);
         // If profile exists but onboarding incomplete, redirect to onboarding
-        if (data && (!data.whatsapp_number || !data.terms_accepted || !data.role)) {
+        if (data && (!data.phone || !data.terms_accepted || !data.role)) {
           router.push('/onboarding');
         }
       } else {
@@ -58,10 +58,10 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
       const logged = !!session;
       setIsLoggedIn(logged);
       if (logged && session?.user) {
-        supabase.from('profiles').select('whatsapp_number, terms_accepted, role').eq('id', session.user.id).single()
+        supabase.from('profiles').select('phone, terms_accepted, role').eq('id', session.user.id).single()
           .then(({ data }) => {
             setProfile(data);
-            if (data && (!data.whatsapp_number || !data.terms_accepted || !data.role)) {
+            if (data && (!data.phone || !data.terms_accepted || !data.role)) {
               router.push('/onboarding');
             }
           });
@@ -115,7 +115,7 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
   }
 
   // If logged in but profile incomplete (should be caught by middleware), as fallback redirect
-  if (profile && (!profile.whatsapp_number || !profile.terms_accepted || !profile.role)) {
+  if (profile && (!profile.phone || !profile.terms_accepted || !profile.role)) {
     // Redirect already issued in effect; render nothing to avoid flash
     return null;
   }

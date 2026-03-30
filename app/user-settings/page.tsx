@@ -65,8 +65,8 @@ export default function UserSettingsPage() {
             <div className="font-medium capitalize">{profile?.role}</div>
           </div>
           <div>
-            <div className="text-sm text-zinc-500">Teléfono WhatsApp</div>
-            <div className="font-medium">{profile?.whatsapp_number || '(no registrado)'}</div>
+            <div className="text-sm text-zinc-500">Teléfono</div>
+            <div className="font-medium">{profile?.phone || '(no registrado)'}</div>
           </div>
           <div>
             <div className="text-sm text-zinc-500">Términos aceptados</div>

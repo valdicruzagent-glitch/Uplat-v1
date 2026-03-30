@@ -23,8 +23,8 @@ export default function StartPage() {
         setChecking(false);
         return;
       }
-      const { data: profile } = await supabase.from('profiles').select('whatsapp_number, terms_accepted, role').eq('id', user.id).single();
-      const isComplete = profile?.whatsapp_number && profile?.terms_accepted && profile?.role;
+      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).single();
+      const isComplete = profile?.phone && profile?.terms_accepted && profile?.role;
       if (!isComplete) {
         router.replace('/onboarding');
       } else {

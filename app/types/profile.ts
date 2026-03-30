@@ -23,8 +23,4 @@ export type Profile = {
     is_verified: boolean;
     status_tier: string;
   } | null;
-  // WhatsApp verification
-  whatsapp_number?: string | null;
-  whatsapp_verified?: boolean;
-  whatsapp_verified_at?: string | null;
 };

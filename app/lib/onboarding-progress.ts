@@ -38,7 +38,7 @@ export async function getOnboardingProgress(): Promise<{ step: Step; phone?: str
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, terms_accepted, whatsapp_number')
+    .select('role, terms_accepted, phone')
     .eq('id', user.id)
     .single();
 
@@ -46,6 +46,6 @@ export async function getOnboardingProgress(): Promise<{ step: Step; phone?: str
 
   if (profile.role) return { step: 'role' };
   if (profile.terms_accepted) return { step: 'role' };
-  if (profile.whatsapp_number) return { step: 'terms', phone: profile.whatsapp_number };
+  if (profile.phone) return { step: 'terms', phone: profile.phone };
   return { step: 'phone' };
 }
