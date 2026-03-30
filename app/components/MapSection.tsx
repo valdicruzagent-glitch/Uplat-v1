@@ -157,17 +157,7 @@ export default function MapSection({
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
           .from("listings")
-          .select(`
-            *,
-            profiles (
-              id,
-              full_name,
-              role,
-              agency_id,
-              agencies (name)
-            )
-          `)
-          .order("published_at", { ascending: false })
+          .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url')
           .order("created_at", { ascending: false });
 
         if (error) {
@@ -441,7 +431,7 @@ export default function MapSection({
     <div className="flex h-full items-center justify-center text-xs text-zinc-500">{t.noImage}</div>
   )}
   <div className="absolute right-2 top-2">
-    <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
+    <FavoriteButton listingId={listing.id} initialCount={(listing as any).favorites_count ?? 0} />
   </div>
 </div>
               <div className="flex-1">
