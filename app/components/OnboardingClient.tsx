@@ -22,6 +22,7 @@ type Country = {
 
 const COUNTRIES: Country[] = [
   { name: 'United States', code: 'US', dialCode: '1', flag: '🇺🇸' },
+  { name: 'Canada', code: 'CA', dialCode: '1', flag: '🇨🇦' },
   { name: 'Mexico', code: 'MX', dialCode: '52', flag: '🇲🇽' },
   { name: 'Guatemala', code: 'GT', dialCode: '502', flag: '🇬🇹' },
   { name: 'Honduras', code: 'HN', dialCode: '504', flag: '🇭🇳' },
@@ -30,8 +31,18 @@ const COUNTRIES: Country[] = [
   { name: 'Costa Rica', code: 'CR', dialCode: '506', flag: '🇨🇷' },
   { name: 'Panama', code: 'PA', dialCode: '507', flag: '🇵🇦' },
   { name: 'Colombia', code: 'CO', dialCode: '57', flag: '🇨🇴' },
+  { name: 'Venezuela', code: 'VE', dialCode: '58', flag: '🇻🇪' },
+  { name: 'Ecuador', code: 'EC', dialCode: '593', flag: '🇪🇨' },
+  { name: 'Peru', code: 'PE', dialCode: '51', flag: '🇵🇪' },
+  { name: 'Bolivia', code: 'BO', dialCode: '591', flag: '🇧🇴' },
+  { name: 'Chile', code: 'CL', dialCode: '56', flag: '🇨🇱' },
   { name: 'Argentina', code: 'AR', dialCode: '54', flag: '🇦🇷' },
+  { name: 'Uruguay', code: 'UY', dialCode: '598', flag: '🇺🇾' },
+  { name: 'Paraguay', code: 'PY', dialCode: '595', flag: '🇵🇾' },
   { name: 'Brazil', code: 'BR', dialCode: '55', flag: '🇧🇷' },
+  { name: 'Dominican Republic', code: 'DO', dialCode: '1', flag: '🇩🇴' },
+  { name: 'Puerto Rico', code: 'PR', dialCode: '1', flag: '🇵🇷' },
+  { name: 'Cuba', code: 'CU', dialCode: '53', flag: '🇨🇺' },
 ];
 
 function splitPhoneNumber(fullNumber: string): { country: Country; local: string } | null {
