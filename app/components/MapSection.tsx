@@ -152,7 +152,7 @@ export default function MapSection({
         for (let i = 0; i < 2; i++) {
           const res = await supabase
             .from("listings")
-            .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url, headline, listing_type, property_type, image_urls, beds, baths, area_m2, status, contact_whatsapp, updated_at, published_at, country')
+            .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url, headline, listing_type, property_type, image_urls, beds, baths, area_m2, status, contact_whatsapp, updated_at, published_at')
             .order("created_at", { ascending: false });
           data = res.data;
           error = res.error;
