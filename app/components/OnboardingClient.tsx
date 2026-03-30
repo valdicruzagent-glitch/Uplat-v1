@@ -6,13 +6,14 @@ import { createClient } from '@supabase/supabase-js';
 import termsES from '@/content/legal/terms.es';
 import termsEN from '@/content/legal/terms.en';
 import { ensureProfileExists, getOnboardingProgress } from '@/app/lib/onboarding-progress';
+import { es } from '@/app/i18n/es';
+import { en } from '@/app/i18n/en';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Countries list for LATAM + US
 type Country = {
   name: string;
   code: string;
@@ -59,43 +60,69 @@ function splitPhoneNumber(fullNumber: string): { country: Country; local: string
 }
 
 interface OnboardingProps {
-  locale: 'es' | 'en';
-  translations: {
-    title: string;
-    stepPhoneTitle: string;
-    stepPhoneDesc: string;
-    phonePlaceholder: string;
-    continue: string;
-    sending: string;
-    termsTitle: string;
-    termsDescription: string;
-    termsAccept: string;
-    stepRoleTitle: string;
-    roleUser: string;
-    roleRealtor: string;
-    roleAgency: string;
-    finish: string;
-    verifiedBadge: string;
-    errorRequired: string;
-    errorSaveProfile: string;
-  };
+  locale: 'es' | 'en'; // initial UI locale from route
 }
 
 type Step = 'phone' | 'terms' | 'role' | 'done';
 const steps: Step[] = ['phone', 'terms', 'role'];
 
-export default function OnboardingClient({ locale, translations }: OnboardingProps) {
+const roleOptions = [
+  {
+    value: 'user' as const,
+    labels: {
+      es: {
+        title: 'Quiero comprar o rentar una propiedad',
+        subtitle: 'Explora propiedades y contacta directamente a agentes o agencias.',
+      },
+      en: {
+        title: 'I want to buy or rent a property',
+        subtitle: 'Explore listings and connect directly with agents or agencies.',
+      },
+    },
+  },
+  {
+    value: 'realtor' as const,
+    labels: {
+      es: {
+        title: 'Soy agente inmobiliario / realtor',
+        subtitle: 'Publica propiedades, recibe leads y gestiona tu presencia profesional.',
+      },
+      en: {
+        title: 'I am a real estate agent / realtor',
+        subtitle: 'Publish listings, receive leads, and manage your professional presence.',
+      },
+    },
+  },
+  {
+    value: 'agency' as const,
+    labels: {
+      es: {
+        title: 'Represento una agencia inmobiliaria',
+        subtitle: 'Administra la presencia de tu agencia y publica propiedades de tu equipo.',
+      },
+      en: {
+        title: 'I represent a real estate agency',
+        subtitle: 'Manage your agency presence and publish listings for your team.',
+      },
+    },
+  },
+];
+
+export default function OnboardingClient({ locale: initialLocale }: OnboardingProps) {
   const router = useRouter();
+  const [uiLocale, setUiLocale] = useState<'es' | 'en'>(initialLocale);
   const [step, setStep] = useState<Step>('phone');
-  const [phone, setPhone] = useState(''); // full E.164 number
+  const [phone, setPhone] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
   const [localPhone, setLocalPhone] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState<'user' | 'realtor' | 'agency' | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsLang, setTermsLang] = useState<'es' | 'en'>(initialLocale);
   const [initializing, setInitializing] = useState(true);
 
+  const t = uiLocale === 'es' ? es : en;
   const currentStepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
 
@@ -144,7 +171,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
   const continueFromPhone = async () => {
     if (!localPhone.trim()) {
-      setErrorMsg(translations.errorRequired);
+      setErrorMsg(t.onboardingErrorRequired);
       return;
     }
     setStatus('loading');
@@ -153,11 +180,9 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Combine into full E.164 number
       const fullPhone = `+${selectedCountry.dialCode}${localPhone.replace(/\D/g, '')}`;
       setPhone(fullPhone);
 
-      // Upsert phone number only
       const { error } = await supabase.from('profiles').upsert({
         id: user.id,
         whatsapp_number: fullPhone,
@@ -198,7 +223,8 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         else if (role === 'realtor' || role === 'agency') router.push('/user-settings');
       }, 500);
     } catch (err: any) {
-      setErrorMsg(translations.errorSaveProfile);
+      console.error('Onboarding complete error:', err);
+      setErrorMsg(t.onboardingErrorSave);
       setStatus('error');
     }
   };
@@ -206,7 +232,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
   if (initializing) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading...</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t.loading}</p>
       </div>
     );
   }
@@ -216,10 +242,10 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
       <div className="min-h-dvh flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6">
         <div className="max-w-md w-full space-y-4 text-center">
           <div className="p-4 border rounded-lg bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-            {translations.verifiedBadge}
+            {t.onboardingVerifiedBadge}
           </div>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {locale === 'es' ? 'Redirigiendo...' : 'Redirecting...'}
+            {uiLocale === 'es' ? 'Redirigiendo...' : 'Redirecting...'}
           </p>
         </div>
       </div>
@@ -228,13 +254,31 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
 
   return (
     <div className="min-h-dvh flex flex-col items-center bg-zinc-50 dark:bg-black p-6">
+      {/* Header with language toggle */}
+      <div className="w-full max-w-md flex justify-end mb-4">
+        <div className="flex gap-2">
+          <button
+            className={`text-sm px-3 py-1 rounded ${uiLocale === 'es' ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700'}`}
+            onClick={() => setUiLocale('es')}
+          >
+            ES
+          </button>
+          <button
+            className={`text-sm px-3 py-1 rounded ${uiLocale === 'en' ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700'}`}
+            onClick={() => setUiLocale('en')}
+          >
+            EN
+          </button>
+        </div>
+      </div>
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Tualero</h1>
       </div>
 
       <div className="w-full max-w-md mb-6">
         <div className="flex justify-between text-xs text-zinc-500 mb-2">
-          <span>{locale === 'es' ? 'Paso' : 'Step'} {currentStepIndex + 1} {locale === 'es' ? 'de' : 'of'} {totalSteps}</span>
+          <span>{uiLocale === 'es' ? 'Paso' : 'Step'} {currentStepIndex + 1} {uiLocale === 'es' ? 'de' : 'of'} {totalSteps}</span>
           <span>{Math.round(((currentStepIndex + 1) / totalSteps) * 100)}%</span>
         </div>
         <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
@@ -249,11 +293,10 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         {step === 'phone' && (
           <>
             <div>
-              <h2 className="text-xl font-semibold mb-1">{translations.stepPhoneTitle}</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.stepPhoneDesc}</p>
+              <h2 className="text-xl font-semibold mb-1">{t.onboardingStepPhoneTitle}</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{t.onboardingStepPhoneDesc}</p>
             </div>
             <div className="space-y-3">
-              {/* Country selector */}
               <select
                 className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
                 value={selectedCountry.code}
@@ -268,11 +311,10 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
                   </option>
                 ))}
               </select>
-              {/* Local phone input */}
               <input
                 type="tel"
                 className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
-                placeholder={translations.phonePlaceholder}
+                placeholder={t.phonePlaceholder}
                 value={localPhone}
                 onChange={e => setLocalPhone(e.target.value)}
               />
@@ -282,7 +324,7 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
               onClick={continueFromPhone}
               disabled={status === 'loading' || !localPhone.trim()}
             >
-              {status === 'loading' ? translations.sending : translations.continue}
+              {status === 'loading' ? t.sending : t.continue}
             </button>
           </>
         )}
@@ -290,11 +332,28 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         {step === 'terms' && (
           <>
             <div>
-              <h2 className="text-xl font-semibold mb-1">{translations.termsTitle}</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{translations.termsDescription}</p>
+              <h2 className="text-xl font-semibold mb-1">{t.termsTitle}</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{t.termsDescription}</p>
+            </div>
+            {/* Terms language toggle */}
+            <div className="flex justify-end">
+              <div className="flex gap-2">
+                <button
+                  className={`text-sm px-3 py-1 rounded ${termsLang === 'es' ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700'}`}
+                  onClick={() => setTermsLang('es')}
+                >
+                  ES
+                </button>
+                <button
+                  className={`text-sm px-3 py-1 rounded ${termsLang === 'en' ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700'}`}
+                  onClick={() => setTermsLang('en')}
+                >
+                  EN
+                </button>
+              </div>
             </div>
             <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 text-sm leading-relaxed overflow-y-auto max-h-80 whitespace-pre-wrap">
-              {locale === 'es' ? termsES : termsEN}
+              {termsLang === 'es' ? termsES : termsEN}
             </div>
             <label className="flex items-start gap-3 text-sm">
               <input
@@ -303,14 +362,14 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
                 onChange={e => setTermsAccepted(e.target.checked)}
                 className="mt-0.5 rounded border-zinc-300"
               />
-              <span>{translations.termsAccept}</span>
+              <span>{t.termsAccept}</span>
             </label>
             <button
               className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               onClick={() => { if (termsAccepted) setStep('role'); }}
               disabled={!termsAccepted}
             >
-              {translations.finish}
+              {t.onboardingFinish}
             </button>
           </>
         )}
@@ -318,27 +377,19 @@ export default function OnboardingClient({ locale, translations }: OnboardingPro
         {step === 'role' && (
           <>
             <div>
-              <h2 className="text-xl font-semibold mb-1">{translations.stepRoleTitle}</h2>
+              <h2 className="text-xl font-semibold mb-1">{t.onboardingStepRoleTitle}</h2>
             </div>
             <div className="space-y-3">
-              <button
-                className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
-                onClick={() => setRole('user')}
-              >
-                {translations.roleUser}
-              </button>
-              <button
-                className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
-                onClick={() => setRole('realtor')}
-              >
-                {translations.roleRealtor}
-              </button>
-              <button
-                className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
-                onClick={() => setRole('agency')}
-              >
-                {translations.roleAgency}
-              </button>
+              {roleOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  className="w-full rounded-lg border-2 border-zinc-200 p-4 text-left hover:border-blue-600 hover:bg-blue-50 dark:border-zinc-800 dark:hover:border-blue-600 dark:hover:bg-blue-900/20 transition-all"
+                  onClick={() => setRole(opt.value)}
+                >
+                  <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">{opt.labels[uiLocale].title}</div>
+                  <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{opt.labels[uiLocale].subtitle}</div>
+                </button>
+              ))}
             </div>
           </>
         )}
