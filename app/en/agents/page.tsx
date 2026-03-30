@@ -3,15 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import type { Profile } from '@/app/types/profile';
 import LanguageSwitch from '@/app/components/LanguageSwitch';
 import { useEnsureProfile } from '@/app/hooks/useEnsureProfile';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 export default function AgentsPageEn() {
   const [profiles, setProfiles] = useState<Profile[]>([]);

@@ -2,17 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import termsES from '@/content/legal/terms.es';
 import termsEN from '@/content/legal/terms.en';
 import { ensureProfileExists, getOnboardingProgress } from '@/app/lib/onboarding-progress';
 import { es } from '@/app/i18n/es';
 import { en } from '@/app/i18n/en';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 type Country = {
   name: string;
@@ -149,7 +146,7 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
       }
 
       if (progress.step === 'role') {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
         if (profile?.role) {
           if (profile.role === 'user') router.push('/');
           else router.push('/user-settings');

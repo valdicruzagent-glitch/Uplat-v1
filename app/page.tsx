@@ -6,12 +6,9 @@ import LanguageSwitch from "@/app/components/LanguageSwitch";
 import MapSection from "@/app/components/MapSection";
 import { es } from "@/app/i18n/es";
 import { loadGuestState, saveGuestState } from "@/lib/guestState";
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 export default function Home() {
   const t = es;
@@ -35,7 +32,7 @@ export default function Home() {
         return;
       }
       // Check profile completion
-      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).maybeSingle();
       const isComplete = profile?.phone && profile?.terms_accepted && profile?.role;
       if (isComplete) {
         setUser({ name: user.user_metadata?.full_name || user.email?.split('@')[0] || '' });
@@ -49,7 +46,7 @@ export default function Home() {
         setUser(null);
         return;
       }
-      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', session.user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', session.user.id).maybeSingle();
       const isComplete = profile?.phone && profile?.terms_accepted && profile?.role;
       if (isComplete) {
         setUser({ name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '' });

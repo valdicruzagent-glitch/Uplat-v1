@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { es } from '@/app/i18n/es';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 export default function UserSettingsPage() {
   const router = useRouter();
@@ -22,7 +19,7 @@ export default function UserSettingsPage() {
         router.push(`/signin?redirect=${encodeURIComponent('/user-settings')}`);
         return;
       }
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
       setProfile(data);
       setLoading(false);
     };

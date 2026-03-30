@@ -1,9 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 export type Step = 'phone' | 'terms' | 'role';
 
@@ -39,7 +36,7 @@ export async function getOnboardingProgress(): Promise<{ step: Step; phone?: str
     .from('profiles')
     .select('role, terms_accepted, phone')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile) return { step: 'phone' };
 

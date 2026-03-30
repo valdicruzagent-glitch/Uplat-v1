@@ -5,12 +5,9 @@ import { useRouter } from 'next/navigation';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import { es } from "@/app/i18n/es";
 import StartChoice from "@/app/start/startChoice";
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 export default function StartPage() {
   const router = useRouter();
@@ -23,7 +20,7 @@ export default function StartPage() {
         setChecking(false);
         return;
       }
-      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('phone, terms_accepted, role').eq('id', user.id).maybeSingle();
       const isComplete = profile?.phone && profile?.terms_accepted && profile?.role;
       if (!isComplete) {
         router.replace('/onboarding');

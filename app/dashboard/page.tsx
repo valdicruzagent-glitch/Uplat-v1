@@ -2,20 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { es } from '@/app/i18n/es';
 import { en } from '@/app/i18n/en';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
-type DashboardTab = 'inquiries' | 'favorites' | 'agents';
+type DashboardTab = 'inquiries' | 'favorites';
 
 type Inquiry = any;
 type FavoriteListing = any;
-type SavedAgent = any;
 
 export default function UserDashboard() {
   const router = useRouter();
@@ -23,7 +19,6 @@ export default function UserDashboard() {
   const [user, setUser] = useState<{ name?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>('inquiries');
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
-  const [savedAgents, setSavedAgents] = useState<SavedAgent[]>([]);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +32,7 @@ export default function UserDashboard() {
       setUser({ name: user.user_metadata?.full_name || user.email?.split('@')[0] });
 
       // Parallel fetch
-      const [inqRes, favRes, agentsRes] = await Promise.all([
+      const [inqRes, favRes] = await Promise.all([
         supabase
           .from('listing_inquiries')
           .select(`
@@ -57,15 +52,6 @@ export default function UserDashboard() {
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
-        supabase
-          .from('agent_likes')
-          .select(`
-            id,
-            agent_id,
-            agent:profiles!agent_likes_agent_id_fkey(full_name)
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
       ]);
 
       // Map inquiries
@@ -79,13 +65,6 @@ export default function UserDashboard() {
 
       // Map favorites
       setFavorites(favRes.data || []);
-
-      // Map saved agents
-      setSavedAgents((agentsRes.data || []).map((a: any) => ({
-        id: a.id,
-        agent_id: a.agent_id,
-        profiles: a.agent,
-      })));
 
       setLoading(false);
     };
@@ -103,7 +82,6 @@ export default function UserDashboard() {
   const tabs = [
     { id: 'inquiries' as DashboardTab, label: 'Consultas' },
     { id: 'favorites' as DashboardTab, label: 'Favoritos' },
-    { id: 'agents' as DashboardTab, label: 'Agentes guardados' },
   ];
 
   return (
@@ -176,26 +154,6 @@ export default function UserDashboard() {
                   <li key={f.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
                     <div className="font-medium">{f.listing?.title || 'Propiedad eliminada'}</div>
                     <div className="text-sm text-zinc-500">ID: {f.listing_id}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
-
-        {activeTab === 'agents' && (
-          <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
-            <h2 className="text-lg font-semibold mb-4">Agentes guardados</h2>
-            {savedAgents.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-zinc-600 dark:text-zinc-400">No has guardado agentes.</p>
-                <p className="text-sm text-zinc-500 mt-1">Guarda a tus agentes de confianza para contactarlos fácilmente.</p>
-              </div>
-            ) : (
-              <ul className="space-y-4">
-                {savedAgents.map(a => (
-                  <li key={a.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
-                    <div className="font-medium">{a.agent?.full_name || 'Agente'}</div>
                   </li>
                 ))}
               </ul>
