@@ -14,14 +14,25 @@ export default function UserSettingsPage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push(`/signin?redirect=${encodeURIComponent('/user-settings')}`);
-        return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.push(`/signin?redirect=${encodeURIComponent('/user-settings')}`);
+          return;
+        }
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+        if (error) {
+          console.error('Profile fetch error:', error);
+          setProfile(null);
+        } else {
+          setProfile(data);
+        }
+      } catch (e) {
+        console.error('Unexpected error in /user-settings:', e);
+        setProfile(null);
+      } finally {
+        setLoading(false);
       }
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-      setProfile(data);
-      setLoading(false);
     };
     fetchProfile();
   }, [router]);

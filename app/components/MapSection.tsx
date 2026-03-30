@@ -159,10 +159,6 @@ export default function MapSection({
           .from("listings")
           .select(`
             *,
-            favorites_count,
-            is_sponsored,
-            sponsor_rank,
-            sponsored_until,
             profiles (
               id,
               full_name,
@@ -171,9 +167,7 @@ export default function MapSection({
               agencies (name)
             )
           `)
-          .order("is_sponsored", { ascending: false })
-          .order("sponsor_rank", { ascending: false })
-          .order("favorites_count", { ascending: false })
+          .order("published_at", { ascending: false })
           .order("created_at", { ascending: false });
 
         if (error) {
