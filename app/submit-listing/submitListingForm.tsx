@@ -171,6 +171,17 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         metadataWhatsapp: user.user_metadata?.whatsapp_number,
       });
 
+      // Render-state log for submit
+      console.log("[SubmitListingForm submit values]", {
+        userId: user?.id,
+        profile,
+        resolvedPhone: phone,
+        profilePhone: profile?.phone,
+        profileWhatsapp: profile?.whatsapp_number,
+        metadataPhone: user.user_metadata?.phone,
+        metadataWhatsapp: user.user_metadata?.whatsapp_number,
+      });
+
       if (!phone) throw new Error("Perfil incompleto: falta número de WhatsApp");
 
       // Parse beds and baths

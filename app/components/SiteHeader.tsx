@@ -77,6 +77,15 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     user?.user_metadata?.picture ||
     null;
 
+  // Debug render state
+  console.log("[SiteHeader render]", {
+    loading,
+    hasUser: !!user,
+    profile,
+    displayName: profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+    avatarUrl,
+  });
+
   return (
     <>
       <header className="sticky top-0 z-[1001] border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
