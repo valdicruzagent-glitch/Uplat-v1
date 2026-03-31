@@ -244,8 +244,8 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const device = getClientDeviceInfo();
       const photoLinksArray = photoLinks ? photoLinks.split('\n').map(l => l.trim()).filter(Boolean) : null;
 
-      // Use profile data (required) – prioritize whatsapp_number
-      const phone = profile?.whatsapp_number || profile?.phone || user.user_metadata?.phone || user.user_metadata?.whatsapp_number;
+      // Use profile data (required) – prioritize whatsapp_number, fallback to phone
+      const phone = profile?.whatsapp_number || profile?.phone || user.user_metadata?.whatsapp_number || user.user_metadata?.phone || "";
       const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || null;
 
       // Debug log

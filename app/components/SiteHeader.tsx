@@ -61,6 +61,13 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
 
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
+  // Avatar fallback: profile.avatar_url -> user.user_metadata.avatar_url -> user.user_metadata.picture
+  const avatarUrl =
+    profile?.avatar_url ||
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    null;
+
   return (
     <>
       <header className="sticky top-0 z-[1001] border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
@@ -78,8 +85,8 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
           {/* Right: mobile auth button */}
           {user ? (
             <div className="md:hidden flex items-center gap-2">
-              {profile?.avatar_url && (
-                <img src={profile.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+              {avatarUrl && (
+                <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
               )}
               <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || ''}</div>
             </div>
@@ -109,8 +116,8 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
               user ? (
                 <div className="relative">
                   <button className="text-sm font-medium flex items-center gap-2 text-zinc-900 dark:text-zinc-100" onClick={() => setMenuOpen(m => !m)}>
-                    {profile?.avatar_url && (
-                      <img src={profile.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+                    {avatarUrl && (
+                      <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
                     )}
                     {profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || ''}
                   </button>
