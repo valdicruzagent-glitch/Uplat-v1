@@ -136,6 +136,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     console.log("SUBMIT_LISTING_FIX_VERSION_ed4db11");
     e.preventDefault();
     setErr(null);
+    setLoading(true);
 
     try {
       const supabase = getSupabaseClient();
@@ -225,7 +226,8 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const bathsNum = baths ? Number(baths) : null; // supports 1.5 etc.
       const yearBuiltNum = yearBuilt ? Number(yearBuilt) : null;
 
-      const { data, error } = await supabase.from("listing_submissions").insert({
+      // Prepare payload for debugging
+      const payload = {
         locale,
         contact_whatsapp: phone,
         contact_name: name,
@@ -247,8 +249,11 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         year_built: yearBuiltNum,
         new_construction: newConstruction || null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
-      });
+      };
 
+      console.log('[SubmitListingForm] about to insert:', payload);
+      const { data, error } = await supabase.from("listing_submissions").insert(payload);
+      console.log('[SubmitListingForm] insert response:', { data, error });
       if (error) {
         console.error('[SubmitListingForm] insert error:', {
           message: error.message,
