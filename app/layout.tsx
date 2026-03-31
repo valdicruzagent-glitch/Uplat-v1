@@ -22,6 +22,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  console.log("ROOT_LAYOUT_VERSION_48b713a");
   return (
     <html
       lang="en"
