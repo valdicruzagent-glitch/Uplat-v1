@@ -30,11 +30,11 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
         }
         return;
       }
-      console.log('[SiteHeader] loading profile for user.id:', user.id);
-      const { data, error } = await supabase.from('profiles').select('full_name, avatar_url, id').eq('id', user.id).maybeSingle();
+      console.log('[SiteHeader] loading profile for userId:', user.id);
+      const { data, error } = await supabase.from('profiles').select('full_name, avatar_url, phone, whatsapp_number, id').eq('id', user.id).maybeSingle();
+      console.log('[SiteHeader] profile query result:', { userId: user.id, data, error });
       if (mounted) {
         setProfile(data ?? null);
-        console.log('[SiteHeader] profile loaded:', { data, error });
       }
     };
 

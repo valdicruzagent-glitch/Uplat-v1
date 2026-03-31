@@ -99,8 +99,8 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const u = user ?? null;
       setUser(u);
       if (u) {
-        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number, id').eq('id', u.id).maybeSingle();
-        console.log('[SubmitListingForm] profile query result ->', { profileId: data?.id, phone: data?.phone, whatsapp_number: data?.whatsapp_number });
+        const { data, error } = await supabase.from('profiles').select('full_name, phone, whatsapp_number, id').eq('id', u.id).maybeSingle();
+        console.log('[SubmitListingForm] profile query result:', { userId: u.id, data, error });
         setProfile(data ?? null);
       } else {
         setProfile(null);
@@ -113,8 +113,8 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       console.log('[SubmitListingForm] onAuthStateChange -> user:', u?.id);
       setUser(u);
       if (u) {
-        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number, id').eq('id', u.id).maybeSingle();
-        console.log('[SubmitListingForm] (onAuth) profile ->', { profileId: data?.id, phone: data?.phone, whatsapp_number: data?.whatsapp_number });
+        const { data, error } = await supabase.from('profiles').select('full_name, phone, whatsapp_number, id').eq('id', u.id).maybeSingle();
+        console.log('[SubmitListingForm] (onAuth) profile query result:', { userId: u.id, data, error });
         setProfile(data ?? null);
       } else {
         setProfile(null);
