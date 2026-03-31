@@ -9,6 +9,8 @@ import { getClientDeviceInfo } from "@/lib/deviceInfo";
 
 const LocationPicker = dynamic(() => import("@/app/components/LocationPicker"), { ssr: false });
 
+import { DEPARTMENTS_BY_COUNTRY } from "./departments";
+
 const COUNTRIES = [
   { code: "AR", name: "Argentina", flag: "🇦🇷" },
   { code: "BZ", name: "Belize", flag: "🇧🇿" },
@@ -33,116 +35,8 @@ const COUNTRIES = [
   { code: "VE", name: "Venezuela", flag: "🇻🇪" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
-const DEPARTMENTS_BY_COUNTRY: Record<string, { code: string; name: string }[]> = {
-  BZ: [
-    { code: "BZ", name: "Belize" },
-    { code: "CY", name: "Cayo" },
-    { code: "CZ", name: "Corozal" },
-    { code: "OW", name: "Orange Walk" },
-    { code: "SC", name: "Stann Creek" },
-    { code: "TO", name: "Toledo" },
-  ],
-  CR: [
-    { code: "SJ", name: "San José" },
-    { code: "AL", name: "Alajuela" },
-    { code: "CA", name: "Cartago" },
-    { code: "HE", name: "Heredia" },
-    { code: "GU", name: "Guanacaste" },
-    { code: "PU", name: "Puntarenas" },
-    { code: "LI", name: "Limón" },
-  ],
-  SV: [
-    { code: "AH", name: "Ahuachapán" },
-    { code: "CB", name: "Cabañas" },
-    { code: "CH", name: "Chalatenango" },
-    { code: "CU", name: "Cuscatlán" },
-    { code: "LB", name: "La Libertad" },
-    { code: "PZ", name: "La Paz" },
-    { code: "UN", name: "La Unión" },
-    { code: "MO", name: "Morazán" },
-    { code: "SM", name: "San Miguel" },
-    { code: "SS", name: "San Salvador" },
-    { code: "SV", name: "San Vicente" },
-    { code: "SA", name: "Santa Ana" },
-    { code: "SO", name: "Sonsonate" },
-    { code: "US", name: "Usulután" },
-  ],
-  GT: [
-    { code: "AV", name: "Alta Verapaz" },
-    { code: "BV", name: "Baja Verapaz" },
-    { code: "CM", name: "Chimaltenango" },
-    { code: "CQ", name: "Chiquimula" },
-    { code: "PG", name: "El Progreso" },
-    { code: "ES", name: "Escuintla" },
-    { code: "GU", name: "Guatemala" },
-    { code: "HU", name: "Huehuetenango" },
-    { code: "IZ", name: "Izabal" },
-    { code: "JA", name: "Jalapa" },
-    { code: "JU", name: "Jutiapa" },
-    { code: "PE", name: "Petén" },
-    { code: "QZ", name: "Quetzaltenango" },
-    { code: "QC", name: "Quiché" },
-    { code: "RE", name: "Retalhuleu" },
-    { code: "SM", name: "Sacatepéquez" },
-    { code: "SMK", name: "San Marcos" },
-    { code: "SR", name: "Santa Rosa" },
-    { code: "SO", name: "Sololá" },
-    { code: "SU", name: "Suchitepéquez" },
-    { code: "TO", name: "Totonicapán" },
-    { code: "ZA", name: "Zacapa" },
-  ],
-  HN: [
-    { code: "AT", name: "Atlántida" },
-    { code: "CH", name: "Choluteca" },
-    { code: "CL", name: "Colón" },
-    { code: "CM", name: "Comayagua" },
-    { code: "CP", name: "Copán" },
-    { code: "CR", name: "Cortés" },
-    { code: "EP", name: "El Paraíso" },
-    { code: "FM", name: "Francisco Morazán" },
-    { code: "GD", name: "Gracias a Dios" },
-    { code: "IN", name: "Intibucá" },
-    { code: "IB", name: "Islas de la Bahía" },
-    { code: "PZ", name: "La Paz" },
-    { code: "LE", name: "Lempira" },
-    { code: "OC", name: "Ocotepeque" },
-    { code: "OL", name: "Olancho" },
-    { code: "SB", name: "Santa Bárbara" },
-    { code: "VA", name: "Valle" },
-    { code: "YO", name: "Yoro" },
-  ],
-  NI: [
-    { code: "BO", name: "Boaco" },
-    { code: "CA", name: "Carazo" },
-    { code: "CI", name: "Chinandega" },
-    { code: "CT", name: "Chontales" },
-    { code: "ES", name: "Estelí" },
-    { code: "GR", name: "Granada" },
-    { code: "JI", name: "Jinotega" },
-    { code: "LE", name: "León" },
-    { code: "MD", name: "Madriz" },
-    { code: "MN", name: "Managua" },
-    { code: "MY", name: "Masaya" },
-    { code: "MT", name: "Matagalpa" },
-    { code: "NS", name: "Nueva Segovia" },
-    { code: "RACCN", name: "RACCN" },
-    { code: "RACCS", name: "RACCS" },
-    { code: "RS", name: "Río San Juan" },
-    { code: "RI", name: "Rivas" },
-  ],
-  PA: [
-    { code: "BT", name: "Bocas del Toro" },
-    { code: "CL", name: "Coclé" },
-    { code: "CN", name: "Colón" },
-    { code: "CH", name: "Chiriquí" },
-    { code: "DA", name: "Darién" },
-    { code: "HE", name: "Herrera" },
-    { code: "LS", name: "Los Santos" },
-    { code: "PA", name: "Panamá" },
-    { code: "PO", name: "Panamá Oeste" },
-    { code: "VG", name: "Veraguas" },
-  ],
-};
+
+
 
 const AMENITIES_OPTIONS = [
   { value: "new_construction", label: "Nueva construcción" },
@@ -200,21 +94,27 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const u = session?.user ?? null;
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('[SubmitListingForm] getUser() ->', { userId: user?.id });
+      const u = user ?? null;
       setUser(u);
       if (u) {
-        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number').eq('id', u.id).maybeSingle();
+        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number, id').eq('id', u.id).maybeSingle();
+        console.log('[SubmitListingForm] profile query result ->', { profileId: data?.id, phone: data?.phone, whatsapp_number: data?.whatsapp_number });
         setProfile(data ?? null);
+      } else {
+        setProfile(null);
       }
       setLoadingProfile(false);
     };
     load();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null;
+      console.log('[SubmitListingForm] onAuthStateChange -> user:', u?.id);
       setUser(u);
       if (u) {
-        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number').eq('id', u.id).maybeSingle();
+        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number, id').eq('id', u.id).maybeSingle();
+        console.log('[SubmitListingForm] (onAuth) profile ->', { profileId: data?.id, phone: data?.phone, whatsapp_number: data?.whatsapp_number });
         setProfile(data ?? null);
       } else {
         setProfile(null);

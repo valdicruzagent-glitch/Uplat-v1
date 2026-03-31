@@ -13,15 +13,18 @@ export default function SubmitListingPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('[SubmitListingPage] getUser() ->', { user });
+      if (!user) {
         router.replace("/signin?next=/submit-listing");
       }
     };
     checkAuth();
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) router.replace("/signin?next=/submit-listing");
+      const user = session?.user ?? null;
+      console.log('[SubmitListingPage] onAuthStateChange ->', { user });
+      if (!user) router.replace("/signin?next=/submit-listing");
     });
     return () => subscription.unsubscribe();
   }, [router, supabase]);

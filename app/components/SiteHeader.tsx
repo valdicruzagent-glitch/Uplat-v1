@@ -24,16 +24,24 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     let mounted = true;
     const loadProfile = async (user: any) => {
       if (!user) {
-        if (mounted) setProfile(null);
+        if (mounted) {
+          setProfile(null);
+          console.log('[SiteHeader] no user, profile set to null');
+        }
         return;
       }
-      const { data } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).maybeSingle();
-      if (mounted) setProfile(data ?? null);
+      console.log('[SiteHeader] loading profile for user.id:', user.id);
+      const { data, error } = await supabase.from('profiles').select('full_name, avatar_url, id').eq('id', user.id).maybeSingle();
+      if (mounted) {
+        setProfile(data ?? null);
+        console.log('[SiteHeader] profile loaded:', { data, error });
+      }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null;
       setUser(u);
+      console.log('[SiteHeader] onAuthStateChange -> user:', u?.id);
       if (u) await loadProfile(u);
       else setProfile(null);
       setLoading(false);
@@ -41,6 +49,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       const u = user ?? null;
       setUser(u);
+      console.log('[SiteHeader] getUser() -> user:', u?.id);
       if (u) await loadProfile(u);
       else setProfile(null);
       setLoading(false);
