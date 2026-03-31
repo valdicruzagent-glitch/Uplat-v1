@@ -77,6 +77,7 @@ export const en = {
   descriptionLabel: "Description",
   photosLabel: "Photo links (optional)",
   send: "Send",
+  publish: "Publish",
   sentOk: "Received. We'll review and message you on WhatsApp.",
   errorLoadingListings: (msg: string) => `Error loading listings: ${msg}`,
   langEs: "ES",

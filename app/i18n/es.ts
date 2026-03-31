@@ -77,6 +77,7 @@ export const es = {
   descriptionLabel: "Descripción",
   photosLabel: "Links de fotos (opcional)",
   send: "Enviar",
+  publish: "Publicar",
   sentOk: "Recibido. Revisaremos tu propiedad y te escribimos por WhatsApp.",
   errorLoadingListings: (msg: string) => `Error cargando propiedades: ${msg}`,
   langEs: "ES",

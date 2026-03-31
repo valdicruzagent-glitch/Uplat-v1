@@ -10,13 +10,27 @@ import { getClientDeviceInfo } from "@/lib/deviceInfo";
 const LocationPicker = dynamic(() => import("@/app/components/LocationPicker"), { ssr: false });
 
 const COUNTRIES = [
+  { code: "AR", name: "Argentina", flag: "🇦🇷" },
   { code: "BZ", name: "Belize", flag: "🇧🇿" },
+  { code: "BO", name: "Bolivia", flag: "🇧🇴" },
+  { code: "BR", name: "Brazil", flag: "🇧🇷" },
+  { code: "CL", name: "Chile", flag: "🇨🇱" },
+  { code: "CO", name: "Colombia", flag: "🇨🇴" },
   { code: "CR", name: "Costa Rica", flag: "🇨🇷" },
+  { code: "CU", name: "Cuba", flag: "🇨🇺" },
+  { code: "EC", name: "Ecuador", flag: "🇪🇨" },
   { code: "SV", name: "El Salvador", flag: "🇸🇻" },
   { code: "GT", name: "Guatemala", flag: "🇬🇹" },
   { code: "HN", name: "Honduras", flag: "🇭🇳" },
+  { code: "MX", name: "Mexico", flag: "🇲🇽" },
   { code: "NI", name: "Nicaragua", flag: "🇳🇮" },
   { code: "PA", name: "Panamá", flag: "🇵🇦" },
+  { code: "PY", name: "Paraguay", flag: "🇵🇾" },
+  { code: "PE", name: "Peru", flag: "🇵🇪" },
+  { code: "PR", name: "Puerto Rico", flag: "🇵🇷" },
+  { code: "DO", name: "Dominican Republic", flag: "🇩🇴" },
+  { code: "UY", name: "Uruguay", flag: "🇺🇾" },
+  { code: "VE", name: "Venezuela", flag: "🇻🇪" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 const DEPARTMENTS_BY_COUNTRY: Record<string, { code: string; name: string }[]> = {
@@ -555,7 +569,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         disabled={loading}
         className="w-full rounded-lg bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
       >
-        {loading ? "Enviando..." : t.send}
+        {loading ? (locale === "es" ? "Publicando..." : "Publishing...") : (locale === "es" ? t.publish : "Publish")}
       </button>
     </form>
   );

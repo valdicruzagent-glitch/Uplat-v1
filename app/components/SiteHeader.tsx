@@ -38,8 +38,8 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       else setProfile(null);
       setLoading(false);
     });
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const u = session?.user ?? null;
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      const u = user ?? null;
       setUser(u);
       if (u) await loadProfile(u);
       else setProfile(null);
