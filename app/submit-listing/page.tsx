@@ -1,8 +1,32 @@
+'use client';
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import SiteHeader from "@/app/components/SiteHeader";
 import SubmitListingForm from "@/app/submit-listing/submitListingForm";
 import { es } from "@/app/i18n/es";
 
 export default function SubmitListingPage() {
+  const router = useRouter();
+  const supabase = getSupabaseClient();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/signin?next=/submit-listing");
+      }
+    };
+    checkAuth();
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace("/signin?next=/submit-listing");
+    });
+    return () => subscription.unsubscribe();
+  }, [router, supabase]);
+
+  // You could show a loading state here; for now we render
   return (
     <>
       <SiteHeader locale="es" />
