@@ -169,7 +169,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
   // Auth / profile state
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<{ full_name?: string; phone?: string } | null>(null);
+  const [profile, setProfile] = useState<{ full_name?: string; phone?: string; whatsapp_number?: string } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -188,7 +188,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        const { data } = await supabase.from('profiles').select('full_name, phone').eq('id', u.id).maybeSingle();
+        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number').eq('id', u.id).maybeSingle();
         setProfile(data ?? null);
       } else {
         setProfile(null);
