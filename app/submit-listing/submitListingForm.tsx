@@ -140,12 +140,24 @@ const AMENITIES_OPTIONS = [
   { value: "gated", label: "Condominio cerrado" },
 ];
 
+function formatPrice(value: string): string {
+  const num = Number(value.replace(/,/g, ''));
+  if (isNaN(num)) return value;
+  return num.toLocaleString('en-US');
+}
+
+function parsePrice(value: string): number | null {
+  const num = Number(value.replace(/,/g, ''));
+  return Number.isFinite(num) ? num : null;
+}
+
 export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const t = locale === "en" ? en : es;
   const supabase = getSupabaseClient();
 
   const [title, setTitle] = useState("");
   const [priceUsd, setPriceUsd] = useState<string>("");
+  const [priceFocused, setPriceFocused] = useState(false);
   const [countryCode, setCountryCode] = useState("");
   const [departmentCode, setDepartmentCode] = useState("");
   const [city, setCity] = useState("");
@@ -178,7 +190,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        const { data } = await supabase.from('profiles').select('full_name, phone').eq('id', u.id).maybeSingle();
+        const { data } = await supabase.from('profiles').select('full_name, phone, whatsapp_number').eq('id', u.id).maybeSingle();
         setProfile(data ?? null);
       }
       setLoadingProfile(false);
@@ -226,7 +238,9 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       // Must be logged in
       if (!user) throw new Error("Acceso no autorizado");
 
-      const price = priceUsd ? Number(priceUsd) : null;
+      const price = parsePrice(priceUsd);
+      if (price === null) throw new Error("Precio inválido");
+
       const device = getClientDeviceInfo();
       const photoLinksArray = photoLinks ? photoLinks.split('\n').map(l => l.trim()).filter(Boolean) : null;
 
@@ -234,14 +248,28 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const phone = profile?.whatsapp_number || profile?.phone || user.user_metadata?.phone || user.user_metadata?.whatsapp_number;
       const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || null;
 
+      // Debug log
+      console.log({
+        profile,
+        profilePhone: profile?.phone,
+        profileWhatsapp: profile?.whatsapp_number,
+        metadataPhone: user.user_metadata?.phone,
+        metadataWhatsapp: user.user_metadata?.whatsapp_number,
+      });
+
       if (!phone) throw new Error("Perfil incompleto: falta número de WhatsApp");
+
+      // Parse beds and baths
+      const bedsNum = beds ? (beds === "6+" ? 6 : Number(beds)) : null;
+      const bathsNum = baths ? Number(baths) : null; // supports 1.5 etc.
+      const yearBuiltNum = yearBuilt ? Number(yearBuilt) : null;
 
       const { error } = await supabase.from("listing_submissions").insert({
         locale,
         contact_whatsapp: phone,
         contact_name: name,
         title,
-        price_usd: Number.isFinite(price) ? price : null,
+        price_usd: price,
         country: COUNTRIES.find(c => c.code === countryCode)?.name || null,
         department: DEPARTMENTS_BY_COUNTRY[countryCode]?.find(d => d.code === departmentCode)?.name || null,
         city,
@@ -252,10 +280,10 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         device_info: device,
         lat,
         lng,
-        beds: beds ? Number(beds) : null,
-        baths: baths ? Number(baths) : null,
+        beds: bedsNum,
+        baths: bathsNum,
         area_m2: areaM2 ? Number(areaM2) : null,
-        year_built: yearBuilt ? Number(yearBuilt) : null,
+        year_built: yearBuiltNum,
         new_construction: newConstruction || null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
       });
@@ -314,7 +342,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           >
             <option value="">Selecciona país</option>
             {COUNTRIES.map(c => (
-              <option key={c.code} value={c.code}>{c.name}</option>
+              <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
             ))}
           </select>
         </label>
@@ -350,24 +378,37 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       <div className="grid gap-3 md:grid-cols-4">
         <label className="text-sm">
           <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bedsLabel}</div>
-          <input
+          <select
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
             value={beds}
             onChange={(e) => setBeds(e.target.value)}
-            inputMode="numeric"
-            placeholder="Ej. 3"
-          />
+          >
+            <option value="">—</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6+">6+</option>
+          </select>
         </label>
 
         <label className="text-sm">
           <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bathsLabel}</div>
-          <input
+          <select
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
             value={baths}
             onChange={(e) => setBaths(e.target.value)}
-            inputMode="numeric"
-            placeholder="Ej. 2"
-          />
+          >
+            <option value="">—</option>
+            <option value="1">1</option>
+            <option value="1.5">1.5</option>
+            <option value="2">2</option>
+            <option value="2.5">2.5</option>
+            <option value="3">3</option>
+            <option value="3.5">3.5</option>
+            <option value="4+">4+</option>
+          </select>
         </label>
 
         <label className="text-sm">
@@ -465,10 +506,12 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.priceUsd}</div>
           <input
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            value={priceUsd}
-            onChange={(e) => setPriceUsd(e.target.value)}
+            value={priceFocused ? priceUsd : formatPrice(priceUsd)}
+            onChange={(e) => setPriceUsd(e.target.value.replace(/,/g, ''))}
+            onFocus={() => setPriceFocused(true)}
+            onBlur={() => setPriceFocused(false)}
             inputMode="numeric"
-            placeholder="100000"
+            placeholder="100,000"
           />
         </label>
 
