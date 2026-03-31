@@ -88,7 +88,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
   // Auth / profile state
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<{ full_name?: string; phone?: string; whatsapp_number?: string } | null>(null);
+  const [profile, setProfile] = useState<{ id?: string; full_name?: string; phone?: string; whatsapp_number?: string } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -200,6 +200,9 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         }
         effectiveProfile = fresh;
         console.log('[SubmitListingForm] fresh profile fetched:', { userId: user.id, data: fresh });
+        if (!effectiveProfile) {
+          throw new Error("Perfil no encontrado");
+        }
       }
 
       const price = parsePrice(priceUsd);
@@ -244,33 +247,33 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const bathsNum = baths ? Number(baths) : null; // supports 1.5 etc.
       const yearBuiltNum = yearBuilt ? Number(yearBuilt) : null;
 
-      // Prepare payload for debugging
-      const payload = {
-        locale,
-        contact_whatsapp: phone,
-        contact_name: name,
+      // Build payload for listings table
+      const listingPayload = {
+        profile_id: effectiveProfile.id,
         title,
-        price_usd: price,
-        country: COUNTRIES.find(c => c.code === countryCode)?.name || null,
-        department: DEPARTMENTS_BY_COUNTRY[countryCode]?.find(d => d.code === departmentCode)?.name || null,
-        city,
-        mode: mode || null,
-        type: type || null,
+        price_numeric: price,
+        price_currency: 'USD',
         description: description || null,
-        photo_links: photoLinksArray,
-        device_info: device,
-        lat,
-        lng,
+        // location fields (use codes, not names)
+        location_country_code: countryCode,
+        location_department_code: departmentCode,
+        location_city: city,
+        location_lat: lat,
+        location_lng: lng,
         beds: bedsNum,
         baths: bathsNum,
         area_m2: areaM2 ? Number(areaM2) : null,
         year_built: yearBuiltNum,
-        new_construction: newConstruction || null,
+        mode,
+        type,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
+        photo_links: photoLinksArray,
+        status: 'live',
+        source: 'submission_form',
       };
 
-      console.log('[SubmitListingForm] about to insert:', payload);
-      const { data, error } = await supabase.from("listing_submissions").insert(payload);
+      console.log('[SubmitListingForm] about to insert listings:', listingPayload);
+      const { data, error } = await supabase.from("listings").insert(listingPayload);
       console.log('[SubmitListingForm] insert response:', { data, error });
       if (error) {
         console.error('[SubmitListingForm] insert error:', {
