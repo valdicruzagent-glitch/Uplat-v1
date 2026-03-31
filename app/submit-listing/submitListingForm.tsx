@@ -255,7 +255,6 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           details: error.details,
           hint: error.hint,
           code: error.code,
-          payload: error.payload,
         });
         throw error;
       }
@@ -294,8 +293,8 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-          {typeof err === 'string' ? err : JSON.stringify(err)}
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200 whitespace-pre-wrap">
+          {typeof err === 'string' ? err : JSON.stringify(err, null, 2)}
         </div>
       )}
 
