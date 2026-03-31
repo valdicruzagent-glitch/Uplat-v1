@@ -10,41 +10,123 @@ import { getClientDeviceInfo } from "@/lib/deviceInfo";
 const LocationPicker = dynamic(() => import("@/app/components/LocationPicker"), { ssr: false });
 
 const COUNTRIES = [
-  { code: "NI", name: "Nicaragua" },
-  { code: "CR", name: "Costa Rica" },
-  { code: "PA", name: "Panamá" },
-  { code: "HN", name: "Honduras" },
-  { code: "GT", name: "Guatemala" },
-  { code: "SV", name: "El Salvador" },
-];
+  { code: "BZ", name: "Belize", flag: "🇧🇿" },
+  { code: "CR", name: "Costa Rica", flag: "🇨🇷" },
+  { code: "SV", name: "El Salvador", flag: "🇸🇻" },
+  { code: "GT", name: "Guatemala", flag: "🇬🇹" },
+  { code: "HN", name: "Honduras", flag: "🇭🇳" },
+  { code: "NI", name: "Nicaragua", flag: "🇳🇮" },
+  { code: "PA", name: "Panamá", flag: "🇵🇦" },
+].sort((a, b) => a.name.localeCompare(b.name));
+
 const DEPARTMENTS_BY_COUNTRY: Record<string, { code: string; name: string }[]> = {
-  NI: [
-    { code: "MN", name: "Managua" },
-    { code: "SJ", name: "San Juan del Sur" },
-    { code: "GR", name: "Granada" },
-    { code: "LE", name: "León" },
-    { code: "CQ", name: " Chinandega" },
+  BZ: [
+    { code: "BZ", name: "Belize" },
+    { code: "CY", name: "Cayo" },
+    { code: "CZ", name: "Corozal" },
+    { code: "OW", name: "Orange Walk" },
+    { code: "SC", name: "Stann Creek" },
+    { code: "TO", name: "Toledo" },
   ],
   CR: [
     { code: "SJ", name: "San José" },
     { code: "AL", name: "Alajuela" },
     { code: "CA", name: "Cartago" },
-  ],
-  PA: [
-    { code: "PA", name: "Panamá" },
-    { code: "CH", name: "Chiriquí" },
-  ],
-  HN: [
-    { code: "FM", name: "Francisco Morazán" },
-    { code: "CP", name: "Cortés" },
-  ],
-  GT: [
-    { code: "GU", name: "Guatemala" },
-    { code: "AN", name: "Antigua" },
+    { code: "HE", name: "Heredia" },
+    { code: "GU", name: "Guanacaste" },
+    { code: "PU", name: "Puntarenas" },
+    { code: "LI", name: "Limón" },
   ],
   SV: [
+    { code: "AH", name: "Ahuachapán" },
+    { code: "CB", name: "Cabañas" },
+    { code: "CH", name: "Chalatenango" },
+    { code: "CU", name: "Cuscatlán" },
+    { code: "LB", name: "La Libertad" },
+    { code: "PZ", name: "La Paz" },
+    { code: "UN", name: "La Unión" },
+    { code: "MO", name: "Morazán" },
+    { code: "SM", name: "San Miguel" },
     { code: "SS", name: "San Salvador" },
-    { code: "SM", name: "Santa Ana" },
+    { code: "SV", name: "San Vicente" },
+    { code: "SA", name: "Santa Ana" },
+    { code: "SO", name: "Sonsonate" },
+    { code: "US", name: "Usulután" },
+  ],
+  GT: [
+    { code: "AV", name: "Alta Verapaz" },
+    { code: "BV", name: "Baja Verapaz" },
+    { code: "CM", name: "Chimaltenango" },
+    { code: "CQ", name: "Chiquimula" },
+    { code: "PG", name: "El Progreso" },
+    { code: "ES", name: "Escuintla" },
+    { code: "GU", name: "Guatemala" },
+    { code: "HU", name: "Huehuetenango" },
+    { code: "IZ", name: "Izabal" },
+    { code: "JA", name: "Jalapa" },
+    { code: "JU", name: "Jutiapa" },
+    { code: "PE", name: "Petén" },
+    { code: "QZ", name: "Quetzaltenango" },
+    { code: "QC", name: "Quiché" },
+    { code: "RE", name: "Retalhuleu" },
+    { code: "SM", name: "Sacatepéquez" },
+    { code: "SMK", name: "San Marcos" },
+    { code: "SR", name: "Santa Rosa" },
+    { code: "SO", name: "Sololá" },
+    { code: "SU", name: "Suchitepéquez" },
+    { code: "TO", name: "Totonicapán" },
+    { code: "ZA", name: "Zacapa" },
+  ],
+  HN: [
+    { code: "AT", name: "Atlántida" },
+    { code: "CH", name: "Choluteca" },
+    { code: "CL", name: "Colón" },
+    { code: "CM", name: "Comayagua" },
+    { code: "CP", name: "Copán" },
+    { code: "CR", name: "Cortés" },
+    { code: "EP", name: "El Paraíso" },
+    { code: "FM", name: "Francisco Morazán" },
+    { code: "GD", name: "Gracias a Dios" },
+    { code: "IN", name: "Intibucá" },
+    { code: "IB", name: "Islas de la Bahía" },
+    { code: "PZ", name: "La Paz" },
+    { code: "LE", name: "Lempira" },
+    { code: "OC", name: "Ocotepeque" },
+    { code: "OL", name: "Olancho" },
+    { code: "SB", name: "Santa Bárbara" },
+    { code: "VA", name: "Valle" },
+    { code: "YO", name: "Yoro" },
+  ],
+  NI: [
+    { code: "BO", name: "Boaco" },
+    { code: "CA", name: "Carazo" },
+    { code: "CI", name: "Chinandega" },
+    { code: "CT", name: "Chontales" },
+    { code: "ES", name: "Estelí" },
+    { code: "GR", name: "Granada" },
+    { code: "JI", name: "Jinotega" },
+    { code: "LE", name: "León" },
+    { code: "MD", name: "Madriz" },
+    { code: "MN", name: "Managua" },
+    { code: "MY", name: "Masaya" },
+    { code: "MT", name: "Matagalpa" },
+    { code: "NS", name: "Nueva Segovia" },
+    { code: "RACCN", name: "RACCN" },
+    { code: "RACCS", name: "RACCS" },
+    { code: "RS", name: "Río San Juan" },
+    { code: "RI", name: "Rivas" },
+  ],
+  PA: [
+    { code: "BT", name: "Bocas del Toro" },
+    { code: "CL", name: "Coclé" },
+    { code: "CN", name: "Colón" },
+    { code: "CH", name: "Chiriquí" },
+    { code: "DA", name: "Darién" },
+    { code: "HE", name: "Herrera" },
+    { code: "LS", name: "Los Santos" },
+    { code: "PA", name: "Panamá" },
+    { code: "PO", name: "Panamá Oeste" },
+    { code: "VG", name: "Veraguas" },
   ],
 };
 
@@ -74,10 +156,44 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [loading, setLoading] = useState(false);
   const websiteFieldRef = useRef<HTMLInputElement>(null);
 
+  // Auth / profile state
+  const supabase = getSupabaseClient();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<{ full_name?: string; phone?: string } | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
   useEffect(() => {
-    setContactWhatsapp(window.localStorage.getItem("uplat_contact_whatsapp") ?? "");
-    setContactName(window.localStorage.getItem("uplat_contact_name") ?? "");
-  }, []);
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        const { data } = await supabase.from('profiles').select('full_name, phone').eq('id', u.id).maybeSingle();
+        setProfile(data ?? null);
+      }
+      setLoadingProfile(false);
+    };
+    load();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        const { data } = await supabase.from('profiles').select('full_name, phone').eq('id', u.id).maybeSingle();
+        setProfile(data ?? null);
+      } else {
+        setProfile(null);
+      }
+      setLoadingProfile(false);
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!user) {
+      setContactWhatsapp(window.localStorage.getItem("uplat_contact_whatsapp") ?? "");
+      setContactName(window.localStorage.getItem("uplat_contact_name") ?? "");
+    }
+  }, [user]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,7 +210,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         return;
       }
 
-      if (!contactWhatsapp) throw new Error("WhatsApp es requerido");
+      if (!user && !contactWhatsapp) throw new Error("WhatsApp es requerido");
       if (!title) throw new Error("Título es requerido");
       if (!priceUsd) throw new Error("Precio es requerido");
       if (!countryCode) throw new Error("País es requerido");
@@ -108,10 +224,16 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const device = getClientDeviceInfo();
       const photoLinksArray = photoLinks ? photoLinks.split('\n').map(l => l.trim()).filter(Boolean) : null;
 
+      // Use profile data if logged in, otherwise form fields
+      const phone = user && profile ? (profile.phone || user.user_metadata?.phone) : contactWhatsapp;
+      const name = user && profile ? (profile.full_name || user.user_metadata?.full_name) : contactName;
+
+      if (!phone) throw new Error("WhatsApp es requerido");
+
       const { error } = await supabase.from("listing_submissions").insert({
         locale,
-        contact_whatsapp: contactWhatsapp,
-        contact_name: contactName || null,
+        contact_whatsapp: phone,
+        contact_name: name || null,
         title,
         price_usd: Number.isFinite(price) ? price : null,
         country: COUNTRIES.find(c => c.code === countryCode)?.name || null,
@@ -259,24 +381,32 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           >
             <option value="">—</option>
             <option value="house">{t.house}</option>
-            <option value="land">{t.land}</option>
             <option value="apartment">{t.apartment}</option>
+            <option value="land">{t.land}</option>
+            <option value="farm">{t.farm}</option>
           </select>
         </label>
       </div>
 
-      {/* Title, Price, Operation */}
-      <div className="grid gap-3 md:grid-cols-3">
+      {/* Title (full width) */}
+      <div className="md:col-span-4">
         <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.listingTitleLabel}</div>
+          <div className="mb-1 flex items-center justify-between text-zinc-700 dark:text-zinc-300">
+            <span>{t.listingTitleLabel}</span>
+            <span className="text-xs text-zinc-500">{title.length}/100</span>
+          </div>
           <input
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            maxLength={100}
             required
           />
         </label>
+      </div>
 
+      {/* Price and Operation */}
+      <div className="grid gap-3 md:grid-cols-2">
         <label className="text-sm">
           <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.priceUsd}</div>
           <input
@@ -323,27 +453,34 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         />
       </label>
 
-      {/* Contact */}
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.contactWhatsapp}</div>
-          <input
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            value={contactWhatsapp}
-            onChange={(e) => setContactWhatsapp(e.target.value)}
-            required
-          />
-        </label>
+      {/* Contact – conditional */}
+      {user && profile ? (
+        <div className="md:col-span-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 p-3 text-sm">
+          <p className="font-medium">{profile.full_name || user.user_metadata?.full_name || user.email?.split('@')[0]}</p>
+          <p className="text-zinc-600 dark:text-zinc-400">{profile.phone || user.user_metadata?.phone || 'Teléfono no configurado'}</p>
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.contactWhatsapp}</div>
+            <input
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              value={contactWhatsapp}
+              onChange={(e) => setContactWhatsapp(e.target.value)}
+              required
+            />
+          </label>
 
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yourName}</div>
-          <input
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            value={contactName}
-            onChange={(e) => setContactName(e.target.value)}
-          />
-        </label>
-      </div>
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yourName}</div>
+            <input
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+            />
+          </label>
+        </div>
+      )}
 
       <button
         type="submit"

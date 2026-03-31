@@ -59,7 +59,6 @@ export default function LocationPicker({ initialCenter, onChange }: LocationPick
         zoom={10}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
-        key={`${center[0]}_${center[1]}`}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
