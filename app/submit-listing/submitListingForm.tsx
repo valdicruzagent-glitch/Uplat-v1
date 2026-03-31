@@ -141,6 +141,25 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     try {
       const supabase = getSupabaseClient();
 
+      // Log form inputs for debugging
+      console.log("[SubmitListingForm] form inputs:", {
+        title,
+        priceUsd,
+        countryCode,
+        departmentCode,
+        city,
+        type,
+        mode,
+        lat,
+        lng,
+        beds,
+        baths,
+        areaM2,
+        yearBuilt,
+        newConstruction,
+        selectedAmenities,
+      });
+
       // Honeypot
       const hp = websiteFieldRef.current?.value ?? "";
       if (hp.trim() !== "") {
@@ -265,14 +284,16 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       }
       setDone(true);
     } catch (e: unknown) {
+      console.error('[SubmitListingForm] submit error:', e);
       let msg = "Failed";
       if (e instanceof Error) {
         msg = e.message;
-        // If it's a Supabase error, enrich with details
         const supabaseErr = e as any;
         if (supabaseErr?.code || supabaseErr?.details) {
           msg += ` (code: ${supabaseErr.code}, details: ${supabaseErr.details})`;
         }
+      } else {
+        msg = String(e);
       }
       setErr(msg);
     } finally {
