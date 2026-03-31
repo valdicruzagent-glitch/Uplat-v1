@@ -124,6 +124,14 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
+  // UX: auto-fill current year when newConstruction is checked and yearBuilt is empty
+  useEffect(() => {
+    if (newConstruction && !yearBuilt) {
+      const currentYear = new Date().getFullYear();
+      setYearBuilt(String(currentYear));
+    }
+  }, [newConstruction, yearBuilt]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
@@ -152,6 +160,28 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       // Must be logged in
       if (!user) throw new Error("Acceso no autorizado");
 
+      // Guard: profile still loading?
+      if (loadingProfile) {
+        throw new Error("Espera un momento mientras cargamos tu perfil");
+      }
+
+      // If profile state is null, try to fetch it now (fresh)
+      let effectiveProfile = profile;
+      if (!effectiveProfile) {
+        console.log('[SubmitListingForm] profile state null, fetching fresh...');
+        const { data: fresh, error: freshErr } = await supabase
+          .from('profiles')
+          .select('full_name, phone, whatsapp_number, id')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (freshErr) {
+          console.error('[SubmitListingForm] fresh profile fetch error:', freshErr);
+          throw new Error("No se pudo cargar el perfil");
+        }
+        effectiveProfile = fresh;
+        console.log('[SubmitListingForm] fresh profile fetched:', { userId: user.id, data: fresh });
+      }
+
       const price = parsePrice(priceUsd);
       if (price === null) throw new Error("Precio inválido");
 
@@ -159,14 +189,19 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const photoLinksArray = photoLinks ? photoLinks.split('\n').map(l => l.trim()).filter(Boolean) : null;
 
       // Use profile data (required) – prioritize whatsapp_number, fallback to phone
-      const phone = profile?.whatsapp_number || profile?.phone || user.user_metadata?.whatsapp_number || user.user_metadata?.phone || "";
-      const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || null;
+      const phone =
+        effectiveProfile?.whatsapp_number ||
+        effectiveProfile?.phone ||
+        user.user_metadata?.whatsapp_number ||
+        user.user_metadata?.phone ||
+        "";
+      const name = effectiveProfile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || null;
 
       // Debug log
       console.log({
-        profile,
-        profilePhone: profile?.phone,
-        profileWhatsapp: profile?.whatsapp_number,
+        profile: effectiveProfile,
+        profilePhone: effectiveProfile?.phone,
+        profileWhatsapp: effectiveProfile?.whatsapp_number,
         metadataPhone: user.user_metadata?.phone,
         metadataWhatsapp: user.user_metadata?.whatsapp_number,
       });
@@ -174,10 +209,10 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       // Render-state log for submit
       console.log("[SubmitListingForm submit values]", {
         userId: user?.id,
-        profile,
+        profile: effectiveProfile,
         resolvedPhone: phone,
-        profilePhone: profile?.phone,
-        profileWhatsapp: profile?.whatsapp_number,
+        profilePhone: effectiveProfile?.phone,
+        profileWhatsapp: effectiveProfile?.whatsapp_number,
         metadataPhone: user.user_metadata?.phone,
         metadataWhatsapp: user.user_metadata?.whatsapp_number,
       });
@@ -477,7 +512,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || loadingProfile}
         className="w-full rounded-lg bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
       >
         {loading ? (locale === "es" ? "Publicando..." : "Publishing...") : (locale === "es" ? t.publish : "Publish")}
