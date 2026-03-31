@@ -268,7 +268,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         type,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
         photo_links: photoLinksArray,
-        status: 'live',
+        status: 'published',
         source: 'submission_form',
       };
 

@@ -7,6 +7,7 @@ import ImageGallery from "@/app/components/ImageGallery";
 import FavoriteButton from "@/app/components/FavoriteButton";
 import InquiryForm from "@/app/components/InquiryForm";
 import ListingMap from "@/app/components/ListingMap";
+import ReportButton from "@/app/components/ReportButton";
 
 function getSortedImages(listing: Record<string, unknown>) {
   const urls = Array.isArray(listing.image_urls) ? listing.image_urls : [];
