@@ -9,6 +9,7 @@ import { en } from "@/app/i18n/en";
 import LanguageSwitch from "./LanguageSwitch";
 
 export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
+  console.log("SITE_HEADER_FIX_VERSION_ed4db11");
   const t = locale === "en" ? en : es;
   const pathname = usePathname();
   const supabase = getSupabaseClient();

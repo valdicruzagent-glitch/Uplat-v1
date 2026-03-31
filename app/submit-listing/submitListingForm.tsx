@@ -133,6 +133,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   }, [newConstruction, yearBuilt]);
 
   async function submit(e: React.FormEvent) {
+    console.log("SUBMIT_LISTING_FIX_VERSION_ed4db11");
     e.preventDefault();
     setErr(null);
 
