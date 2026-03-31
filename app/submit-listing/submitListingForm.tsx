@@ -143,7 +143,7 @@ const AMENITIES_OPTIONS = [
 function formatPrice(value: string): string {
   const num = Number(value.replace(/,/g, ''));
   if (isNaN(num)) return value;
-  return num.toLocaleString('en-US');
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function parsePrice(value: string): number | null {
