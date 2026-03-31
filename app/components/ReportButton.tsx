@@ -13,7 +13,8 @@ export default function ReportButton({ listingId }: { listingId: string }) {
 
   const handleSubmit = async () => {
     setLoading(true);
-    const { data: { user } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
     if (!user) {
       alert('Debes iniciar sesión para reportar');
       setLoading(false);
