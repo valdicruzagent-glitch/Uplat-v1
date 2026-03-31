@@ -27,7 +27,6 @@ export const en = {
   areaShort: (n: number) => `${Math.round(n)} m²`,
   back: "← Back",
   listingNotFound: "Listing not found",
-  contactWhatsapp: "Contact on WhatsApp",
   views: (n: number | null) => (n === null ? "Views: …" : `Views: ${n}`),
   signInTitle: "Sign in",
   signInSubtitle: "Start with Google, then verify WhatsApp to publish listings and manage leads.",
@@ -148,8 +147,14 @@ export const en = {
   resendCode: "Resend code",
   // Submit listing new fields
   countryLabel: "Country",
+  departmentLabel: "Department / State",
   cityLabel: "City",
   typeLabel: "Type",
+  operationLabel: "Operation",
+  bedsLabel: "Bedrooms",
+  bathsLabel: "Bathrooms",
+  areaM2Label: "Area (m²)",
+  contactWhatsapp: "Contact WhatsApp",
   // SiteHeader
   agents: "Agents",
   signIn: "Sign in",

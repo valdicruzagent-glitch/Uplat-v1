@@ -27,7 +27,6 @@ export const es = {
   areaShort: (n: number) => `${Math.round(n)} m²`,
   back: "← Regresar",
   listingNotFound: "Propiedad no encontrada",
-  contactWhatsapp: "Contactar por WhatsApp",
   views: (n: number | null) => (n === null ? "Vistas: …" : `Vistas: ${n}`),
   signInTitle: "Entrar",
   signInSubtitle: "Empieza con Google y luego verifica tu WhatsApp para publicar propiedades y manejar leads.",
@@ -148,8 +147,14 @@ export const es = {
   resendCode: "Reenviar código",
   // Submit listing new fields
   countryLabel: "País",
+  departmentLabel: "Departamento / Estado",
   cityLabel: "Ciudad",
   typeLabel: "Tipo",
+  operationLabel: "Operación",
+  bedsLabel: "Habitaciones",
+  bathsLabel: "Baños",
+  areaM2Label: "Área (m²)",
+  contactWhatsapp: "WhatsApp de contacto",
   // SiteHeader
   agents: "Agentes",
   signIn: "Entrar",
