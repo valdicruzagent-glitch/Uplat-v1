@@ -36,6 +36,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       console.log('[SiteHeader] profile query result:', { userId: user.id, data, error });
       if (mounted) {
         setProfile(data ?? null);
+        setLoading(false);
       }
     };
 

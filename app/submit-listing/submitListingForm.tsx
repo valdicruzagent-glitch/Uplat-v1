@@ -39,7 +39,6 @@ const COUNTRIES = [
 
 
 const AMENITIES_OPTIONS = [
-  { value: "new_construction", label: "Nueva construcción" },
   { value: "ac", label: "Aire acondicionado" },
   { value: "pool", label: "Piscina" },
   { value: "waterfront", label: "Frente al agua" },
@@ -124,13 +123,13 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  // UX: auto-fill current year when newConstruction is checked and yearBuilt is empty
+  // UX: auto-fill current year when newConstruction is checked (overwrite any existing)
   useEffect(() => {
-    if (newConstruction && !yearBuilt) {
+    if (newConstruction) {
       const currentYear = new Date().getFullYear();
       setYearBuilt(String(currentYear));
     }
-  }, [newConstruction, yearBuilt]);
+  }, [newConstruction]);
 
   async function submit(e: React.FormEvent) {
     console.log("SUBMIT_LISTING_FIX_VERSION_ed4db11");
