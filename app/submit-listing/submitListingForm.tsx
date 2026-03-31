@@ -225,7 +225,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const bathsNum = baths ? Number(baths) : null; // supports 1.5 etc.
       const yearBuiltNum = yearBuilt ? Number(yearBuilt) : null;
 
-      const { error } = await supabase.from("listing_submissions").insert({
+      const { data, error } = await supabase.from("listing_submissions").insert({
         locale,
         contact_whatsapp: phone,
         contact_name: name,
@@ -249,10 +249,27 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[SubmitListingForm] insert error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          payload: error.payload,
+        });
+        throw error;
+      }
       setDone(true);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed";
+      let msg = "Failed";
+      if (e instanceof Error) {
+        msg = e.message;
+        // If it's a Supabase error, enrich with details
+        const supabaseErr = e as any;
+        if (supabaseErr?.code || supabaseErr?.details) {
+          msg += ` (code: ${supabaseErr.code}, details: ${supabaseErr.details})`;
+        }
+      }
       setErr(msg);
     } finally {
       setLoading(false);
@@ -278,7 +295,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
       {err && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-          {err}
+          {typeof err === 'string' ? err : JSON.stringify(err)}
         </div>
       )}
 
