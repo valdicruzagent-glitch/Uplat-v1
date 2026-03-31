@@ -155,6 +155,9 @@ export const es = {
   bathsLabel: "Baños",
   areaM2Label: "Área (m²)",
   contactWhatsapp: "WhatsApp de contacto",
+  yearBuiltLabel: "Año de construcción",
+  newConstructionLabel: "Nueva construcción",
+  amenitiesLabel: "Características / Amenidades",
   // SiteHeader
   agents: "Agentes",
   signIn: "Entrar",

@@ -130,6 +130,16 @@ const DEPARTMENTS_BY_COUNTRY: Record<string, { code: string; name: string }[]> =
   ],
 };
 
+const AMENITIES_OPTIONS = [
+  { value: "new_construction", label: "Nueva construcción" },
+  { value: "ac", label: "Aire acondicionado" },
+  { value: "pool", label: "Piscina" },
+  { value: "waterfront", label: "Frente al agua" },
+  { value: "parking", label: "Estacionamiento" },
+  { value: "furnished", label: "Amueblado" },
+  { value: "gated", label: "Condominio cerrado" },
+];
+
 export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const t = locale === "en" ? en : es;
 
@@ -150,6 +160,9 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [beds, setBeds] = useState<string>("");
   const [baths, setBaths] = useState<string>("");
   const [areaM2, setAreaM2] = useState<string>("");
+  const [yearBuilt, setYearBuilt] = useState<string>("");
+  const [newConstruction, setNewConstruction] = useState(false);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -249,6 +262,9 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         beds: beds ? Number(beds) : null,
         baths: baths ? Number(baths) : null,
         area_m2: areaM2 ? Number(areaM2) : null,
+        year_built: yearBuilt ? Number(yearBuilt) : null,
+        new_construction: newConstruction || null,
+        amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
       });
 
       if (error) throw error;
@@ -386,6 +402,51 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
             <option value="farm">{t.farm}</option>
           </select>
         </label>
+      </div>
+
+      {/* Additional property data */}
+      <div className="grid gap-3 md:grid-cols-3">
+        <label className="text-sm">
+          <div className="mb-1 text-zinc-700 dark:text-zinc-300">Año de construcción</div>
+          <input
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            value={yearBuilt}
+            onChange={(e) => setYearBuilt(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            inputMode="numeric"
+            placeholder="Ej. 1990"
+          />
+        </label>
+
+        <label className="text-sm flex items-center gap-2">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-zinc-300"
+            checked={newConstruction}
+            onChange={(e) => setNewConstruction(e.target.checked)}
+          />
+          <span>Nueva construcción</span>
+        </label>
+      </div>
+
+      {/* Amenities */}
+      <div>
+        <div className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Características / Amenidades</div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+          {AMENITIES_OPTIONS.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-zinc-300"
+                checked={selectedAmenities.includes(opt.value)}
+                onChange={(e) => {
+                  if (e.target.checked) setSelectedAmenities([...selectedAmenities, opt.value]);
+                  else setSelectedAmenities(selectedAmenities.filter((v) => v !== opt.value));
+                }}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Title (full width) */}
