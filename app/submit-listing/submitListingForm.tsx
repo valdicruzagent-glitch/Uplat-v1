@@ -142,9 +142,7 @@ const AMENITIES_OPTIONS = [
 
 export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const t = locale === "en" ? en : es;
-
-  const [contactName, setContactName] = useState("");
-  const [contactWhatsapp, setContactWhatsapp] = useState("");
+  const supabase = getSupabaseClient();
 
   const [title, setTitle] = useState("");
   const [priceUsd, setPriceUsd] = useState<string>("");
@@ -170,7 +168,6 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const websiteFieldRef = useRef<HTMLInputElement>(null);
 
   // Auth / profile state
-  const supabase = getSupabaseClient();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<{ full_name?: string; phone?: string } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -201,13 +198,6 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  useEffect(() => {
-    if (!user) {
-      setContactWhatsapp(window.localStorage.getItem("uplat_contact_whatsapp") ?? "");
-      setContactName(window.localStorage.getItem("uplat_contact_name") ?? "");
-    }
-  }, [user]);
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
@@ -223,7 +213,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         return;
       }
 
-      if (!user && !contactWhatsapp) throw new Error("WhatsApp es requerido");
+      // Validations
       if (!title) throw new Error("Título es requerido");
       if (!priceUsd) throw new Error("Precio es requerido");
       if (!countryCode) throw new Error("País es requerido");
@@ -233,20 +223,23 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       if (!mode) throw new Error("Operación es requerida");
       if (lat === null || lng === null) throw new Error("Ubicación en mapa es requerida");
 
+      // Must be logged in
+      if (!user) throw new Error("Acceso no autorizado");
+
       const price = priceUsd ? Number(priceUsd) : null;
       const device = getClientDeviceInfo();
       const photoLinksArray = photoLinks ? photoLinks.split('\n').map(l => l.trim()).filter(Boolean) : null;
 
-      // Use profile data if logged in, otherwise form fields
-      const phone = user && profile ? (profile.phone || user.user_metadata?.phone) : contactWhatsapp;
-      const name = user && profile ? (profile.full_name || user.user_metadata?.full_name) : contactName;
+      // Use profile data (required)
+      const phone = profile?.phone || user.user_metadata?.phone;
+      const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || null;
 
-      if (!phone) throw new Error("WhatsApp es requerido");
+      if (!phone) throw new Error("Perfil incompleto: falta número de WhatsApp");
 
       const { error } = await supabase.from("listing_submissions").insert({
         locale,
         contact_whatsapp: phone,
-        contact_name: name || null,
+        contact_name: name,
         title,
         price_usd: Number.isFinite(price) ? price : null,
         country: COUNTRIES.find(c => c.code === countryCode)?.name || null,
@@ -449,7 +442,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         </div>
       </div>
 
-      {/* Title (full width) */}
+      {/* Title */}
       <div className="md:col-span-4">
         <label className="text-sm">
           <div className="mb-1 flex items-center justify-between text-zinc-700 dark:text-zinc-300">
@@ -513,35 +506,6 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           placeholder="https://... (una URL por línea)"
         />
       </label>
-
-      {/* Contact – conditional */}
-      {user && profile ? (
-        <div className="md:col-span-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 p-3 text-sm">
-          <p className="font-medium">{profile.full_name || user.user_metadata?.full_name || user.email?.split('@')[0]}</p>
-          <p className="text-zinc-600 dark:text-zinc-400">{profile.phone || user.user_metadata?.phone || 'Teléfono no configurado'}</p>
-        </div>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          <label className="text-sm">
-            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.contactWhatsapp}</div>
-            <input
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-              value={contactWhatsapp}
-              onChange={(e) => setContactWhatsapp(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="text-sm">
-            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yourName}</div>
-            <input
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-            />
-          </label>
-        </div>
-      )}
 
       <button
         type="submit"

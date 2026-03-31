@@ -55,7 +55,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     if (user && (profile || user.email)) {
       window.location.href = locale === "en" ? "/en/submit-listing" : "/submit-listing";
     } else {
-      window.location.href = locale === "en" ? "/en/signin?next=/sell" : "/signin?next=/sell";
+      window.location.href = locale === "en" ? "/en/signin?next=/submit-listing" : "/signin?next=/submit-listing";
     }
   };
 
