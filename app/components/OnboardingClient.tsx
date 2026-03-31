@@ -183,6 +183,9 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
         id: user.id,
         phone: fullPhone,
         whatsapp_number: fullPhone,
+        country_code: selectedCountry.code,
+        country_name: selectedCountry.name,
+        dial_code: selectedCountry.dialCode,
       });
       if (error) throw error;
 
@@ -206,6 +209,9 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
         role,
         phone: phone.trim(),
         whatsapp_number: phone.trim(),
+        country_code: selectedCountry.code,
+        country_name: selectedCountry.name,
+        dial_code: selectedCountry.dialCode,
         email: user.email,
         avatar_url: user.user_metadata?.picture || null,
         terms_accepted: true,
