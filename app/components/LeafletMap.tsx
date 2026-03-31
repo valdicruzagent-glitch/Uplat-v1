@@ -39,6 +39,16 @@ function FitBoundsOnMount({ listings }: { listings: Listing[] }) {
   return null;
 }
 
+function CenterUpdater({ center }: { center?: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
+}
+
 export type LeafletMapProps = {
   activeListings: Listing[];
   compListings: Listing[];
@@ -140,6 +150,7 @@ export default function LeafletMap(props: LeafletMapProps) {
         />
 
         <FitBoundsOnMount listings={activeListings} />
+        <CenterUpdater center={center} />
 
         <MarkerClusterGroup
           // Zillow-like: cluster only actives, keep comps separate.

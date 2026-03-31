@@ -14,25 +14,49 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
   const supabase = getSupabaseClient();
 
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    let mounted = true;
+    const loadProfile = async (user: any) => {
+      if (!user) {
+        if (mounted) setProfile(null);
+        return;
+      }
+      const { data } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).maybeSingle();
+      if (mounted) setProfile(data ?? null);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) await loadProfile(u);
+      else setProfile(null);
       setLoading(false);
     });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) await loadProfile(u);
+      else setProfile(null);
       setLoading(false);
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      mounted = false;
+    };
   }, [supabase]);
 
   const handleSell = () => {
-    window.location.href = locale === "en" ? "/en/signin?next=/sell" : "/signin?next=/sell";
+    if (user && (profile || user.email)) {
+      window.location.href = locale === "en" ? "/en/submit-listing" : "/submit-listing";
+    } else {
+      window.location.href = locale === "en" ? "/en/signin?next=/sell" : "/signin?next=/sell";
+    }
   };
 
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(href + "/");
@@ -54,10 +78,10 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
           {/* Right: mobile auth button */}
           {user ? (
             <div className="md:hidden flex items-center gap-2">
-              {user.avatar_url && (
-                <img src={user.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+              {profile?.avatar_url && (
+                <img src={profile.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
               )}
-              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</div>
+              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || ''}</div>
             </div>
           ) : (
             <Link href={locale === "en" ? "/en/signin" : "/signin"} className="md:hidden px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">
@@ -85,10 +109,10 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
               user ? (
                 <div className="relative">
                   <button className="text-sm font-medium flex items-center gap-2 text-zinc-900 dark:text-zinc-100" onClick={() => setMenuOpen(m => !m)}>
-                    {user.avatar_url && (
-                      <img src={user.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+                    {profile?.avatar_url && (
+                      <img src={profile.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
                     )}
-                    {user.name}
+                    {profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || ''}
                   </button>
                   {menuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50">
