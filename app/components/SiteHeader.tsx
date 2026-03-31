@@ -14,7 +14,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
   const supabase = getSupabaseClient();
 
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<{ full_name?: string } | null>(null);
+  const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
