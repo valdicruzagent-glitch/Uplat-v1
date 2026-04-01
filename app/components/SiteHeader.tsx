@@ -24,18 +24,20 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
   const renderCount = useRef(0);
   renderCount.current += 1;
   console.log(`[SiteHeader] render #${renderCount.current}`, { user: user?.id, profile: profile?.full_name, loading });
-  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     let mounted = true;
+    let currentUserId: string | null = null;
+
     const loadProfile = async (user: any) => {
       if (!user) {
-        if (mounted) {
-          setProfile(null);
-          console.log('[SiteHeader] no user, profile set to null');
-        }
+        if (mounted) setProfile(null);
         return;
       }
+      // Skip if already loaded for this user
+      if (currentUserId === user.id) return;
+      currentUserId = user.id;
+
       console.log('[SiteHeader] loading profile for userId:', user.id);
       try {
         const timeoutPromise = new Promise((_, reject) =>
@@ -51,7 +53,6 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
         if (mounted) {
           setProfile(data ?? null);
           setLoading(false);
-          console.log('[SiteHeader] after setProfile/setLoading');
         }
       } catch (e) {
         console.error('[SiteHeader] profile query exception:', e);
@@ -61,16 +62,13 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
 
     const initAuth = async () => {
       try {
-        // Quick local session (no network)
         const { data: { user } } = await supabase.auth.getUser();
         console.log('[SiteHeader] getUser() initial:', user?.id);
         if (user) {
           setUser(user);
           await loadProfile(user);
         } else {
-          // Try to refresh in case token expired
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          console.log('[SiteHeader] refreshSession after empty:', { userId: refreshData?.session?.user?.id, refreshError });
+          const { data: refreshData } = await supabase.auth.refreshSession();
           if (refreshData?.session?.user) {
             setUser(refreshData.session.user);
             await loadProfile(refreshData.session.user);
@@ -89,30 +87,20 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       console.log('[SiteHeader] onAuthStateChange event:', _event, 'sessionUser:', session?.user?.id);
       const u = session?.user ?? null;
-      setUser(u);
-      if (u) await loadProfile(u);
-      else setProfile(null);
-      setLoading(false);
+      // Only act if user actually changed
+      if (u?.id !== currentUserId) {
+        setUser(u);
+        if (u) await loadProfile(u);
+        else setProfile(null);
+        setLoading(false);
+      }
     });
 
     return () => {
       subscription.unsubscribe();
       mounted = false;
     };
-  }, [supabase, pathname]);
-
-  // Diagnostic: check state after a short delay and force update if needed (temp)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log('[SiteHeader] delayed state check:', { user: user?.id, profile: profile?.full_name, loading });
-      // If user exists but header might not reflect, force an update
-      if (user && (!profile || !profile.full_name)) {
-        console.log('[SiteHeader] forcing update due to missing profile');
-        forceUpdate(n => n + 1);
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [user, profile, loading]);
+  }, [supabase]); // removed pathname to prevent refetch on route change
 
   const handleSell = () => {
     if (user && (profile || user.email)) {
@@ -136,7 +124,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     loading,
     hasUser: !!user,
     profile,
-    displayName: profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+    displayName: profile?.full_name || user?.user_metadata?.full_name || user.email?.split('@')[0] || '',
     avatarUrl,
   });
 
