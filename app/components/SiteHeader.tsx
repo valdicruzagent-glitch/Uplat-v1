@@ -37,11 +37,17 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
         return;
       }
       console.log('[SiteHeader] loading profile for userId:', user.id);
-      const { data, error } = await supabase.from('profiles').select('full_name, avatar_url, phone, whatsapp_number, id').eq('id', user.id).maybeSingle();
-      console.log('[SiteHeader] profile query result:', { userId: user.id, data, error });
-      if (mounted) {
-        setProfile(data ?? null);
-        setLoading(false);
+      try {
+        const { data, error } = await supabase.from('profiles').select('full_name, avatar_url, phone, whatsapp_number, id').eq('id', user.id).maybeSingle();
+        console.log('[SiteHeader] profile query result:', { userId: user.id, data, error });
+        if (mounted) {
+          setProfile(data ?? null);
+          setLoading(false);
+          console.log('[SiteHeader] after setProfile/setLoading');
+        }
+      } catch (e) {
+        console.error('[SiteHeader] profile query exception:', e);
+        if (mounted) setLoading(false);
       }
     };
 
@@ -167,8 +173,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
               {t.getHelp}
             </button>
             <LanguageSwitch current={locale} />
-            {!loading && (
-              user ? (
+            {user ? (
                 <div className="relative">
                   <button className="text-sm font-medium flex items-center gap-2 text-zinc-900 dark:text-zinc-100" onClick={() => setMenuOpen(m => !m)}>
                     {avatarUrl && (
@@ -189,7 +194,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
                   {t.signInTitle}
                 </Link>
               )
-            )}
+            }
           </div>
         </div>
       </header>
