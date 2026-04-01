@@ -1,3 +1,4 @@
+// /Users/belkiscruz/.openclaw/workspace/Uplat-v1/middleware.ts
 import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -35,7 +36,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Check profile completeness: phone collected, role, and terms acceptance must be present
+  // Check profile completeness
   const { data: profile } = await supabase.from('profiles')
     .select('role, whatsapp_number, terms_accepted, is_admin')
     .eq('id', user.id)
@@ -46,15 +47,14 @@ export async function middleware(request: NextRequest) {
   const onboardingPath = '/onboarding';
   const path = request.nextUrl.pathname;
 
-  // Admin routes: require is_admin
+  // Admin routes
   if (path.startsWith('/admin')) {
     if (!profile?.is_admin) {
-      // Not admin; redirect to home
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
     }
-    return response; // admin allowed
+    return response;
   }
 
   const excluded = ['/onboarding', '/signin', '/signup', '/api', '/_next', '/favicon.ico'];
