@@ -22,8 +22,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  console.log("ROOT_LAYOUT_VERSION_48b713a");
-  const commitHash = "3c1d38f";
   return (
     <html
       lang="en"
@@ -31,25 +29,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
-        {/* Debug: visible version marker */}
-        <div
-          id="app-version"
-          style={{
-            position: 'fixed',
-            bottom: '4px',
-            right: '4px',
-            background: 'rgba(0,0,0,0.7)',
-            color: '#0f0',
-            padding: '2px 6px',
-            fontSize: '10px',
-            fontFamily: 'monospace',
-            zIndex: 99999,
-            pointerEvents: 'none',
-            opacity: 0.8,
-          }}
-        >
-          v={commitHash}
-        </div>
       </body>
     </html>
   );

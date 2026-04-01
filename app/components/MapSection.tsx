@@ -195,8 +195,10 @@ export default function MapSection({
         }
 
         if (error) {
-          console.error(error);
-          setErr(error.message);
+          console.error('[MapSection] load error:', error);
+          // Clear potentially corrupted cache
+          localStorage.removeItem(cacheKey);
+          setErr('Error cargando propiedades. Intenta recargar.');
           setListings([]);
         } else {
           setListings((data ?? []) as Listing[]);
@@ -204,8 +206,9 @@ export default function MapSection({
           localStorage.setItem(cacheKey, JSON.stringify({ ts: now, data: data ?? [] }));
         }
       } catch (e: unknown) {
-        console.error(e);
-        const msg = e instanceof Error ? e.message : "Failed to load listings";
+        console.error('[MapSection] load exception:', e);
+        localStorage.removeItem(cacheKey);
+        const msg = e instanceof Error ? e.message : "Error cargando propiedades";
         setErr(msg);
         setListings([]);
       } finally {
