@@ -1,21 +1,44 @@
+// /Users/belkiscruz/.openclaw/workspace/Uplat-v1/middleware.ts
 import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  // 🔥 Redirigir todo a tualero.com
+  const hostname = request.headers.get('host') || '';
+  const url = request.nextUrl;
+  
+  if (hostname === 'uplat-v1.vercel.app') {
+    const newUrl = new URL(url.pathname + url.search, 'https://tualero.com');
+    return NextResponse.redirect(newUrl, 301);
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => {
-          return request.cookies.getAll().map(({ name, value }) => ({ name, value }));
+        getAll() {
+          return request.cookies.getAll();
         },
-        setAll: (cookiesToSet) => {
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+            // 🔥 CONFIGURACIÓN CRÍTICA
+            response.cookies.set(name, value, {
+              ...options,
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              path: '/',
+              domain: 'tualero.com',  // Tu dominio personalizado
+              maxAge: 60 * 60 * 24 * 7, // 7 días
+            });
           });
         },
       },
@@ -28,26 +51,24 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Check profile completeness: phone collected, role, and terms acceptance must be present
-  const { data: profile } = await supabase.from('profiles')
+  // Check profile completeness
+  const { data: profile } = await supabase
+    .from('profiles')
     .select('role, whatsapp_number, terms_accepted, is_admin')
     .eq('id', user.id)
     .maybeSingle();
 
   const isComplete = profile?.whatsapp_number && profile?.role && profile?.terms_accepted;
-
-  const onboardingPath = '/onboarding';
   const path = request.nextUrl.pathname;
 
-  // Admin routes: require is_admin
+  // Admin routes
   if (path.startsWith('/admin')) {
     if (!profile?.is_admin) {
-      // Not admin; redirect to home
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
     }
-    return response; // admin allowed
+    return response;
   }
 
   const excluded = ['/onboarding', '/signin', '/signup', '/api', '/_next', '/favicon.ico'];
@@ -57,7 +78,7 @@ export async function middleware(request: NextRequest) {
 
   if (!isComplete) {
     const url = request.nextUrl.clone();
-    url.pathname = onboardingPath;
+    url.pathname = '/onboarding';
     return NextResponse.redirect(url);
   }
 
