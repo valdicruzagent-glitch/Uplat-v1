@@ -1,8 +1,9 @@
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import SiteHeader from "@/app/components/SiteHeader";
 import Link from "next/link";
 import TrackListingView from "@/app/components/TrackListingView";
 import { es } from "@/app/i18n/es";
-import { getSupabaseClient } from "@/lib/supabaseClient";
 import ImageGallery from "@/app/components/ImageGallery";
 import FavoriteButton from "@/app/components/FavoriteButton";
 import InquiryForm from "@/app/components/InquiryForm";
@@ -40,7 +41,18 @@ export default async function ListingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = getSupabaseClient();
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (name) => cookieStore.get(name)?.value,
+        set: (name, value, options) => cookieStore.set({ name, value, ...options }),
+      },
+    }
+  );
+
   const { data: listing, error } = await supabase
     .from("listings")
     .select(`

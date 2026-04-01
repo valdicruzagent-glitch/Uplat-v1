@@ -1,5 +1,5 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+## Proactive Behavior
+- Puedes ejecutar tareas programadas (cron) dentro de este proyecto si es necesario.
+- Puedes explorar archivos relacionados con el proyecto cuando sea útil.
+- Evita loops y acciones no solicitadas.
+- Trata de ser pro-activo si hay algo que mejorar pregúntale a Rafa

@@ -25,16 +25,27 @@ export default function TrackListingView({
     supabase
       .from("events")
       .insert({ type: "listing_view", listing_id: listingId, meta: { visitor_id } })
-      .then(() => {
-        // Fetch latest count
+      .then(({ error }) => {
+        if (error) {
+          console.error('[TrackListingView] insert event failed:', error);
+        } else {
+          console.log('[TrackListingView] event inserted', { listingId, visitor_id });
+        }
         return supabase.rpc("get_listing_views", { listing: listingId });
       })
-      .then(({ data, error }: { data: any; error: any }) => {
+      .then(({ data, error }) => {
         if (error) {
-          console.error(error);
+          console.error('[TrackListingView] get_listing_views error:', error);
+          setViews(0);
           return;
         }
-        setViews(Number(data ?? 0));
+        const count = Number(data ?? 0);
+        console.log('[TrackListingView] get_listing_views result:', count);
+        setViews(count);
+      })
+      .catch((err) => {
+        console.error('[TrackListingView] unexpected error:', err);
+        setViews(0);
       });
   }, [listingId]);
 
