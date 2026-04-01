@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
             ...options,
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
             path: '/',
             maxAge: 60 * 60 * 24 * 7,
           })
