@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
@@ -21,6 +21,10 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  console.log(`[SiteHeader] render #${renderCount.current}`, { user: user?.id, profile: profile?.full_name, loading });
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -79,6 +83,19 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       mounted = false;
     };
   }, [supabase]);
+
+  // Diagnostic: check state after a short delay and force update if needed (temp)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('[SiteHeader] delayed state check:', { user: user?.id, profile: profile?.full_name, loading });
+      // If user exists but header might not reflect, force an update
+      if (user && (!profile || !profile.full_name)) {
+        console.log('[SiteHeader] forcing update due to missing profile');
+        forceUpdate(n => n + 1);
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [user, profile, loading]);
 
   const handleSell = () => {
     if (user && (profile || user.email)) {
