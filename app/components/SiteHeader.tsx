@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { es } from "@/app/i18n/es";
 import { en } from "@/app/i18n/en";
 import LanguageSwitch from "./LanguageSwitch";
@@ -40,7 +41,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       const u = session?.user ?? null;
       setUser(u);
       console.log('[SiteHeader] onAuthStateChange -> user:', u?.id);
@@ -48,8 +49,8 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       else setProfile(null);
       setLoading(false);
     });
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      const u = user ?? null;
+    supabase.auth.getUser().then(async ({ data }: { data: { user: any } }) => {
+      const u = data?.user ?? null;
       setUser(u);
       console.log('[SiteHeader] getUser() -> user:', u?.id);
       if (u) await loadProfile(u);

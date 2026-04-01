@@ -13,18 +13,16 @@ export async function middleware(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-              path: '/',
-              maxAge: 60 * 60 * 24 * 7,
-            })
+        set(name: string, value: string, options: any) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24 * 7,
           })
         },
       },

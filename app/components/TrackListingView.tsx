@@ -29,7 +29,7 @@ export default function TrackListingView({
         // Fetch latest count
         return supabase.rpc("get_listing_views", { listing: listingId });
       })
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: any; error: any }) => {
         if (error) {
           console.error(error);
           return;

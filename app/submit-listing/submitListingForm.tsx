@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
 import { getClientDeviceInfo } from "@/lib/deviceInfo";
@@ -132,7 +133,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       }
     };
     load();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       if (!isMounted) return;
       const newUser = session?.user ?? null;
       if (newUser?.id !== userIdRef.current) {

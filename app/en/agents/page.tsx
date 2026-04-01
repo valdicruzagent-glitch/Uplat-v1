@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import type { Profile } from '@/app/types/profile';
 import LanguageSwitch from '@/app/components/LanguageSwitch';
@@ -28,10 +29,10 @@ export default function AgentsPageEn() {
 
   // Get current user
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: User | null } }) => {
       if (data?.user?.id) setCurrentProfileId(data.user.id);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setCurrentProfileId(session?.user?.id ?? null);
     });
     return () => subscription.unsubscribe();
@@ -118,7 +119,7 @@ export default function AgentsPageEn() {
         .from('agent_likes')
         .select('agent_id')
         .eq('user_id', currentProfileId);
-      setLikedAgents(new Set((data || []).map(l => l.agent_id)));
+      setLikedAgents(new Set((data || []).map((l: any) => l.agent_id)));
     }
     loadLikes();
   }, [currentProfileId]);

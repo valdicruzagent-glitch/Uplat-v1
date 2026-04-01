@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { User } from '@supabase/supabase-js';
 
 const supabase = getSupabaseClient();
 
@@ -34,7 +35,7 @@ export default function WhatsAppVerification({ onVerified, locale, translations 
 
   // Check current profile status on mount
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getUser().then(async ({ data }: { data: { user: User | null } }) => {
       if (data.user) {
         const { data: profile } = await supabase
           .from('profiles')

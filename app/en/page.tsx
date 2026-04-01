@@ -7,6 +7,7 @@ import MapSection from "@/app/components/MapSection";
 import { en } from "@/app/i18n/en";
 import { loadGuestState, saveGuestState } from "@/lib/guestState";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 const supabase = getSupabaseClient();
 
@@ -26,7 +27,8 @@ export default function HomeEn() {
   // Real auth state: only set user if onboarding complete
   useEffect(() => {
     const setAuthUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
       if (!user) {
         setUser(null);
         return;
@@ -43,7 +45,7 @@ export default function HomeEn() {
       }
     };
     setAuthUser();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       if (!session?.user) {
         setUser(null);
         return;

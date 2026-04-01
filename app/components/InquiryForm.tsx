@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 const supabase = getSupabaseClient();
 
@@ -36,7 +37,8 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
       const logged = !!user;
       setIsLoggedIn(logged);
       if (logged && user) {
@@ -55,12 +57,12 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
       setAuthChecked(true);
     };
     checkAuth();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       const logged = !!session;
       setIsLoggedIn(logged);
       if (logged && session?.user) {
         supabase.from('profiles').select('phone, terms_accepted, role').eq('id', session.user.id).single()
-          .then(({ data }) => {
+          .then(({ data }: { data: any }) => {
             setProfile(data);
             if (data?.phone) {
               setWaFrom(data.phone);

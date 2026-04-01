@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import SiteHeader from "@/app/components/SiteHeader";
 import SubmitListingForm from "@/app/submit-listing/submitListingForm";
 import { es } from "@/app/i18n/es";
@@ -21,7 +22,7 @@ export default function SubmitListingPage() {
     };
     checkAuth();
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       const user = session?.user ?? null;
       console.log('[SubmitListingPage] onAuthStateChange ->', { user });
       if (!user) router.replace("/signin?next=/submit-listing");

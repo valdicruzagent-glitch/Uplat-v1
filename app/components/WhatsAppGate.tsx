@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import WhatsAppVerification from './WhatsAppVerification';
 
 const supabase = getSupabaseClient();
@@ -36,21 +37,21 @@ export default function WhatsAppGate({ children, locale, translations }: WhatsAp
   const [profile, setProfile] = useState<{ whatsapp_verified?: boolean } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: any } }) => {
       const logged = !!data.user;
       setIsLoggedIn(logged);
       if (logged && data.user) {
         supabase.from('profiles').select('whatsapp_verified').eq('id', data.user.id).single()
-          .then(({ data }) => setProfile(data || null));
+          .then(({ data }: { data: any }) => setProfile(data || null));
       }
       setChecked(true);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       const logged = !!session;
       setIsLoggedIn(logged);
-      if (logged && session.user) {
+      if (logged && session?.user) {
         supabase.from('profiles').select('whatsapp_verified').eq('id', session.user.id).single()
-          .then(({ data }) => setProfile(data || null));
+          .then(({ data }: { data: any }) => setProfile(data || null));
       } else {
         setProfile(null);
       }
@@ -95,8 +96,8 @@ export default function WhatsAppGate({ children, locale, translations }: WhatsAp
           }}
           onVerified={() => {
             // Refresh profile state to reveal children
-            supabase.from('profiles').select('whatsapp_verified').eq('id', supabase.auth.getSession().then(({ data }) => data.session?.user?.id)).single()
-              .then(({ data }) => setProfile(data || null));
+            supabase.from('profiles').select('whatsapp_verified').eq('id', supabase.auth.getSession().then(({ data }: { data: any }) => data.session?.user?.id)).single()
+              .then(({ data }: { data: any }) => setProfile(data || null));
           }}
         />
       </div>
