@@ -4,40 +4,26 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  // 🔥 Redirigir todo a tualero.com
-  const hostname = request.headers.get('host') || '';
-  const url = request.nextUrl;
-  
-  if (hostname === 'uplat-v1.vercel.app') {
-    const newUrl = new URL(url.pathname + url.search, 'https://tualero.com');
-    return NextResponse.redirect(newUrl, 301);
-  }
+  const response = NextResponse.next();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
+        getAll: () => {
+          return request.cookies.getAll().map(({ name, value }) => ({ name, value }));
         },
-        setAll(cookiesToSet) {
+        setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value, options }) => {
-            // 🔥 CONFIGURACIÓN CRÍTICA
             response.cookies.set(name, value, {
               ...options,
               httpOnly: true,
               secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
+              sameSite: 'lax',        // 🔥 Este es el cambio clave
               path: '/',
-              domain: 'tualero.com',  // Tu dominio personalizado
-              maxAge: 60 * 60 * 24 * 7, // 7 días
+              // ⚠️ NO agregues "domain" aquí
+              maxAge: 60 * 60 * 24 * 7,
             });
           });
         },
@@ -52,13 +38,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check profile completeness
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: profile } = await supabase.from('profiles')
     .select('role, whatsapp_number, terms_accepted, is_admin')
     .eq('id', user.id)
     .maybeSingle();
 
   const isComplete = profile?.whatsapp_number && profile?.role && profile?.terms_accepted;
+
+  const onboardingPath = '/onboarding';
   const path = request.nextUrl.pathname;
 
   // Admin routes
@@ -78,7 +65,7 @@ export async function middleware(request: NextRequest) {
 
   if (!isComplete) {
     const url = request.nextUrl.clone();
-    url.pathname = '/onboarding';
+    url.pathname = onboardingPath;
     return NextResponse.redirect(url);
   }
 
