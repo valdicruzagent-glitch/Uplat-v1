@@ -41,31 +41,37 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       }
     };
 
-    // Diagnostic: check initial session
-    supabase.auth.getSession().then(({ data }: { data: any }) => {
-      console.log('[SiteHeader] getSession() ->', data);
-    });
+    const initAuth = async () => {
+      try {
+        // Force session validation/refresh
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        console.log('[SiteHeader] refreshSession() ->', { refreshData, refreshError });
+
+        const { data } = await supabase.auth.getUser();
+        console.log('[SiteHeader] getUser() raw result:', data);
+        const u = data?.user ?? null;
+        setUser(u);
+        console.log('[SiteHeader] getUser() -> setUser:', u?.id);
+        if (u) await loadProfile(u);
+        else {
+          setProfile(null);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error('[SiteHeader] auth init error:', e);
+        setLoading(false);
+      }
+    };
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       console.log('[SiteHeader] onAuthStateChange event:', _event, 'sessionUser:', session?.user?.id);
       const u = session?.user ?? null;
       setUser(u);
-      console.log('[SiteHeader] onAuthStateChange -> setUser:', u?.id);
       if (u) await loadProfile(u);
       else setProfile(null);
       setLoading(false);
-    });
-
-    supabase.auth.getUser().then(async (result: { data: { user: any } }) => {
-      console.log('[SiteHeader] getUser() raw result:', result);
-      const u = result.data?.user ?? null;
-      setUser(u);
-      console.log('[SiteHeader] getUser() -> setUser:', u?.id);
-      if (u) await loadProfile(u);
-      else {
-        setProfile(null);
-        setLoading(false);
-      }
     });
 
     return () => {
