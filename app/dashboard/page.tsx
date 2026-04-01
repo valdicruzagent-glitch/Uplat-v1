@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import UserDashboard from './UserDashboard';
 import AgencyDashboard from './AgencyDashboard';
+import RealtorDashboard from './RealtorDashboard';
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -12,7 +13,7 @@ export default async function DashboardPage() {
     {
       cookies: {
         get: (name) => cookieStore.get(name)?.value,
-        set: () => {}, // no need to set cookies on server
+        set: () => {},
       },
     }
   );
@@ -25,13 +26,14 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase.from('profiles').select('role, agency_id').eq('id', user.id).single();
 
   if (profile?.role === 'agency') {
-    // Ensure agency_id exists, otherwise fallback to user-settings (complete profile)
-    if (!profile.agency_id) {
-      redirect('/user-settings');
-    }
+    if (!profile.agency_id) redirect('/user-settings');
     return <AgencyDashboard agencyId={profile.agency_id} />;
   }
 
-  // For 'realtor' or 'user' roles
+  if (profile?.role === 'realtor') {
+    return <RealtorDashboard />;
+  }
+
+  // Default: user
   return <UserDashboard />;
 }
