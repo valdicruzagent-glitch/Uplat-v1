@@ -129,7 +129,10 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         console.error(e);
         setErr('Unexpected error');
       } finally {
-        if (isMounted) setReady(true);
+        if (isMounted) {
+          setReady(true);
+          console.log('[SubmitListingForm] load complete', { ready: true, userId: user?.id, profileFullName: profile?.full_name });
+        }
       }
     };
     load();
@@ -159,6 +162,11 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       setYearBuilt(String(new Date().getFullYear()));
     }
   }, [newConstruction]);
+
+  // Diagnostic: component mount
+  useEffect(() => {
+    console.log('[SubmitListingForm] mounted');
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
