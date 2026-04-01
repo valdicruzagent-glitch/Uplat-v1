@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { getSupabaseClient } from "@/lib/supabaseClient";
-
-const supabase = getSupabaseClient();
+import { createSupabaseClient } from "@/lib/supabaseClient";
+const supabase = createSupabaseClient();
 
 export function useEnsureProfile() {
   const ensureProfile = useCallback(async () => {

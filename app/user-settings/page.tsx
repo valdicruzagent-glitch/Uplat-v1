@@ -3,11 +3,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getSupabaseClient } from "@/lib/supabaseClient";
+import { createSupabaseClient } from "@/lib/supabaseClient";
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import { es } from '@/app/i18n/es';
 
-const supabase = getSupabaseClient();
+const supabase = createSupabaseClient();
 
 export default function UserSettingsPage() {
   const router = useRouter();

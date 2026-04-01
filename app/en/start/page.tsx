@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import LanguageSwitch from "@/app/components/LanguageSwitch";
 import { en } from "@/app/i18n/en";
 import StartChoice from "@/app/start/startChoice";
-import { getSupabaseClient } from "@/lib/supabaseClient";
-
-const supabase = getSupabaseClient();
+import { createSupabaseClient } from "@/lib/supabaseClient";
+const supabase = createSupabaseClient();
 
 export default function StartPageEn() {
   const router = useRouter();

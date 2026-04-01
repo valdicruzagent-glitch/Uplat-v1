@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
-import { getSupabaseClient } from "@/lib/supabaseClient";
+import { createSupabaseClient } from "@/lib/supabaseClient";;
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
 import { getClientDeviceInfo } from "@/lib/deviceInfo";
@@ -56,7 +56,7 @@ const AMENITIES = [
 export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const t = locale === "en" ? en : es;
   const ll = (esText: string, enText: string) => (locale === "en" ? enText : esText);
-  const supabase = getSupabaseClient();
+  const supabase = createSupabaseClient();
 
   // Form state
   const [title, setTitle] = useState("");

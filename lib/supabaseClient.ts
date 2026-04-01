@@ -1,20 +1,26 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient, createClient } from '@supabase/ssr'
 
-// Env-based placeholder. Do NOT commit real secrets.
-// Configure locally via .env.local (not committed) or your hosting provider env vars.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Cliente para componentes cliente (use client)
+export const createSupabaseClient = () =>
+  createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
-export const supabase: SupabaseClient | null =
-  supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null;
-
-export function getSupabaseClient(): SupabaseClient {
-  if (!supabase) {
-    throw new Error(
-      "Supabase env vars missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
-  return supabase;
-}
+// Cliente para Server Components / Server Actions (opcional)
+export const createServerSupabaseClient = (request: Request) =>
+  createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.headers.get('cookie')?.split(';').find(c => c.trim().startsWith(name + '='))?.split('=')[1]
+        },
+        set(name: string, value: string, options: any) {
+          // En server components/actions no podemos set cookies directamente;
+          // normalmente se manejan en middleware o routes
+        },
+      },
+    }
+  )

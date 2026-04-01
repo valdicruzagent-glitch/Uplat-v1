@@ -16,7 +16,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabaseClient";
+import { createSupabaseClient } from "@/lib/supabaseClient";;
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
 import { getClientDeviceInfo } from "@/lib/deviceInfo";
@@ -61,7 +61,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
     setGoogleLoading(true);
 
     try {
-      const supabase = getSupabaseClient();
+      const supabase = createSupabaseClient();
       const redirectTo = `${window.location.origin}${nextPath}`;
 
       window.localStorage.setItem("uplat_auth_goal", "google_whatsapp");
@@ -92,7 +92,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
     setLoading(true);
 
     try {
-      const supabase = getSupabaseClient();
+      const supabase = createSupabaseClient();
       const wa = normalizeWhatsapp(whatsapp);
       if (!wa) throw new Error("WhatsApp is required");
 

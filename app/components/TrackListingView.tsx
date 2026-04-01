@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabaseClient";
+import { createSupabaseClient } from "@/lib/supabaseClient";;
 import { getOrCreateVisitorId } from "@/app/lib/visitor";
 
 import { en } from "@/app/i18n/en";
@@ -18,7 +18,7 @@ export default function TrackListingView({
   const [views, setViews] = useState<number | null>(null);
 
   useEffect(() => {
-    const supabase = getSupabaseClient();
+    const supabase = createSupabaseClient();
     const visitor_id = getOrCreateVisitorId();
 
     // Fire-and-forget view event

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSupabaseClient } from "@/lib/supabaseClient";
+import { createSupabaseClient } from "@/lib/supabaseClient";
 import { es } from '@/app/i18n/es';
 import { en } from '@/app/i18n/en';
 
-const supabase = getSupabaseClient();
+const supabase = createSupabaseClient();
 
 type DashboardTab = 'inquiries' | 'favorites';
 
