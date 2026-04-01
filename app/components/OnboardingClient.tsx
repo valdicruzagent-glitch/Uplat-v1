@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import termsES from '@/content/legal/terms.es';
 import termsEN from '@/content/legal/terms.en';
 import { ensureProfileExists, getOnboardingProgress } from '@/app/lib/onboarding-progress';
 import { es } from '@/app/i18n/es';
 import { en } from '@/app/i18n/en';
 
-const supabase = createSupabaseClient();
+const supabase = getSupabaseClient();
 
 type Country = {
   name: string;

@@ -22,7 +22,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useRef } from "react";
 
-import { createSupabaseClient } from "@/lib/supabaseClient";;
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 import type { Listing } from "@/app/types/listing";
 
@@ -164,7 +164,7 @@ export default function MapSection({
       setErr(null);
 
       try {
-        const supabase = createSupabaseClient();
+        const supabase = getSupabaseClient();
         let data: any[] | null = null;
         let error: any = null;
         for (let i = 0; i < 2; i++) {

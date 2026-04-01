@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { es } from "@/app/i18n/es";
 import { en } from "@/app/i18n/en";
 import LanguageSwitch from "./LanguageSwitch";
@@ -12,7 +12,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
   console.log("SITE_HEADER_FIX_VERSION_ed4db11");
   const t = locale === "en" ? en : es;
   const pathname = usePathname();
-  const supabase = createSupabaseClient();
+  const supabase = getSupabaseClient();
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string | null } | null>(null);

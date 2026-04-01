@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import WhatsAppVerification from './WhatsAppVerification';
 
-const supabase = createSupabaseClient();
+const supabase = getSupabaseClient();
 
 interface WhatsAppGateProps {
   children: React.ReactNode;

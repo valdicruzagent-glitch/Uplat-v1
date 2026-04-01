@@ -1,11 +1,11 @@
-import { createSupabaseClient } from '@/lib/supabaseClient';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 
 export async function uploadListingPhotos(
   userId: string,
   files: File[],
   onProgress?: (percent: number) => void
 ): Promise<string[]> {
-  const supabase = createSupabaseClient();
+  const supabase = getSupabaseClient();
   const bucket = 'listing-photos';
   const urls: string[] = [];
 

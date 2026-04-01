@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import type { Profile } from '@/app/types/profile';
 import LanguageSwitch from '@/app/components/LanguageSwitch';
 import { useEnsureProfile } from '@/app/hooks/useEnsureProfile';
 
-const supabase = createSupabaseClient();
+const supabase = getSupabaseClient();
 
 export default function AgentsPageEn() {
   const [profiles, setProfiles] = useState<Profile[]>([]);

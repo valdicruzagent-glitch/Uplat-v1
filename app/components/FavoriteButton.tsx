@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createSupabaseClient } from "@/lib/supabaseClient";
-const supabase = createSupabaseClient();
+import { getSupabaseClient } from "@/lib/supabaseClient";
+
+const supabase = getSupabaseClient();
 
 interface Props {
   listingId: string;

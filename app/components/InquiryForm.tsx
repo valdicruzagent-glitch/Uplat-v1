@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseClient } from "@/lib/supabaseClient";
-const supabase = createSupabaseClient();
+import { getSupabaseClient } from "@/lib/supabaseClient";
+
+const supabase = getSupabaseClient();
 
 interface InquiryFormProps {
   listingId: string;

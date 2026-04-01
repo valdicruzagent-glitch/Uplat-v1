@@ -1,5 +1,6 @@
-import { createSupabaseClient } from "@/lib/supabaseClient";
-const supabase = createSupabaseClient();
+import { getSupabaseClient } from "@/lib/supabaseClient";
+
+const supabase = getSupabaseClient();
 
 export type Step = 'phone' | 'terms' | 'role';
 

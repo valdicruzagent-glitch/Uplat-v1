@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createSupabaseClient } from '@/lib/supabaseClient';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 
 export default function ReportButton({ listingId }: { listingId: string }) {
   const [open, setOpen] = useState(false);
@@ -9,7 +9,7 @@ export default function ReportButton({ listingId }: { listingId: string }) {
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const supabase = createSupabaseClient();
+  const supabase = getSupabaseClient();
 
   const handleSubmit = async () => {
     setLoading(true);
