@@ -38,7 +38,15 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       }
       console.log('[SiteHeader] loading profile for userId:', user.id);
       try {
-        const { data, error } = await supabase.from('profiles').select('full_name, avatar_url, phone, whatsapp_number, id').eq('id', user.id).maybeSingle();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('profile query timeout')), 5000)
+        );
+        const profilePromise = supabase
+          .from('profiles')
+          .select('full_name, avatar_url, phone, whatsapp_number, id')
+          .eq('id', user.id)
+          .maybeSingle();
+        const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
         console.log('[SiteHeader] profile query result:', { userId: user.id, data, error });
         if (mounted) {
           setProfile(data ?? null);
@@ -53,22 +61,25 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
 
     const initAuth = async () => {
       try {
-        // Force session validation/refresh
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        console.log('[SiteHeader] refreshSession() ->', { refreshData, refreshError });
-
-        const { data } = await supabase.auth.getUser();
-        console.log('[SiteHeader] getUser() raw result:', data);
-        const u = data?.user ?? null;
-        setUser(u);
-        console.log('[SiteHeader] getUser() -> setUser:', u?.id);
-        if (u) await loadProfile(u);
-        else {
-          setProfile(null);
-          setLoading(false);
+        // Quick local session (no network)
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('[SiteHeader] getUser() initial:', user?.id);
+        if (user) {
+          setUser(user);
+          await loadProfile(user);
+        } else {
+          // Try to refresh in case token expired
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          console.log('[SiteHeader] refreshSession after empty:', { userId: refreshData?.session?.user?.id, refreshError });
+          if (refreshData?.session?.user) {
+            setUser(refreshData.session.user);
+            await loadProfile(refreshData.session.user);
+          } else {
+            setLoading(false);
+          }
         }
       } catch (e) {
-        console.error('[SiteHeader] auth init error:', e);
+        console.error('[SiteHeader] initAuth error:', e);
         setLoading(false);
       }
     };
@@ -88,7 +99,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       subscription.unsubscribe();
       mounted = false;
     };
-  }, [supabase]);
+  }, [supabase, pathname]);
 
   // Diagnostic: check state after a short delay and force update if needed (temp)
   useEffect(() => {
