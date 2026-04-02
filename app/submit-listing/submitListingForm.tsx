@@ -121,7 +121,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           .select('id, full_name, phone, whatsapp_number, avatar_url')
           .eq('id', user.id)
           .maybeSingle()
-          .then(({ data, error }) => {
+          .then(({ data, error }: { data: any; error: any }) => {
             if (!isMounted) return;
             if (error) {
               console.error('Profile load error:', error);
@@ -150,7 +150,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
             .select('id, full_name, phone, whatsapp_number, avatar_url')
             .eq('id', newUser.id)
             .maybeSingle()
-            .then(({ data, error }) => {
+            .then(({ data, error }: { data: any; error: any }) => {
               if (!isMounted) return;
               if (error) console.error('Profile load error:', error);
               else setProfile(data);
