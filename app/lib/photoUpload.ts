@@ -11,7 +11,7 @@ export async function uploadListingPhotos(
     const file = params.files[i];
     const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-    const path = `${userId}/${fileName}`;
+    const path = `${params.userId}/${fileName}`;
 
     const { error } = await supabase.storage.from(bucket).upload(path, file, {
       upsert: false,
