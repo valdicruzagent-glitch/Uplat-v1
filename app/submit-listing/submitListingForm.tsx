@@ -155,7 +155,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
               if (error) console.error('Profile load error:', error);
               else setProfile(data);
             })
-            .catch(e => console.error(e));
+            .catch((e: any) => console.error(e));
         } else {
           setErr("Not authenticated");
         }
