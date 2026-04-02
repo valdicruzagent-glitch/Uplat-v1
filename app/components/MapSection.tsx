@@ -163,11 +163,12 @@ export default function MapSection({
       setLoading(true);
       setErr(null);
 
+      const cacheKey = 'uplat_listings_cache';
+
       try {
         const supabase = getSupabaseClient();
 
         // Check cache first (30s TTL)
-        const cacheKey = 'uplat_listings_cache';
         const cached = localStorage.getItem(cacheKey);
         const now = Date.now();
         if (cached) {
