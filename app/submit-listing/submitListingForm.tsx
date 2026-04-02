@@ -282,7 +282,20 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <>
+      {/* Banner informativo */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <h3 className="font-semibold text-blue-900">{ll("¡Crédito gratis!", "Free credit!")}</h3>
+        <p className="text-sm text-blue-800 mt-1">
+          {ll("Tienes un crédito gratis para publicar una propiedad. Después de usarlo, tendrás que comprar créditos adicionales.",
+              "You have a free credit to publish a listing. After using it, you'll need to purchase additional credits.")}
+        </p>
+        <p className="text-sm text-blue-800 mt-2">
+          {ll("Importante: solo publica propiedades reales. Propiedades falsas o engañosas pueden causar la desactivación de tu cuenta.",
+              "Important: only publish real listings. Fake or misleading listings may result in account deactivation.")}
+        </p>
+      </div>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
       {/* Honeypot */}
       <div style={{ display: 'none' }}>
         <label>Website</label>
@@ -452,5 +465,6 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         </button>
       </div>
     </form>
+    </>
   );
 }

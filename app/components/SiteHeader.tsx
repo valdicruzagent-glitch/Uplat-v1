@@ -34,14 +34,13 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
         if (mounted) setProfile(null);
         return;
       }
-      // Skip if already loaded for this user
       if (currentUserId === user.id) return;
       currentUserId = user.id;
 
       console.log('[SiteHeader] loading profile for userId:', user.id);
       try {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('profile query timeout')), 10000)
+          setTimeout(() => reject(new Error('profile query timeout')), 5000)
         );
         const profilePromise = supabase
           .from('profiles')
@@ -52,11 +51,9 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
         console.log('[SiteHeader] profile query result:', { userId: user.id, data, error });
         if (mounted) {
           setProfile(data ?? null);
-          setLoading(false);
         }
       } catch (e) {
         console.error('[SiteHeader] profile query exception:', e);
-        if (mounted) setLoading(false);
       }
     };
 
@@ -66,12 +63,16 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
         console.log('[SiteHeader] getUser() initial:', user?.id);
         if (user) {
           setUser(user);
-          await loadProfile(user);
+          // Non-blocking: set loading false immediately, load profile in background
+          setLoading(false);
+          loadProfile(user);
         } else {
           const { data: refreshData } = await supabase.auth.refreshSession();
           if (refreshData?.session?.user) {
-            setUser(refreshData.session.user);
-            await loadProfile(refreshData.session.user);
+            const u = refreshData.session.user;
+            setUser(u);
+            setLoading(false);
+            loadProfile(u);
           } else {
             setLoading(false);
           }
@@ -87,11 +88,13 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       console.log('[SiteHeader] onAuthStateChange event:', _event, 'sessionUser:', session?.user?.id);
       const u = session?.user ?? null;
-      // Only act if user actually changed
       if (u?.id !== currentUserId) {
         setUser(u);
-        if (u) await loadProfile(u);
-        else setProfile(null);
+        if (u) {
+          loadProfile(u);
+        } else {
+          setProfile(null);
+        }
         setLoading(false);
       }
     });
