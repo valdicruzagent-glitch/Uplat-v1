@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
+import { getClientDeviceInfo } from "@/lib/deviceInfo";
 import { uploadListingPhotos } from "@/app/lib/photoUpload";
 
 const LocationPicker = dynamic(() => import("@/app/components/LocationPicker"), { ssr: false });
