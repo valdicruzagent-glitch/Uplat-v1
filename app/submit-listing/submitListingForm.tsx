@@ -14,7 +14,7 @@ import { DEPARTMENTS_BY_COUNTRY } from "./departments";
 
 const COUNTRIES: Country[] = [
   { code: "AR", name: "Argentina", flag: "🇦🇷" },
-  { code: "BZ", name: "Belize", flag: "🇧🇿" },
+  { code: "BZ", name: "Belice", flag: "🇧🇿" },
   { code: "BO", name: "Bolivia", flag: "🇧🇴" },
   { code: "BR", name: "Brasil", flag: "🇧🇷" },
   { code: "CL", name: "Chile", flag: "🇨🇱" },
@@ -87,7 +87,6 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [done, setDone] = useState(false);
 
   const websiteFieldRef = useRef<HTMLInputElement>(null);
-  const profileInputRef = useRef<HTMLInputElement>(null);
   // Auth/profile refs
   const mounted = useRef(false);
   const userIdRef = useRef<string | null>(null);
@@ -215,52 +214,32 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const priceNum = parsePrice(priceUsd);
       if (priceNum === null) throw new Error(ll("Precio inválido", "Invalid price"));
 
-      // Upload photos
-      let image_urls: string[] = [];
-      if (files.length > 0) {
-        const deviceInfo = getClientDeviceInfo();
-        const uploadResult = await uploadListingPhotos({
-          files,
-          listingId: 'temp-' + Date.now(),
-          userId: user.id,
-          deviceInfo,
-          onProgress: p => setUploadProgress(Math.round(p * 100)),
-        });
-        image_urls = uploadResult.urls;
-      }
-
-      // Prepare listing payload (sin imágenes aún)
-      const payload: any = {
-        title,
-        price_usd: priceNum,
-        country_code: countryCode,
-        department_code: departmentCode,
-        city,
-        mode,
-        type,
-        description: description || null,
-        lat,
-        lng,
-        beds: beds ? Number(beds) : null,
-        baths: baths ? Number(baths) : null,
-        area_m2: areaM2 ? Number(areaM2) : null,
-        year_built: yearBuilt ? Number(yearBuilt) : null,
-        new_construction: newConstruction || false,
-        amenities: selectedAmenities,
-        contact_name: profile?.full_name || null,
-        contact_whatsapp: profile?.whatsapp_number || null,
-        published_at: new Date().toISOString(),
-        source: 'submission_form',
-      };
-
-      if (profile?.id) {
-        payload.profile_id = profile.id;
-      }
-
-      // Insertar listing
+      // Insertar listing (sin imágenes)
       const { data: insertData, error: insertError } = await supabase
         .from('listings')
-        .insert([payload])
+        .insert([{
+          title,
+          price_usd: priceNum,
+          country_code: countryCode,
+          department_code: departmentCode,
+          city,
+          mode,
+          type,
+          description: description || null,
+          lat,
+          lng,
+          beds: beds ? Number(beds) : null,
+          baths: baths ? Number(baths) : null,
+          area_m2: areaM2 ? Number(areaM2) : null,
+          year_built: yearBuilt ? Number(yearBuilt) : null,
+          new_construction: newConstruction || false,
+          amenities: selectedAmenities,
+          contact_name: profile?.full_name || null,
+          contact_whatsapp: profile?.whatsapp_number || null,
+          published_at: new Date().toISOString(),
+          source: 'submission_form',
+          ...(profile?.id && { profile_id: profile.id }),
+        }])
         .select('id')
         .single();
 
