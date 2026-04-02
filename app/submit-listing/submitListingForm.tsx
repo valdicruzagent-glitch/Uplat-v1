@@ -6,7 +6,6 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
-import { getClientDeviceInfo } from "@/lib/deviceInfo";
 import { uploadListingPhotos } from "@/app/lib/photoUpload";
 
 const LocationPicker = dynamic(() => import("@/app/components/LocationPicker"), { ssr: false });
@@ -230,7 +229,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         image_urls = uploadResult.urls;
       }
 
-      // Prepare listing payload
+      // Prepare listing payload (sin imágenes aún)
       const payload: any = {
         title,
         price_usd: priceNum,
@@ -248,7 +247,6 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         year_built: yearBuilt ? Number(yearBuilt) : null,
         new_construction: newConstruction || false,
         amenities: selectedAmenities,
-        image_urls: image_urls.length > 0 ? image_urls : null,
         contact_name: profile?.full_name || null,
         contact_whatsapp: profile?.whatsapp_number || null,
         published_at: new Date().toISOString(),
@@ -259,7 +257,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         payload.profile_id = profile.id;
       }
 
-      // Insert into listings via service role (use SUPABASE_URL + service key directly to bypass RLS)
+      // Insertar listing
       const { data: insertData, error: insertError } = await supabase
         .from('listings')
         .insert([payload])
@@ -269,14 +267,16 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       if (insertError) throw insertError;
       const listingId = insertData.id;
 
-      // Upload photos for real now that we have listingId
+      // Subir fotos si hay
       if (files.length > 0) {
-        await uploadListingPhotos({
+        const urls = await uploadListingPhotos({
+          userId: user.id,
           files,
           listingId,
-          userId: user.id,
-          deviceInfo: getClientDeviceInfo(),
+          onProgress: p => setUploadProgress(Math.round(p * 100))
         });
+        // Actualizar listing con URLs
+        await supabase.from('listings').update({ image_urls: urls }).eq('id', listingId);
       }
 
       setDone(true);
