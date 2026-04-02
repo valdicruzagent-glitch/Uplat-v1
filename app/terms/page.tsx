@@ -12,7 +12,7 @@ export default function TermsPage() {
       <main className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-2xl font-bold mb-6">{t.termsTitle}</h1>
         <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-wrap">
-          {es.termsES}
+          {t.termsDescription}
         </div>
         <div className="mt-8">
           <Link href="/" className="text-blue-600 hover:underline">{t.back}</Link>
