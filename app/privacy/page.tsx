@@ -3,6 +3,8 @@ import { es } from "@/app/i18n/es";
 import Footer from "@/app/components/Footer";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 export default function PrivacyPage() {
   return (
     <>

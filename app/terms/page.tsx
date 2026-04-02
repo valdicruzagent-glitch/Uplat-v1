@@ -4,6 +4,8 @@ import { en } from "@/app/i18n/en";
 import Footer from "@/app/components/Footer";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 export default function TermsPage() {
   const t = es; // Todo en español por ahora
   return (
