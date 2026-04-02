@@ -7,6 +7,7 @@ import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { en } from "@/app/i18n/en";
 import { es } from "@/app/i18n/es";
 import { uploadListingPhotos } from "@/app/lib/photoUpload";
+import { compressImages, blobToFile } from "@/app/lib/imageUtils";
 
 const LocationPicker = dynamic(() => import("@/app/components/LocationPicker"), { ssr: false });
 
@@ -76,6 +77,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [newConstruction, setNewConstruction] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  const [selectedCoverIndex, setSelectedCoverIndex] = useState<number>(-1);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -248,14 +250,23 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
       // Subir fotos si hay
       if (files.length > 0) {
+        setUploadProgress(10);
+        // Comprimir imágenes (WebP, max 1600px)
+        const compressedBlobs = await compressImages(files, 1600, 0.8);
+        const compressedFiles = compressedBlobs.map((blob, idx) => blobToFile(blob, files[idx].name));
+        setUploadProgress(30);
         const urls = await uploadListingPhotos({
           userId: user.id,
-          files,
+          files: compressedFiles,
           listingId,
-          onProgress: p => setUploadProgress(Math.round(p * 100))
+          onProgress: p => setUploadProgress(30 + Math.round(p * 0.7))
         });
-        // Actualizar listing con URLs
-        await supabase.from('listings').update({ image_urls: urls }).eq('id', listingId);
+        // Portada: usar selectedCoverIndex o primera
+        const coverIdx = selectedCoverIndex >= 0 && selectedCoverIndex < urls.length ? selectedCoverIndex : 0;
+        await supabase.from('listings').update({
+          cover_image_url: urls[coverIdx],
+          image_urls: urls
+        }).eq('id', listingId);
       }
 
       setDone(true);
@@ -295,176 +306,186 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
               "Important: only publish real listings. Fake or misleading listings may result in account deactivation.")}
         </p>
       </div>
+
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      {/* Honeypot */}
-      <div style={{ display: 'none' }}>
-        <label>Website</label>
-        <input ref={websiteFieldRef} name="website" type="text" tabIndex={-1} autoComplete="off" />
-      </div>
-
-      {/* Map picker */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll("Ubicación en mapa", "Location on map")}</label>
-        <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={null} />
-        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Mueve el mapa hasta centrar el marcador.", "Move the map to center the marker.")}</p>
-      </div>
-
-      {/* Country / Department / City */}
-      <div className="grid gap-3 md:grid-cols-3">
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.countryLabel}</div>
-          <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={countryCode} onChange={e => { setCountryCode(e.target.value); setDepartmentCode(""); }}>
-            <option value="">{ll("Selecciona un país", "Select country")}</option>
-            {COUNTRIES.map(c => (
-              <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.departmentLabel}</div>
-          <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={departmentCode} onChange={e => setDepartmentCode(e.target.value)} disabled={!countryCode}>
-            <option value="">{ll("Selecciona departamento", "Select department")}</option>
-            {departmentOptions.map(d => (
-              <option key={d.code} value={d.code}>{d.name}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.cityLabel}</div>
-          <input className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={city} onChange={e => setCity(e.target.value)} placeholder={ll("Ciudad o localidad", "City or locality")} />
-        </label>
-      </div>
-
-      {/* Property specs */}
-      <div className="grid gap-3 md:grid-cols-4">
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bedsLabel}</div>
-          <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={beds} onChange={e => setBeds(e.target.value)}>
-            <option value="">—</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6+">6+</option>
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bathsLabel}</div>
-          <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={baths} onChange={e => setBaths(e.target.value)}>
-            <option value="">—</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6+">6+</option>
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.areaM2Label}</div>
-          <input className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={areaM2} onChange={e => setAreaM2(e.target.value)} placeholder={ll("m²", "sq ft")} />
-        </label>
-
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yearBuiltLabel}</div>
-          <input className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={yearBuilt} onChange={e => setYearBuilt(e.target.value)} placeholder={ll("Año (opcional)", "Year (optional)")} type="number" />
-        </label>
-      </div>
-
-      {/* Listing basics */}
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.listingTitleLabel}</div>
-          <input required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={title} onChange={e => setTitle(e.target.value)} placeholder={ll("Título atractivo", "Catchy title")} />
-        </label>
-
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.priceUsd}</div>
-          <input required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={priceUsd} onChange={e => setPriceUsd(formatPrice(e.target.value))} placeholder="0.00" type="text" inputMode="decimal" />
-        </label>
-      </div>
-
-      {/* Mode & Type */}
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.operationLabel}</div>
-          <select required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={mode} onChange={e => setMode(e.target.value)}>
-            <option value="">{ll("Selecciona operación", "Select operation")}</option>
-            <option value="buy">{ll(t.buy, "Buy")}</option>
-            <option value="rent">{ll(t.rent, "Rent")}</option>
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.typeLabel}</div>
-          <select required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={type} onChange={e => setType(e.target.value)}>
-            <option value="">{ll("Selecciona tipo", "Select type")}</option>
-            <option value="house">{t.house}</option>
-            <option value="apartment">{t.apartment}</option>
-            <option value="land">{t.land}</option>
-            <option value="farm">{t.farm}</option>
-            <option value="commercial">{ll("Comercial", "Commercial")}</option>
-            <option value="office">{ll("Oficina", "Office")}</option>
-            <option value="warehouse">{ll("Bodega", "Warehouse")}</option>
-          </select>
-        </label>
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.descriptionLabel}</label>
-        <textarea required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" rows={4} value={description} onChange={e => setDescription(e.target.value)} placeholder={ll("Describe la propiedad", "Describe the property")} />
-      </div>
-
-      {/* Amenities */}
-      <div>
-        <div className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.amenitiesLabel}</div>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          {AMENITIES.map(a => (
-            <label key={a.id} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-              <input type="checkbox" checked={selectedAmenities.includes(a.id)} onChange={e => {
-                if (e.target.checked) setSelectedAmenities([...selectedAmenities, a.id]);
-                else setSelectedAmenities(selectedAmenities.filter(x => x !== a.id));
-              }} />
-              {a.label}
-            </label>
-          ))}
+        {/* Honeypot */}
+        <div style={{ display: 'none' }}>
+          <label>Website</label>
+          <input ref={websiteFieldRef} name="website" type="text" tabIndex={-1} autoComplete="off" />
         </div>
-      </div>
 
-      {/* Photos */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.photosLabel}</label>
-        <input type="file" multiple accept="image/*" onChange={handleFileChange} className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300" />
-        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Puedes seleccionar múltiples imágenes", "You can select multiple images")}</p>
-        {files.length > 0 && (
-          <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            {ll(`${files.length} archivo(s) seleccionado(s)`, `${files.length} file(s) selected`)}
+        {/* Map picker */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll("Ubicación en mapa", "Location on map")}</label>
+          <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={null} />
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Mueve el mapa hasta centrar el marcador.", "Move the map to center the marker.")}</p>
+        </div>
+
+        {/* Country / Department / City */}
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.countryLabel}</div>
+            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={countryCode} onChange={e => { setCountryCode(e.target.value); setDepartmentCode(""); }}>
+              <option value="">{ll("Selecciona un país", "Select country")}</option>
+              {COUNTRIES.map(c => (
+                <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.departmentLabel}</div>
+            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={departmentCode} onChange={e => setDepartmentCode(e.target.value)} disabled={!countryCode}>
+              <option value="">{ll("Selecciona departamento", "Select department")}</option>
+              {departmentOptions.map(d => (
+                <option key={d.code} value={d.code}>{d.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.cityLabel}</div>
+            <input className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={city} onChange={e => setCity(e.target.value)} placeholder={ll("Ciudad o localidad", "City or locality")} />
+          </label>
+        </div>
+
+        {/* Property specs */}
+        <div className="grid gap-3 md:grid-cols-4">
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bedsLabel}</div>
+            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={beds} onChange={e => setBeds(e.target.value)}>
+              <option value="">—</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6+">6+</option>
+            </select>
+          </label>
+
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bathsLabel}</div>
+            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={baths} onChange={e => setBaths(e.target.value)}>
+              <option value="">—</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6+">6+</option>
+            </select>
+          </label>
+
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.areaM2Label}</div>
+            <input className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={areaM2} onChange={e => setAreaM2(e.target.value)} placeholder={ll("m²", "sq ft")} />
+          </label>
+
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yearBuiltLabel}</div>
+            <input
+              type="number"
+              min={0}
+              max={new Date().getFullYear()}
+              step={1}
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              value={yearBuilt}
+              onChange={e => setYearBuilt(e.target.value)}
+              placeholder={ll("Año (opcional)", "Year (optional)")}
+            />
+          </label>
+        </div>
+
+        {/* Listing basics */}
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.listingTitleLabel}</div>
+            <input required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={title} onChange={e => setTitle(e.target.value)} placeholder={ll("Título atractivo", "Catchy title")} />
+          </label>
+
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.priceUsd}</div>
+            <input required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={priceUsd} onChange={e => setPriceUsd(formatPrice(e.target.value))} placeholder="0.00" type="text" inputMode="decimal" />
+          </label>
+        </div>
+
+        {/* Mode & Type */}
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.operationLabel}</div>
+            <select required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={mode} onChange={e => setMode(e.target.value)}>
+              <option value="">{ll("Selecciona operación", "Select operation")}</option>
+              <option value="sell">{ll("Vender", "Sell")}</option>
+              <option value="rent">{ll("Rentar", "Rent")}</option>
+            </select>
+          </label>
+
+          <label className="text-sm">
+            <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.typeLabel}</div>
+            <select required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={type} onChange={e => setType(e.target.value)}>
+              <option value="">{ll("Selecciona tipo", "Select type")}</option>
+              <option value="house">{t.house}</option>
+              <option value="apartment">{t.apartment}</option>
+              <option value="land">{t.land}</option>
+              <option value="farm">{t.farm}</option>
+              <option value="commercial">{ll("Comercial", "Commercial")}</option>
+              <option value="office">{ll("Oficina", "Office")}</option>
+              <option value="warehouse">{ll("Bodega", "Warehouse")}</option>
+            </select>
+          </label>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.descriptionLabel}</label>
+          <textarea required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" rows={4} value={description} onChange={e => setDescription(e.target.value)} placeholder={ll("Describe la propiedad", "Describe the property")} />
+        </div>
+
+        {/* Amenities */}
+        <div>
+          <div className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.amenitiesLabel}</div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {AMENITIES.map(a => (
+              <label key={a.id} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                <input type="checkbox" checked={selectedAmenities.includes(a.id)} onChange={e => {
+                  if (e.target.checked) setSelectedAmenities([...selectedAmenities, a.id]);
+                  else setSelectedAmenities(selectedAmenities.filter(x => x !== a.id));
+                }} />
+                {a.label}
+              </label>
+            ))}
           </div>
-        )}
-        {uploading && (
-          <div className="mt-2">
-            <div className="h-2 w-full overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
-              <div className="h-full bg-blue-600 transition-all" style={{ width: `${uploadProgress}%` }}></div>
+        </div>
+
+        {/* Photos */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.photosLabel}</label>
+          <input type="file" multiple accept="image/*" onChange={handleFileChange} className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300" />
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Puedes seleccionar múltiples imágenes", "You can select multiple images")}</p>
+          {files.length > 0 && (
+            <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              {ll(`${files.length}/25 fotos seleccionadas`, `${files.length}/25 photos selected`)}
             </div>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{uploadProgress}%</p>
-          </div>
-        )}
-      </div>
+          )}
+          {uploading && (
+            <div className="mt-2">
+              <div className="h-2 w-full overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
+                <div className="h-full bg-blue-600 transition-all" style={{ width: `${uploadProgress}%` }}></div>
+              </div>
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{uploadProgress}%</p>
+            </div>
+          )}
+        </div>
 
-      {/* Submit */}
-      <div className="flex items-center justify-end gap-3 pt-4">
-        {err && <div className="text-red-600 text-sm">{err}</div>}
-        <button type="submit" disabled={uploading} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
-          {uploading ? ll("Subiendo...", "Uploading...") : t.publish}
-        </button>
-      </div>
-    </form>
+        {/* Submit */}
+        <div className="flex items-center justify-end gap-3 pt-4">
+          {err && <div className="text-red-600 text-sm">{err}</div>}
+          <button type="submit" disabled={uploading} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            {uploading ? ll("Procesando...", "Processing...") : t.publish}
+          </button>
+        </div>
+      </form>
     </>
   );
 }
