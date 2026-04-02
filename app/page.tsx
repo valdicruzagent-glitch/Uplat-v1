@@ -5,6 +5,7 @@ import SiteHeader from "@/app/components/SiteHeader";
 import MapSection from "@/app/components/MapSection";
 import { es } from "@/app/i18n/es";
 import { loadGuestState, saveGuestState } from "@/lib/guestState";
+import Footer from "@/app/components/Footer";
 
 export default function Home() {
   const guestState = loadGuestState();
