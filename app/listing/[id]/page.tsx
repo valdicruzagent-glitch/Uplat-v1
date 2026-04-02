@@ -9,6 +9,7 @@ import FavoriteButton from "@/app/components/FavoriteButton";
 import InquiryForm from "@/app/components/InquiryForm";
 import ListingMap from "@/app/components/ListingMap";
 import ReportButton from "@/app/components/ReportButton";
+import OwnerCard from "@/app/components/OwnerCard";
 
 function getSortedImages(listing: Record<string, unknown>) {
   const urls = Array.isArray(listing.image_urls) ? listing.image_urls : [];
@@ -61,11 +62,18 @@ export default async function ListingPage({
         full_name,
         role,
         agency_id,
+        phone,
+        whatsapp_number,
+        avatar_url,
         agencies (name, country, department, city)
       )
     `)
     .eq("id", id)
     .single();
+
+  // Obtener usuario actual (para rating)
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserId = user?.id;
 
   if (error || !listing) {
     return (
@@ -122,19 +130,23 @@ export default async function ListingPage({
           {typeof listing.area_m2 === "number" ? ` • ${es.areaShort(listing.area_m2)}` : ""}
         </p>
 
-        {/* Ownership */}
+        {/* Owner card */}
         {(listing as any).profiles?.[0] && (
-          <div className="mt-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Inmobiliaria</p>
-            <p className="font-medium">
-              {(listing as any).profiles[0].full_name}
-              {(listing as any).profiles[0].agencies?.[0] && (
-                <span className="ml-2 font-normal text-zinc-600 dark:text-zinc-400">
-                  • {(listing as any).profiles[0].agencies[0].name}
-                </span>
-              )}
-            </p>
-          </div>
+          <OwnerCard
+            owner={{
+              id: (listing as any).profiles[0].id,
+              full_name: (listing as any).profiles[0].full_name,
+              role: (listing as any).profiles[0].role,
+              avatar_url: (listing as any).profiles[0].avatar_url,
+              whatsapp_number: (listing as any).profiles[0].whatsapp_number,
+              agency: (listing as any).profiles[0].agencies?.[0] || null,
+            }}
+            listingTitle={title}
+            listingCity={listing.city}
+            priceText={priceText}
+            listingWhatsapp={listing.contact_whatsapp}
+            currentUserId={currentUserId || undefined}
+          />
         )}
 
         <TrackListingView listingId={listing.id} locale="es" />
