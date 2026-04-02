@@ -61,7 +61,7 @@ export default function TrackListingView({
         console.log('[TrackListingView] count:', count);
         setViews(count);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error('[TrackListingView] unexpected error:', err);
         setViews(0);
       });
