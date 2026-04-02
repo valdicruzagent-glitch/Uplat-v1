@@ -29,7 +29,9 @@ export default function TrackListingView({
       .eq('listing_id', listingId)
       .eq('meta->>visitor_id', visitor_id)
       .maybeSingle()
-      .then(async ({ data: existing, error: checkErr }) => {
+      .then(async (res: { data: any; error: any }) => {
+        const existing = res.data;
+        const checkErr = res.error;
         if (checkErr) {
           console.error('[TrackListingView] check error:', checkErr);
         }
