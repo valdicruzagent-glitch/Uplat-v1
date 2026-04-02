@@ -258,7 +258,7 @@ export default function MapSection({
   const computedPriceBounds = useMemo(() => {
     const visiblePriced = bounds ? activePricedAll.filter((listing) => inBounds(listing, bounds)) : activePricedAll;
     const source = visiblePriced.length >= 5 ? visiblePriced : activePricedAll;
-    const prices = source.map(priceNum).filter((v): v is number => v !== null);
+    const prices = source.map(l => priceNum(l.price_usd)).filter((v): v is number => v !== null);
     if (prices.length === 0) return { min: 0, max: 0 };
     return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
   }, [activePricedAll, bounds]);
