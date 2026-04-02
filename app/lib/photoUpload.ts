@@ -25,8 +25,8 @@ export async function uploadListingPhotos(
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     urls.push(data.publicUrl);
 
-    if (onProgress) {
-      onProgress(Math.round(((i + 1) / files.length) * 100));
+    if (params.onProgress) {
+      params.onProgress(Math.round(((i + 1) / params.files.length) * 100));
     }
   }
 
