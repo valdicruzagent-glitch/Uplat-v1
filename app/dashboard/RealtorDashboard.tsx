@@ -28,6 +28,8 @@ export default function RealtorDashboard() {
       const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile(profileData);
 
+      let inquiriesData: any[] = [];
+
       // Fetch agent's listings
       const { data: listingsData } = await supabase
         .from('listings')
@@ -40,17 +42,20 @@ export default function RealtorDashboard() {
       // Fetch inquiries for agent's listings
       if (listingsData && listingsData.length > 0) {
         const listingIds = listingsData.map((l: any) => l.id);
-        const { data: inquiriesData } = await supabase
+        const { data: inqData } = await supabase
           .from('listing_inquiries')
           .select('id, created_at, listing:listings(title), message')
           .in('listing_id', listingIds)
           .order('created_at', { ascending: false });
-        setInquiries(inquiriesData || []);
+        inquiriesData = inqData || [];
+        setInquiries(inquiriesData);
+      } else {
+        setInquiries([]);
       }
 
       setStats({
         listings: listingsData?.length || 0,
-        inquiries: inquiriesData?.length || 0,
+        inquiries: inquiriesData.length,
         views: 0, // TODO: sum views from events
       });
 
