@@ -129,7 +129,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
               setProfile(data);
             }
           })
-          .catch(e => console.error('Profile load exception:', e));
+          .catch((e: any) => console.error('Profile load exception:', e));
       } catch (e) {
         console.error(e);
         setErr('Unexpected error');
