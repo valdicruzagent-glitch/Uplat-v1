@@ -16,6 +16,6 @@ export default function PrivacyPage() {
         </div>
       </main>
       <Footer locale="es" />
-    </>;
+    </>
   );
 }

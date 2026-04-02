@@ -19,6 +19,6 @@ export default function TermsPage() {
         </div>
       </main>
       <Footer locale="es" />
-    </>;
+    </>
   );
 }
