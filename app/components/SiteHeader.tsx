@@ -41,7 +41,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
       console.log('[SiteHeader] loading profile for userId:', user.id);
       try {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('profile query timeout')), 5000)
+          setTimeout(() => reject(new Error('profile query timeout')), 10000)
         );
         const profilePromise = supabase
           .from('profiles')
