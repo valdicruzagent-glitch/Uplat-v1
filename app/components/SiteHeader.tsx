@@ -124,7 +124,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     loading,
     hasUser: !!user,
     profile,
-    displayName: profile?.full_name || user?.user_metadata?.full_name || user.email?.split('@')[0] || '',
+    displayName: profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
     avatarUrl,
   });
 
@@ -148,7 +148,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
               {avatarUrl && (
                 <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
               )}
-              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || ''}</div>
+              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{profile?.full_name || user.user_metadata?.full_name || user?.email?.split('@')[0] || ''}</div>
             </div>
           ) : (
             <Link href={locale === "en" ? "/en/signin" : "/signin"} className="md:hidden px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700">
@@ -178,7 +178,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
                     {avatarUrl && (
                       <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
                     )}
-                    {profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || ''}
+                    {profile?.full_name || user.user_metadata?.full_name || user?.email?.split('@')[0] || ''}
                   </button>
                   {menuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50">
