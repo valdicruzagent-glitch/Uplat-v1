@@ -48,7 +48,6 @@ export default async function ListingPage({
     {
       cookies: {
         get: (name) => cookieStore.get(name)?.value,
-        set: (name, value, options) => cookieStore.set({ name, value, ...options }),
       },
     }
   );
