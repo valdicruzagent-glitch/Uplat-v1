@@ -10,6 +10,7 @@ import InquiryForm from "@/app/components/InquiryForm";
 import ListingMap from "@/app/components/ListingMap";
 import OwnerCard from "@/app/components/OwnerCard";
 import ReportButton from "@/app/components/ReportButton";
+import OwnerListingActions from "@/app/components/OwnerListingActions";
 import { DEPARTMENTS_BY_COUNTRY } from "@/app/submit-listing/departments";
 
 function getSortedImages(listing: Record<string, unknown>) {
@@ -120,6 +121,8 @@ export default async function ListingPage({
   const departmentName = getDepartmentName(listing.country_code, listing.department_code);
   const locationText = [listing.city, departmentName].filter(Boolean).join(', ');
 
+  const isOwnerViewing = !!currentUserId && currentUserId === listing.profile_id;
+
   const ownerCardProps = ownerProfile ? {
     owner: {
       id: ownerProfile.id,
@@ -176,12 +179,23 @@ export default async function ListingPage({
 
         {ownerCardProps && <OwnerCard {...ownerCardProps} />}
 
+        {isOwnerViewing && <OwnerListingActions listingId={listing.id} />}
+
         <TrackListingView listingId={listing.id} locale="es" />
 
         {listing.description ? (
-          <section className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-xl font-semibold">Descripción:</h2>
             <p className="text-base leading-7 text-zinc-700 dark:text-zinc-300">{listing.description}</p>
+            {Array.isArray(listing.amenities) && listing.amenities.length > 0 ? (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {listing.amenities.map((item: string) => (
+                  <span key={item} className="rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </section>
         ) : null}
 
