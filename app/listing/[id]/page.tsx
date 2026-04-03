@@ -9,6 +9,8 @@ import FavoriteButton from "@/app/components/FavoriteButton";
 import InquiryForm from "@/app/components/InquiryForm";
 import ListingMap from "@/app/components/ListingMap";
 import OwnerCard from "@/app/components/OwnerCard";
+import ReportButton from "@/app/components/ReportButton";
+import { DEPARTMENTS_BY_COUNTRY } from "@/app/submit-listing/departments";
 
 function getSortedImages(listing: Record<string, unknown>) {
   const urls = Array.isArray(listing.image_urls) ? listing.image_urls : [];
@@ -41,6 +43,24 @@ function getPropertyTypeLabel(listing: Record<string, unknown>) {
     case "warehouse": return "Bodega";
     default: return "Casa";
   }
+}
+
+function getCountryName(countryCode: unknown) {
+  switch (countryCode) {
+    case 'NI': return 'Nicaragua';
+    case 'HN': return 'Honduras';
+    case 'CR': return 'Costa Rica';
+    case 'GT': return 'Guatemala';
+    case 'SV': return 'El Salvador';
+    case 'PA': return 'Panamá';
+    default: return typeof countryCode === 'string' ? countryCode : '';
+  }
+}
+
+function getDepartmentName(countryCode: unknown, departmentCode: unknown) {
+  if (typeof countryCode !== 'string' || typeof departmentCode !== 'string') return '';
+  const departments = DEPARTMENTS_BY_COUNTRY[countryCode] || [];
+  return departments.find((item) => item.code === departmentCode)?.name || departmentCode;
 }
 
 export default async function ListingPage({
@@ -109,6 +129,8 @@ export default async function ListingPage({
     return typeof listing.cover_image_url === "string" ? listing.cover_image_url : null;
   })();
   const ownerProfile = (listing as any).profiles?.[0] || null;
+  const departmentName = getDepartmentName(listing.country_code, listing.department_code);
+  const countryName = getCountryName(listing.country_code);
 
   return (
     <>
@@ -131,9 +153,14 @@ export default async function ListingPage({
               <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{listingType}</span>
               <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{propertyType}</span>
               {listing.city ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{listing.city}</span> : null}
+              {departmentName ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{departmentName}</span> : null}
+              {countryName ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{countryName}</span> : null}
             </div>
           </div>
-          <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
+          <div className="flex items-center gap-2">
+            <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
+            <ReportButton listingId={listing.id} />
+          </div>
         </div>
 
         <section className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">

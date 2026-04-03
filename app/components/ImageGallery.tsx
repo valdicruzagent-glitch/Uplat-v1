@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface Image {
   image_url: string;
@@ -17,29 +17,64 @@ export default function ImageGallery({
 }) {
   const [selectedIdx, setSelectedIdx] = useState(initialIndex);
   const selected = images[selectedIdx];
-  const thumbCount = 5;
+  const thumbCount = 6;
+
+  const orderedThumbs = useMemo(() => {
+    if (images.length <= thumbCount) return images.map((img, idx) => ({ img, idx }));
+    return images.slice(0, thumbCount).map((img, idx) => ({ img, idx }));
+  }, [images]);
 
   if (!images.length) return null;
 
+  const goPrev = () => setSelectedIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  const goNext = () => setSelectedIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+
   return (
-    <div className="flex flex-col gap-2">
-      {/* Main image */}
-      <img
-        src={selected.image_url}
-        alt=""
-        className="h-[30rem] w-full rounded-2xl object-cover md:h-[38rem]"
-      />
-      {/* Thumbnails */}
-      <div className="flex gap-3 overflow-x-auto py-2">
-        {images.slice(0, thumbCount).map((img, idx) => (
+    <div className="flex flex-col gap-3">
+      <div className="relative overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900">
+        <div className="aspect-video w-full">
+          <img
+            src={selected.image_url}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        </div>
+
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={goPrev}
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 px-3 py-2 text-white backdrop-blur hover:bg-black/70"
+              aria-label="Foto anterior"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 px-3 py-2 text-white backdrop-blur hover:bg-black/70"
+              aria-label="Siguiente foto"
+            >
+              →
+            </button>
+            <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
+              {selectedIdx + 1} / {images.length}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto py-1">
+        {orderedThumbs.map(({ img, idx }) => (
           <button
             key={img.id ?? idx}
             type="button"
             onClick={() => setSelectedIdx(idx)}
-            className={`h-24 w-20 flex-shrink-0 overflow-hidden rounded-xl md:h-28 md:w-24 ${
+            className={`aspect-video w-28 flex-shrink-0 overflow-hidden rounded-xl border ${
               selectedIdx === idx
-                ? 'ring-2 ring-blue-600'
-                : 'opacity-70 hover:opacity-100'
+                ? 'border-zinc-900 ring-2 ring-zinc-900/20 dark:border-white dark:ring-white/20'
+                : 'border-transparent opacity-70 hover:opacity-100'
             }`}
           >
             <img
