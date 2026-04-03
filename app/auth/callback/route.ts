@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const isVercel = process.env.VERCEL === '1';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -16,10 +17,19 @@ export async function GET(request: Request) {
           return (await cookies()).get(name)?.value;
         },
         async set(name, value, options) {
-          (await cookies()).set({ name, value, ...options });
+          const cookieStore = await cookies();
+          // En Vercel, establece dominio compartido para que las cookies sean accesibles en todos los subdominios
+          if (isVercel) {
+            options = { ...options, domain: '.vercel.app' };
+          }
+          cookieStore.set(name, value, options);
         },
         async remove(name, options) {
-          (await cookies()).delete({ name, ...options });
+          const cookieStore = await cookies();
+          if (isVercel) {
+            options = { ...options, domain: '.vercel.app' };
+          }
+          cookieStore.delete({ name, ...options });
         },
       },
     });
