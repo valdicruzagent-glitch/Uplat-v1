@@ -1,8 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet default icons
+import L from "leaflet";
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41]
+});
 
 const DEFAULT_CENTER: [number, number] = [12.1364, -86.2514]; // Managua
 
@@ -23,16 +37,22 @@ function CenterUpdater({ center }: { center?: [number, number] }) {
 
 function MoveListener({ onChange }: { onChange: (lat: number, lng: number) => void }) {
   const map = useMap();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const onMove = () => {
-      const c = map.getCenter();
-      onChange(c.lat, c.lng);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        const c = map.getCenter();
+        onChange(c.lat, c.lng);
+      }, 200); // debounce 200ms
     };
     map.on("moveend", onMove);
-    // Also trigger initially to set lat/lng
+    // Initial call to set initial coordinates
     onMove();
     return () => {
       map.off("moveend", onMove);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [map, onChange]);
   return null;
