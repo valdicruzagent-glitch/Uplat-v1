@@ -216,6 +216,9 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const priceNum = parsePrice(priceUsd);
       if (priceNum === null) throw new Error(ll("Precio inválido", "Invalid price"));
 
+      const profileId = profile?.id || user.id;
+      if (!profileId) throw new Error(ll("No se encontró el perfil del usuario", "User profile not found"));
+
       // Insertar listing (sin imágenes)
       const { data: insertData, error: insertError } = await supabase
         .from('listings')
@@ -240,7 +243,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           contact_whatsapp: profile?.whatsapp_number || null,
           published_at: new Date().toISOString(),
           source: 'submission_form',
-          profile_id: user.id,
+          profile_id: profileId,
         }])
         .select('id')
         .single();
