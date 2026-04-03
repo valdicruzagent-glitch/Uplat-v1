@@ -240,7 +240,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           contact_whatsapp: profile?.whatsapp_number || null,
           published_at: new Date().toISOString(),
           source: 'submission_form',
-          ...(profile?.id && { profile_id: profile.id }),
+          profile_id: user.id,
         }])
         .select('id')
         .single();
