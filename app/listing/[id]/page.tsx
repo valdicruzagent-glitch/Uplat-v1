@@ -26,9 +26,9 @@ function getSortedImages(listing: Record<string, unknown>) {
 
 function getListingTypeLabel(listing: Record<string, unknown>) {
   const raw = typeof listing.listing_type === "string" ? listing.listing_type : listing.mode;
-  if (raw === "buy" || raw === "sale") return "A la venta";
+  if (raw === "buy" || raw === "sale") return "En venta";
   if (raw === "rent") return "En renta";
-  return "A la venta";
+  return "En venta";
 }
 
 function getPropertyTypeLabel(listing: Record<string, unknown>) {
@@ -42,18 +42,6 @@ function getPropertyTypeLabel(listing: Record<string, unknown>) {
     case "office": return "Oficina";
     case "warehouse": return "Bodega";
     default: return "Casa";
-  }
-}
-
-function getCountryName(countryCode: unknown) {
-  switch (countryCode) {
-    case 'NI': return 'Nicaragua';
-    case 'HN': return 'Honduras';
-    case 'CR': return 'Costa Rica';
-    case 'GT': return 'Guatemala';
-    case 'SV': return 'El Salvador';
-    case 'PA': return 'Panamá';
-    default: return typeof countryCode === 'string' ? countryCode : '';
   }
 }
 
@@ -130,18 +118,28 @@ export default async function ListingPage({
   })();
   const ownerProfile = (listing as any).profiles?.[0] || null;
   const departmentName = getDepartmentName(listing.country_code, listing.department_code);
-  const countryName = getCountryName(listing.country_code);
+  const locationText = [listing.city, departmentName].filter(Boolean).join(', ');
+
+  const ownerCardProps = ownerProfile ? {
+    owner: {
+      id: ownerProfile.id,
+      full_name: ownerProfile.full_name,
+      role: ownerProfile.role,
+      avatar_url: ownerProfile.avatar_url,
+      whatsapp_number: ownerProfile.whatsapp_number,
+      agency: ownerProfile.agencies?.[0] || null,
+    },
+    listingTitle: title,
+    listingCity: listing.city,
+    priceText,
+    listingWhatsapp: listing.contact_whatsapp,
+    currentUserId: currentUserId || undefined,
+  } : null;
 
   return (
     <>
       <SiteHeader locale="es" />
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
-        {hasMultiple ? (
-          <ImageGallery images={sortedImages} initialIndex={initialIndex} />
-        ) : fallbackPrimaryImage ? (
-          <img src={fallbackPrimaryImage} alt={String(title)} className="h-[30rem] w-full rounded-2xl object-cover md:h-[38rem]" />
-        ) : null}
-
         <Link className="text-sm underline" href="/">
           {es.back}
         </Link>
@@ -152,9 +150,7 @@ export default async function ListingPage({
             <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
               <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{listingType}</span>
               <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{propertyType}</span>
-              {listing.city ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{listing.city}</span> : null}
-              {departmentName ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{departmentName}</span> : null}
-              {countryName ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{countryName}</span> : null}
+              {locationText ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{locationText}</span> : null}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -162,6 +158,12 @@ export default async function ListingPage({
             <ReportButton listingId={listing.id} />
           </div>
         </div>
+
+        {hasMultiple ? (
+          <ImageGallery images={sortedImages} initialIndex={initialIndex} />
+        ) : fallbackPrimaryImage ? (
+          <img src={fallbackPrimaryImage} alt={String(title)} className="h-[30rem] w-full rounded-2xl object-cover md:h-[38rem]" />
+        ) : null}
 
         <section className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
           <p className="text-3xl font-bold tracking-tight md:text-4xl">{priceText}</p>
@@ -172,23 +174,7 @@ export default async function ListingPage({
           </div>
         </section>
 
-        {ownerProfile && (
-          <OwnerCard
-            owner={{
-              id: ownerProfile.id,
-              full_name: ownerProfile.full_name,
-              role: ownerProfile.role,
-              avatar_url: ownerProfile.avatar_url,
-              whatsapp_number: ownerProfile.whatsapp_number,
-              agency: ownerProfile.agencies?.[0] || null,
-            }}
-            listingTitle={title}
-            listingCity={listing.city}
-            priceText={priceText}
-            listingWhatsapp={listing.contact_whatsapp}
-            currentUserId={currentUserId || undefined}
-          />
-        )}
+        {ownerCardProps && <OwnerCard {...ownerCardProps} />}
 
         <TrackListingView listingId={listing.id} locale="es" />
 
@@ -213,7 +199,7 @@ export default async function ListingPage({
               locale="es"
               translations={{
                 askAbout: "Preguntar por esta propiedad",
-                messagePlaceholder: "Haz una pregunta sobre esta propiedad.",
+                messagePlaceholder: "Haz una consulta sobre esta propiedad.",
                 waPlaceholder: "",
                 submit: "Enviar consulta",
                 submitting: "Enviando...",
@@ -223,9 +209,7 @@ export default async function ListingPage({
                 signInButton: "Iniciar sesión",
               }}
             />
-            <div className="text-sm text-zinc-500 dark:text-zinc-400">
-              {ownerProfile ? 'Haz una pregunta y te responderá el dueño o agente del listing.' : 'Haz una pregunta sobre esta propiedad.'}
-            </div>
+            {ownerCardProps && <OwnerCard {...ownerCardProps} />}
           </>
         )}
       </main>
