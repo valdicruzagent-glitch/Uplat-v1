@@ -427,7 +427,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.operationLabel}</div>
             <select required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={mode} onChange={e => setMode(e.target.value)}>
               <option value="">{ll("Selecciona operación", "Select operation")}</option>
-              <option value="sell">{ll("Vender", "Sell")}</option>
+              <option value="buy">{ll("Vender", "Sell")}</option>
               <option value="rent">{ll("Rentar", "Rent")}</option>
             </select>
           </label>

@@ -62,7 +62,7 @@ export default function SignInForm({ locale }: { locale: "es" | "en" }) {
 
     try {
       const supabase = getSupabaseClient();
-      const redirectTo = `${window.location.origin}${nextPath}`;
+      const redirectTo = `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(nextPath)}`;
 
       window.localStorage.setItem("uplat_auth_goal", "google_whatsapp");
 
