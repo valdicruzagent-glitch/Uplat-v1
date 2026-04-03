@@ -8,7 +8,6 @@ import ImageGallery from "@/app/components/ImageGallery";
 import FavoriteButton from "@/app/components/FavoriteButton";
 import InquiryForm from "@/app/components/InquiryForm";
 import ListingMap from "@/app/components/ListingMap";
-import ReportButton from "@/app/components/ReportButton";
 import OwnerCard from "@/app/components/OwnerCard";
 
 function getSortedImages(listing: Record<string, unknown>) {
@@ -23,17 +22,25 @@ function getSortedImages(listing: Record<string, unknown>) {
   }));
 }
 
-function getListingType(listing: Record<string, unknown>) {
-  if (typeof listing.listing_type === "string") return listing.listing_type;
-  if (listing.mode === "buy") return "sale";
-  if (listing.mode === "rent") return "rent";
-  return "sale";
+function getListingTypeLabel(listing: Record<string, unknown>) {
+  const raw = typeof listing.listing_type === "string" ? listing.listing_type : listing.mode;
+  if (raw === "buy" || raw === "sale") return "A la venta";
+  if (raw === "rent") return "En renta";
+  return "A la venta";
 }
 
-function getPropertyType(listing: Record<string, unknown>) {
-  if (typeof listing.property_type === "string") return listing.property_type;
-  if (typeof listing.type === "string") return listing.type;
-  return "house";
+function getPropertyTypeLabel(listing: Record<string, unknown>) {
+  const raw = typeof listing.property_type === "string" ? listing.property_type : listing.type;
+  switch (raw) {
+    case "house": return "Casa";
+    case "apartment": return "Apartamento";
+    case "land": return "Terreno";
+    case "farm": return "Finca";
+    case "commercial": return "Comercial";
+    case "office": return "Oficina";
+    case "warehouse": return "Bodega";
+    default: return "Casa";
+  }
 }
 
 export default async function ListingPage({
@@ -71,7 +78,6 @@ export default async function ListingPage({
     .eq("id", id)
     .single();
 
-  // Obtener usuario actual (para rating)
   const { data: { user } } = await supabase.auth.getUser();
   const currentUserId = user?.id;
 
@@ -91,8 +97,8 @@ export default async function ListingPage({
 
   const priceText = listing.price_usd ? `$${Number(listing.price_usd).toLocaleString()}` : "—";
   const title = listing.headline || listing.title;
-  const propertyType = getPropertyType(listing);
-  const listingType = getListingType(listing);
+  const propertyType = getPropertyTypeLabel(listing);
+  const listingType = getListingTypeLabel(listing);
   const sortedImages = getSortedImages(listing);
   const hasMultiple = sortedImages.length > 0;
   const primaryIdx = sortedImages.findIndex((img: any) => img.is_primary);
@@ -102,44 +108,52 @@ export default async function ListingPage({
     if (imageUrls?.length && typeof imageUrls[0] === "string") return imageUrls[0];
     return typeof listing.cover_image_url === "string" ? listing.cover_image_url : null;
   })();
-  const contactWhatsapp = typeof listing.contact_whatsapp === "string" ? listing.contact_whatsapp : "505XXXXXXXX";
-  const msg = encodeURIComponent(`Hola, estoy interesado en: ${listing.title} en ${listing.city}. Precio: ${priceText}.`);
-  const wa = `https://wa.me/${contactWhatsapp.replace(/\D/g, "")}?text=${msg}`;
+  const ownerProfile = (listing as any).profiles?.[0] || null;
 
   return (
     <>
       <SiteHeader locale="es" />
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-10">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
         {hasMultiple ? (
           <ImageGallery images={sortedImages} initialIndex={initialIndex} />
         ) : fallbackPrimaryImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={fallbackPrimaryImage} alt={String(title)} className="h-64 w-full rounded-xl object-cover" />
+          <img src={fallbackPrimaryImage} alt={String(title)} className="h-[30rem] w-full rounded-2xl object-cover md:h-[38rem]" />
         ) : null}
+
         <Link className="text-sm underline" href="/">
           {es.back}
         </Link>
+
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <div className="space-y-3">
+            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{title}</h1>
+            <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+              <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{listingType}</span>
+              <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{propertyType}</span>
+              {listing.city ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{listing.city}</span> : null}
+            </div>
+          </div>
           <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
         </div>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {priceText} • {listing.city} • {propertyType} • {listingType}
-          {typeof listing.beds === "number" ? ` • ${es.bedsShort(listing.beds)}` : ""}
-          {typeof listing.baths === "number" ? ` • ${es.bathsShort(listing.baths)}` : ""}
-          {typeof listing.area_m2 === "number" ? ` • ${es.areaShort(listing.area_m2)}` : ""}
-        </p>
 
-        {/* Owner card */}
-        {(listing as any).profiles?.[0] && (
+        <section className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-3xl font-bold tracking-tight md:text-4xl">{priceText}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-base text-zinc-800 dark:text-zinc-200">
+            {typeof listing.beds === "number" ? <span>{es.bedsShort(listing.beds)}</span> : null}
+            {typeof listing.baths === "number" ? <span>{es.bathsShort(listing.baths)}</span> : null}
+            {typeof listing.area_m2 === "number" ? <span>{es.areaShort(listing.area_m2)}</span> : null}
+          </div>
+        </section>
+
+        {ownerProfile && (
           <OwnerCard
             owner={{
-              id: (listing as any).profiles[0].id,
-              full_name: (listing as any).profiles[0].full_name,
-              role: (listing as any).profiles[0].role,
-              avatar_url: (listing as any).profiles[0].avatar_url,
-              whatsapp_number: (listing as any).profiles[0].whatsapp_number,
-              agency: (listing as any).profiles[0].agencies?.[0] || null,
+              id: ownerProfile.id,
+              full_name: ownerProfile.full_name,
+              role: ownerProfile.role,
+              avatar_url: ownerProfile.avatar_url,
+              whatsapp_number: ownerProfile.whatsapp_number,
+              agency: ownerProfile.agencies?.[0] || null,
             }}
             listingTitle={title}
             listingCity={listing.city}
@@ -151,10 +165,15 @@ export default async function ListingPage({
 
         <TrackListingView listingId={listing.id} locale="es" />
 
-        {listing.description ? <p className="text-sm leading-6">{listing.description}</p> : null}
+        {listing.description ? (
+          <section className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-xl font-semibold">¿Te interesa esta propiedad?</h2>
+            <p className="text-base leading-7 text-zinc-700 dark:text-zinc-300">{listing.description}</p>
+          </section>
+        ) : null}
 
         {typeof listing.lat === 'number' && typeof listing.lng === 'number' && (
-          <div className="mt-6">
+          <div className="mt-2">
             <ListingMap lat={listing.lat} lng={listing.lng} title={title} price={priceText} />
           </div>
         )}
@@ -163,11 +182,11 @@ export default async function ListingPage({
           <>
             <InquiryForm
               listingId={listing.id}
-              agentId={(listing as any).profiles?.[0]?.id || null}
+              agentId={ownerProfile?.id || null}
               locale="es"
               translations={{
                 askAbout: "Preguntar por esta propiedad",
-                messagePlaceholder: "Tu mensaje...",
+                messagePlaceholder: "¿Sigue disponible? ¿Se puede agendar una visita?",
                 waPlaceholder: "Tu WhatsApp (opcional)",
                 submit: "Enviar consulta",
                 submitting: "Enviando...",
@@ -177,14 +196,9 @@ export default async function ListingPage({
                 signInButton: "Iniciar sesión",
               }}
             />
-            <a
-              className="mt-2 inline-flex w-fit items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-              href={wa}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {es.contactWhatsapp}
-            </a>
+            <div className="text-sm text-zinc-500 dark:text-zinc-400">
+              {ownerProfile ? 'Haz una pregunta y te responderá el dueño o agente del listing.' : 'Haz una pregunta sobre esta propiedad.'}
+            </div>
           </>
         )}
       </main>

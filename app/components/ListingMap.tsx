@@ -32,7 +32,7 @@ export default function ListingMap({
   }, []);
 
   return (
-    <div className="h-48 w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+    <div className="h-72 w-full overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 md:h-96">
       <MapContainer
         center={[lat, lng]}
         zoom={15}

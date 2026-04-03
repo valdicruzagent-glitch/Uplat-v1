@@ -27,16 +27,16 @@ export default function ImageGallery({
       <img
         src={selected.image_url}
         alt=""
-        className="h-64 w-full rounded-xl object-cover"
+        className="h-[30rem] w-full rounded-2xl object-cover md:h-[38rem]"
       />
       {/* Thumbnails */}
-      <div className="flex gap-2 overflow-x-auto py-1">
+      <div className="flex gap-3 overflow-x-auto py-2">
         {images.slice(0, thumbCount).map((img, idx) => (
           <button
             key={img.id ?? idx}
             type="button"
             onClick={() => setSelectedIdx(idx)}
-            className={`h-16 w-24 flex-shrink-0 overflow-hidden rounded ${
+            className={`h-24 w-20 flex-shrink-0 overflow-hidden rounded-xl md:h-28 md:w-24 ${
               selectedIdx === idx
                 ? 'ring-2 ring-blue-600'
                 : 'opacity-70 hover:opacity-100'

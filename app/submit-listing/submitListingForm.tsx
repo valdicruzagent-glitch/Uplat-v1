@@ -283,6 +283,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           contact_whatsapp: profile?.whatsapp_number || null,
           published_at: new Date().toISOString(),
           source: 'submission_form',
+          status: 'published',
           profile_id: profileId,
         }])
         .select('id')

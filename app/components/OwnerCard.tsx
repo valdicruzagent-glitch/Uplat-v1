@@ -72,9 +72,7 @@ export default function OwnerCard({ owner, listingTitle, listingCity, priceText,
     }
   };
 
-  const contactWhatsapp = owner.whatsapp_number || listingWhatsapp || "505XXXXXXXX";
-  const msg = encodeURIComponent(`Hola, estoy interesado en: ${listingTitle} en ${listingCity}. Precio: ${priceText}.`);
-  const wa = `https://wa.me/${contactWhatsapp.replace(/\D/g, "")}?text=${msg}`;
+  const hasAgency = !!owner.agency?.name;
 
   const stars = Array.from({ length: 10 }, (_, i) => i + 1);
   const displayRating = hoverRating !== null ? hoverRating : myRating ?? ratingStats.average;
@@ -120,12 +118,15 @@ export default function OwnerCard({ owner, listingTitle, listingCity, priceText,
           )}
         </div>
       </div>
-      <div className="mt-3">
-        <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">
-          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.609 5.8zm5.973-14.04c-.247-.074-.502-.151-.77-.235-2.486-1.008-4.356-2.652-5.209-4.617-.352-.82-.561-1.698-.561-2.613 0-2.311 1.771-4.181 4.189-4.181 1.418 0 2.682.675 3.48 1.748.8 1.073.987 2.464.567 3.801-.075.236-.241.462-.471.656l2.751 3.42c.11.136.254.204.391.207.138.004.28-.056.391-.208l5.88-7.327c.227-.282.36-.65.36-1.043 0-.396-.133-.765-.358-1.061l-5.557-6.92c-.226-.281-.549-.438-.886-.438-.332 0-.654.15-.869.438z"/></svg>
-          Contactar por WhatsApp
-        </a>
-      </div>
+      {hasAgency && (
+        <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/50">
+          <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Agencia</div>
+          <div className="mt-1 font-semibold text-zinc-900 dark:text-zinc-100">{owner.agency?.name}</div>
+          <div className="text-sm text-zinc-600 dark:text-zinc-400">
+            {[owner.agency?.city, owner.agency?.department, owner.agency?.country].filter(Boolean).join(', ')}
+          </div>
+        </div>
+      )}
 
       {/* Rating modal */}
       {rateModalOpen && (
