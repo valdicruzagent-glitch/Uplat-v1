@@ -96,7 +96,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   // Price formatting helpers
   const formatPrice = (val: string) => {
     const num = Number(val.replace(/,/g, ''));
-    return isNaN(num) ? val : num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return isNaN(num) ? val : num.toLocaleString('en-US');
   };
   const parsePrice = (val: string) => {
     const num = Number(val.replace(/,/g, ''));
@@ -213,7 +213,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       if (!type) throw new Error(ll("Tipo es requerido", "Type is required"));
       if (!lat || !lng) throw new Error(ll("Selecciona una ubicación en el mapa", "Select a location on the map"));
 
-      const priceNum = parsePrice(priceUsd);
+  const priceNum = parsePrice(priceUsd);
       if (priceNum === null) throw new Error(ll("Precio inválido", "Invalid price"));
 
       // Insertar listing (sin imágenes)
@@ -412,15 +412,11 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
               required
               className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
               value={priceUsd}
-              onChange={e => {
-                // Solo números y punto
-                const v = e.target.value.replace(/[^0-9.]/g, '');
-                setPriceUsd(v);
-              }}
+              onChange={e => setPriceUsd(e.target.value.replace(/[^0-9]/g, ''))}
               onBlur={e => setPriceUsd(formatPrice(e.target.value))}
-              placeholder={ll("0.00", "0.00")}
+              placeholder={ll("0", "0")}
               type="text"
-              inputMode="decimal"
+              inputMode="numeric"
             />
           </label>
         </div>
