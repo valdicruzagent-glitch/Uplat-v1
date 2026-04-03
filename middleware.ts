@@ -55,7 +55,7 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  const excluded = ['/onboarding', '/signin', '/signup', '/api', '/_next', '/favicon.ico']
+  const excluded = ['/onboarding', '/signin', '/signup', '/submit-listing', '/en/submit-listing', '/api', '/_next', '/favicon.ico']
   if (excluded.some(p => path.startsWith(p))) {
     return response
   }

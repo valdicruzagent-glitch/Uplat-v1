@@ -30,7 +30,7 @@ export default function SubmitListingPage() {
       if (!user) router.replace("/signin?next=/submit-listing");
     });
     return () => subscription.unsubscribe();
-  }, [router, supabase]);
+  }, [router]);
 
   // You could show a loading state here; for now we render
   return (
