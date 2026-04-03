@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
@@ -77,7 +77,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [newConstruction, setNewConstruction] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
-  const [selectedCoverIndex, setSelectedCoverIndex] = useState<number>(-1);
+  const [selectedCoverIndex, setSelectedCoverIndex] = useState<number>(0);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -180,9 +180,18 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     console.log('[SubmitListingForm] mounted');
   }, []);
 
+  const photoPreviewUrls = useMemo(() => files.map(file => URL.createObjectURL(file)), [files]);
+
+  useEffect(() => {
+    return () => {
+      photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [photoPreviewUrls]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files || []);
+    const selected = Array.from(e.target.files || []).slice(0, 25);
     setFiles(selected);
+    setSelectedCoverIndex(0);
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -204,16 +213,47 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         return;
       }
 
-      // Validations
-      if (!title) throw new Error(ll("Título es requerido", "Title is required"));
-      if (!priceUsd) throw new Error(ll("Precio es requerido", "Price is required"));
-      if (!countryCode) throw new Error(ll("País es requerido", "Country is required"));
-      if (!departmentCode) throw new Error(ll("Departamento es requerido", "Department is required"));
-      if (!mode) throw new Error(ll("Operación es requerida", "Operation is required"));
-      if (!type) throw new Error(ll("Tipo es requerido", "Type is required"));
-      if (!lat || !lng) throw new Error(ll("Selecciona una ubicación en el mapa", "Select a location on the map"));
+      const form = e.currentTarget as HTMLFormElement;
+      const formData = new FormData(form);
 
-  const priceNum = parsePrice(priceUsd);
+      const titleValue = String(formData.get('title') || title).trim();
+      const priceValue = String(formData.get('priceUsd') || priceUsd).trim();
+      const countryValue = String(formData.get('countryCode') || countryCode).trim();
+      const departmentValue = String(formData.get('departmentCode') || departmentCode).trim();
+      const cityValue = String(formData.get('city') || city).trim();
+      const modeValue = String(formData.get('mode') || mode).trim();
+      const typeValue = String(formData.get('type') || type).trim();
+      const descriptionValue = String(formData.get('description') || description).trim();
+      const bedsValue = String(formData.get('beds') || beds).trim();
+      const bathsValue = String(formData.get('baths') || baths).trim();
+      const areaValue = String(formData.get('areaM2') || areaM2).trim();
+      const yearValue = String(formData.get('yearBuilt') || yearBuilt).trim();
+
+      setTitle(titleValue);
+      setPriceUsd(priceValue);
+      setCountryCode(countryValue);
+      setDepartmentCode(departmentValue);
+      setCity(cityValue);
+      setMode(modeValue);
+      setType(typeValue);
+      setDescription(descriptionValue);
+      setBeds(bedsValue);
+      setBaths(bathsValue);
+      setAreaM2(areaValue);
+      setYearBuilt(yearValue);
+
+      // Validations
+      if (!titleValue) throw new Error(ll("Título es requerido", "Title is required"));
+      if (!priceValue) throw new Error(ll("Precio es requerido", "Price is required"));
+      if (!countryValue) throw new Error(ll("País es requerido", "Country is required"));
+      if (!departmentValue) throw new Error(ll("Departamento es requerido", "Department is required"));
+      if (!cityValue) throw new Error(ll("Ciudad es requerida", "City is required"));
+      if (!modeValue) throw new Error(ll("Operación es requerida", "Operation is required"));
+      if (!typeValue) throw new Error(ll("Tipo es requerido", "Type is required"));
+      if (!descriptionValue) throw new Error(ll("Descripción es requerida", "Description is required"));
+      if (lat === null || lng === null) throw new Error(ll("Selecciona una ubicación en el mapa", "Select a location on the map"));
+
+  const priceNum = parsePrice(priceValue);
       if (priceNum === null) throw new Error(ll("Precio inválido", "Invalid price"));
 
       const profileId = profile?.id || user.id;
@@ -223,20 +263,20 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const { data: insertData, error: insertError } = await supabase
         .from('listings')
         .insert([{
-          title,
+          title: titleValue,
           price_usd: priceNum,
-          country_code: countryCode,
-          department_code: departmentCode,
-          city,
-          mode,
-          type,
-          description: description || null,
+          country_code: countryValue,
+          department_code: departmentValue,
+          city: cityValue,
+          mode: modeValue,
+          type: typeValue,
+          description: descriptionValue || null,
           lat,
           lng,
-          beds: beds ? Number(beds) : null,
-          baths: baths ? Number(baths) : null,
-          area_m2: areaM2 ? Number(areaM2) : null,
-          year_built: yearBuilt ? Number(yearBuilt) : null,
+          beds: bedsValue === '6+' ? 6 : (bedsValue ? Number(bedsValue) : null),
+          baths: bathsValue === '6+' ? 6 : (bathsValue ? Number(bathsValue) : null),
+          area_m2: areaValue ? Number(areaValue) : null,
+          year_built: yearValue ? Number(yearValue) : null,
           new_construction: newConstruction || false,
           amenities: selectedAmenities,
           contact_name: profile?.full_name || null,
@@ -328,7 +368,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         <div className="grid gap-3 md:grid-cols-3">
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.countryLabel}</div>
-            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={countryCode} onChange={e => { setCountryCode(e.target.value); setDepartmentCode(""); }}>
+            <select name="countryCode" className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={countryCode} onChange={e => { setCountryCode(e.target.value); setDepartmentCode(""); }}>
               <option value="">{ll("Selecciona un país", "Select country")}</option>
               {COUNTRIES.map(c => (
                 <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
@@ -338,7 +378,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.departmentLabel}</div>
-            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={departmentCode} onChange={e => setDepartmentCode(e.target.value)} disabled={!countryCode}>
+            <select name="departmentCode" className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={departmentCode} onChange={e => setDepartmentCode(e.target.value)} disabled={!countryCode}>
               <option value="">{ll("Selecciona departamento", "Select department")}</option>
               {departmentOptions.map(d => (
                 <option key={d.code} value={d.code}>{d.name}</option>
@@ -348,7 +388,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.cityLabel}</div>
-            <input className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={city} onChange={e => setCity(e.target.value)} placeholder={ll("Ciudad o localidad", "City or locality")} />
+            <input name="city" className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={city} onChange={e => setCity(e.target.value)} placeholder={ll("Ciudad o localidad", "City or locality")} />
           </label>
         </div>
 
@@ -356,7 +396,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         <div className="grid gap-3 md:grid-cols-4">
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bedsLabel}</div>
-            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={beds} onChange={e => setBeds(e.target.value)}>
+            <select name="beds" className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={beds} onChange={e => setBeds(e.target.value)}>
               <option value="">—</option>
               <option value="1">1</option>
               <option value="2">2</option>
@@ -369,7 +409,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.bathsLabel}</div>
-            <select className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={baths} onChange={e => setBaths(e.target.value)}>
+            <select name="baths" className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={baths} onChange={e => setBaths(e.target.value)}>
               <option value="">—</option>
               <option value="1">1</option>
               <option value="2">2</option>
@@ -382,7 +422,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.areaM2Label}</div>
-            <input className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={areaM2} onChange={e => setAreaM2(e.target.value)} placeholder={ll("m²", "sq ft")} />
+            <input name="areaM2" className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={areaM2} onChange={e => setAreaM2(e.target.value.replace(/[^0-9.]/g, ''))} placeholder={ll("m²", "sq ft")} />
           </label>
 
           <label className="text-sm">
@@ -394,6 +434,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
               min={0}
               max={new Date().getFullYear()}
               step={1}
+              name="yearBuilt"
               className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
               value={yearBuilt}
               onChange={e => setYearBuilt(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
@@ -406,13 +447,14 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         <div className="grid gap-3 md:grid-cols-2">
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.listingTitleLabel}</div>
-            <input required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={title} onChange={e => setTitle(e.target.value)} placeholder={ll("Título atractivo", "Catchy title")} />
+            <input name="title" required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={title} onChange={e => setTitle(e.target.value)} placeholder={ll("Título atractivo", "Catchy title")} />
           </label>
 
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.priceUsd}</div>
             <input
               required
+              name="priceUsd"
               className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
               value={priceUsd}
               onChange={e => setPriceUsd(e.target.value.replace(/[^0-9]/g, ''))}
@@ -428,7 +470,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         <div className="grid gap-3 md:grid-cols-2">
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.operationLabel}</div>
-            <select required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={mode} onChange={e => setMode(e.target.value)}>
+            <select name="mode" required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={mode} onChange={e => setMode(e.target.value)}>
               <option value="">{ll("Selecciona operación", "Select operation")}</option>
               <option value="buy">{ll("Vender", "Sell")}</option>
               <option value="rent">{ll("Rentar", "Rent")}</option>
@@ -437,7 +479,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.typeLabel}</div>
-            <select required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={type} onChange={e => setType(e.target.value)}>
+            <select name="type" required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={type} onChange={e => setType(e.target.value)}>
               <option value="">{ll("Selecciona tipo", "Select type")}</option>
               <option value="house">{t.house}</option>
               <option value="apartment">{t.apartment}</option>
@@ -453,7 +495,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         {/* Description */}
         <div>
           <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.descriptionLabel}</label>
-          <textarea required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" rows={4} value={description} onChange={e => setDescription(e.target.value)} placeholder={ll("Describe la propiedad", "Describe the property")} />
+          <textarea name="description" required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" rows={4} value={description} onChange={e => setDescription(e.target.value)} placeholder={ll("Describe la propiedad", "Describe the property")} />
         </div>
 
         {/* Amenities */}
@@ -476,11 +518,32 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         <div>
           <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.photosLabel}</label>
           <input type="file" multiple accept="image/*" onChange={handleFileChange} className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300" />
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Las imágenes se comprimen automáticamente antes de subirlas.", "Images are automatically compressed before upload.")}</p>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Puedes seleccionar múltiples imágenes", "You can select multiple images")}</p>
           {files.length > 0 && (
-            <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              {ll(`${files.length}/25 fotos seleccionadas`, `${files.length}/25 photos selected`)}
-            </div>
+            <>
+              <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {ll(`${files.length}/25 fotos seleccionadas`, `${files.length}/25 photos selected`)}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+                {files.map((file, index) => (
+                  <button
+                    key={`${file.name}-${index}`}
+                    type="button"
+                    onClick={() => setSelectedCoverIndex(index)}
+                    className={`overflow-hidden rounded-lg border text-left ${selectedCoverIndex === index ? 'border-blue-600 ring-2 ring-blue-200' : 'border-zinc-200 dark:border-zinc-800'}`}
+                  >
+                    <img src={photoPreviewUrls[index]} alt={file.name} className="h-32 w-full object-cover" />
+                    <div className="flex items-center justify-between px-2 py-2 text-xs">
+                      <span className="truncate">{file.name}</span>
+                      <span className={`${selectedCoverIndex === index ? 'text-blue-600 font-semibold' : 'text-zinc-500'}`}>
+                        {selectedCoverIndex === index ? ll('Portada', 'Cover') : ll('Elegir', 'Pick')}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
           )}
           {uploading && (
             <div className="mt-2">
