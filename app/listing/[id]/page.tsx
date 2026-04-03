@@ -194,7 +194,7 @@ export default async function ListingPage({
 
         {listing.description ? (
           <section className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="text-xl font-semibold">¿Te interesa esta propiedad?</h2>
+            <h2 className="text-xl font-semibold">Descripción:</h2>
             <p className="text-base leading-7 text-zinc-700 dark:text-zinc-300">{listing.description}</p>
           </section>
         ) : null}
@@ -213,8 +213,8 @@ export default async function ListingPage({
               locale="es"
               translations={{
                 askAbout: "Preguntar por esta propiedad",
-                messagePlaceholder: "¿Sigue disponible? ¿Se puede agendar una visita?",
-                waPlaceholder: "Tu WhatsApp (opcional)",
+                messagePlaceholder: "Haz una pregunta sobre esta propiedad.",
+                waPlaceholder: "",
                 submit: "Enviar consulta",
                 submitting: "Enviando...",
                 success: "¡Consulta enviada!",

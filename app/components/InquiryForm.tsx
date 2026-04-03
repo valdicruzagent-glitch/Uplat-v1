@@ -138,24 +138,9 @@ export default function InquiryForm({ listingId, agentId, locale, translations }
           rows={3}
           value={message}
           onChange={e => setMessage(e.target.value)}
+          placeholder={translations.messagePlaceholder}
           required
         />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{translations.waPlaceholder}</label>
-        {phoneReadonly ? (
-          <div className="rounded border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800">
-            {waFrom}
-          </div>
-        ) : (
-          <input
-            type="tel"
-            className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-            value={waFrom}
-            onChange={e => setWaFrom(e.target.value)}
-            placeholder="+1 234 567 8900"
-          />
-        )}
       </div>
       <button
         type="submit"

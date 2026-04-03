@@ -54,10 +54,24 @@ export default function TrackListingView({
         const { data, error } = await supabase.rpc('get_listing_views', { listing: listingId });
         if (error) {
           console.error('[TrackListingView] get_listing_views error:', error);
-          setViews(0);
+          const fallback = await supabase
+            .from('events')
+            .select('id', { count: 'exact', head: true })
+            .eq('type', 'listing_view')
+            .eq('listing_id', listingId);
+          setViews(fallback.count ?? 0);
           return;
         }
         const count = Number(data ?? 0);
+        if (count <= 0) {
+          const fallback = await supabase
+            .from('events')
+            .select('id', { count: 'exact', head: true })
+            .eq('type', 'listing_view')
+            .eq('listing_id', listingId);
+          setViews(fallback.count ?? 0);
+          return;
+        }
         console.log('[TrackListingView] count:', count);
         setViews(count);
       })
