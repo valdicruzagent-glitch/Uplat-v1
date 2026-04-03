@@ -408,7 +408,20 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.priceUsd}</div>
-            <input required className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" value={priceUsd} onChange={e => setPriceUsd(formatPrice(e.target.value))} placeholder="0.00" type="text" inputMode="decimal" />
+            <input
+              required
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              value={priceUsd}
+              onChange={e => {
+                // Solo números y punto
+                const v = e.target.value.replace(/[^0-9.]/g, '');
+                setPriceUsd(v);
+              }}
+              onBlur={e => setPriceUsd(formatPrice(e.target.value))}
+              placeholder={ll("0.00", "0.00")}
+              type="text"
+              inputMode="decimal"
+            />
           </label>
         </div>
 
