@@ -385,13 +385,15 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           <label className="text-sm">
             <div className="mb-1 text-zinc-700 dark:text-zinc-300">{t.yearBuiltLabel}</div>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               min={0}
               max={new Date().getFullYear()}
               step={1}
               className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
               value={yearBuilt}
-              onChange={e => setYearBuilt(e.target.value)}
+              onChange={e => setYearBuilt(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
               placeholder={ll("Año (opcional)", "Year (optional)")}
             />
           </label>
