@@ -81,6 +81,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [selectedCoverIndex, setSelectedCoverIndex] = useState<number>(0);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [locationEditEnabled, setLocationEditEnabled] = useState(false);
 
   // Auth/profile state
   const [user, setUser] = useState<any>(null);
@@ -223,6 +224,12 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       cancelled = true;
     };
   }, [editListingId, user?.id, editingLoaded, supabase, locale]);
+
+  useEffect(() => {
+    if (!editListingId) {
+      setLocationEditEnabled(true);
+    }
+  }, [editListingId]);
 
   // Auto-year for new construction
   useEffect(() => {
@@ -453,14 +460,33 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
 
         {/* Map picker */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll("Ubicación en mapa", "Location on map")}</label>
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll("Ubicación en mapa", "Location on map")}</label>
+            {editListingId ? (
+              <button
+                type="button"
+                onClick={() => setLocationEditEnabled((value) => !value)}
+                className="rounded-md border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              >
+                {locationEditEnabled ? ll("Listo", "Done") : ll("Editar ubicación", "Edit location")}
+              </button>
+            ) : null}
+          </div>
           {editListingId && lat !== null && lng !== null ? (
             <div className="mb-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
               {ll("Ubicación actual guardada:", "Current saved location:")} {lat.toFixed(5)}, {lng.toFixed(5)}
             </div>
           ) : null}
-          <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={lat !== null && lng !== null ? [lat, lng] : null} />
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Mueve el mapa hasta centrar el marcador.", "Move the map to center the marker.")}</p>
+          {locationEditEnabled ? (
+            <>
+              <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={lat !== null && lng !== null ? [lat, lng] : null} />
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Mueve el mapa hasta centrar el marcador.", "Move the map to center the marker.")}</p>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+              {ll("Ubicación bloqueada hasta que toques 'Editar ubicación'.", "Location is locked until you tap 'Edit location'.")}
+            </div>
+          )}
         </div>
 
         {/* Country / Department / City */}
