@@ -25,6 +25,7 @@ const DETAIL_ZOOM = 16;
 interface LocationPickerProps {
   initialCenter?: [number, number] | null;
   onChange: (lat: number, lng: number) => void;
+  interactive?: boolean;
 }
 
 function CenterUpdater({ center, zoom }: { center?: [number, number]; zoom: number }) {
@@ -60,7 +61,7 @@ function MoveListener({ onChange }: { onChange: (lat: number, lng: number) => vo
   return null;
 }
 
-export default function LocationPicker({ initialCenter, onChange }: LocationPickerProps) {
+export default function LocationPicker({ initialCenter, onChange, interactive = true }: LocationPickerProps) {
   const [center, setCenter] = useState<[number, number]>(initialCenter ?? DEFAULT_CENTER);
   const desiredZoom = initialCenter ? DETAIL_ZOOM : DEFAULT_ZOOM;
 
@@ -80,7 +81,13 @@ export default function LocationPicker({ initialCenter, onChange }: LocationPick
       <MapContainer
         center={center}
         zoom={desiredZoom}
-        scrollWheelZoom={true}
+        scrollWheelZoom={interactive}
+        dragging={interactive}
+        doubleClickZoom={interactive}
+        touchZoom={interactive}
+        boxZoom={interactive}
+        keyboard={interactive}
+        zoomControl={interactive}
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
@@ -88,7 +95,7 @@ export default function LocationPicker({ initialCenter, onChange }: LocationPick
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <CenterUpdater center={center} zoom={desiredZoom} />
-        <MoveListener onChange={handleMove} />
+        {interactive ? <MoveListener onChange={handleMove} /> : null}
         {/* Fixed pin in the center */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1000 }}>
           <svg width="32" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -97,6 +104,11 @@ export default function LocationPicker({ initialCenter, onChange }: LocationPick
           </svg>
         </div>
       </MapContainer>
+      {!interactive ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1001] bg-gradient-to-b from-zinc-950/35 via-zinc-950/10 to-transparent px-3 py-3 text-xs font-medium text-white">
+          Mapa en vista previa
+        </div>
+      ) : null}
       <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-zinc-900/90 px-2 py-1 text-xs rounded shadow">
         {center[0].toFixed(5)}, {center[1].toFixed(5)}
       </div>

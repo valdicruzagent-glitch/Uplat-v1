@@ -568,8 +568,19 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           ) : null}
           {locationEditEnabled ? (
             <>
-              <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={lat !== null && lng !== null ? [lat, lng] : null} />
+              <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={lat !== null && lng !== null ? [lat, lng] : null} interactive />
               <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Mueve el mapa hasta centrar el marcador.", "Move the map to center the marker.")}</p>
+            </>
+          ) : editListingId && lat !== null && lng !== null ? (
+            <>
+              <LocationPicker
+                onChange={() => {}}
+                initialCenter={[lat, lng]}
+                interactive={false}
+              />
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                {ll("Vista previa bloqueada. Toca 'Editar ubicación' para mover el mapa.", "Locked preview. Tap 'Edit location' to move the map.")}
+              </p>
             </>
           ) : (
             <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
