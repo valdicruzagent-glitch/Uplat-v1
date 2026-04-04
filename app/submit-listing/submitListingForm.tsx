@@ -58,6 +58,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const t = locale === "en" ? en : es;
   const ll = (esText: string, enText: string) => (locale === "en" ? enText : esText);
   const supabase = getSupabaseClient();
+  const editListingId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('edit') : null;
 
   // Form state
   const [title, setTitle] = useState("");
@@ -87,6 +88,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [ready, setReady] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [editingLoaded, setEditingLoaded] = useState(false);
 
   const websiteFieldRef = useRef<HTMLInputElement>(null);
   // Auth/profile refs
@@ -167,6 +169,60 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       subscription.unsubscribe();
     };
   }, [supabase]);
+
+  useEffect(() => {
+    if (!editListingId || !user?.id || editingLoaded) return;
+
+    let cancelled = false;
+
+    const loadListingForEdit = async () => {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('id, profile_id, title, price_usd, country_code, department_code, city, mode, type, description, lat, lng, beds, baths, area_m2, year_built, new_construction, amenities')
+        .eq('id', editListingId)
+        .eq('profile_id', user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error('Edit listing load error:', error);
+        setErr(ll('No se pudo cargar el listing para editar', 'Could not load listing for editing'));
+        setEditingLoaded(true);
+        return;
+      }
+
+      if (!data) {
+        setErr(ll('No encontramos ese listing para editar con tu cuenta', 'Listing not found for this account'));
+        setEditingLoaded(true);
+        return;
+      }
+
+      setTitle(data.title || '');
+      setPriceUsd(data.price_usd ? Number(data.price_usd).toLocaleString('en-US') : '');
+      setCountryCode(data.country_code || '');
+      setDepartmentCode(data.department_code || '');
+      setCity(data.city || '');
+      setMode(data.mode || '');
+      setType(data.type || '');
+      setDescription(data.description || '');
+      setLat(typeof data.lat === 'number' ? data.lat : null);
+      setLng(typeof data.lng === 'number' ? data.lng : null);
+      setBeds(data.beds ? String(data.beds) : '');
+      setBaths(data.baths ? String(data.baths) : '');
+      setAreaM2(data.area_m2 ? String(data.area_m2) : '');
+      setYearBuilt(data.year_built ? String(data.year_built) : '');
+      setNewConstruction(Boolean(data.new_construction));
+      setSelectedAmenities(Array.isArray(data.amenities) ? data.amenities : []);
+      setEditingLoaded(true);
+    };
+
+    loadListingForEdit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editListingId, user?.id, editingLoaded, supabase, locale]);
 
   // Auto-year for new construction
   useEffect(() => {
@@ -278,40 +334,58 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const profileId = resolvedProfileId || user.id;
       if (!profileId) throw new Error(ll("No se encontró el perfil del usuario", "User profile not found"));
 
-      // Insertar listing (sin imágenes)
-      const { data: insertData, error: insertError } = await supabase
-        .from('listings')
-        .insert([{
-          title: titleValue,
-          price_usd: priceNum,
-          country_code: countryValue,
-          department_code: departmentValue,
-          city: cityValue,
-          mode: modeValue,
-          type: typeValue,
-          description: descriptionValue || null,
-          lat,
-          lng,
-          beds: bedsValue === '6+' ? 6 : (bedsValue ? Number(bedsValue) : null),
-          baths: bathsValue === '6+' ? 6 : (bathsValue ? Number(bathsValue) : null),
-          area_m2: areaValue ? Number(areaValue) : null,
-          year_built: yearValue ? Number(yearValue) : null,
-          new_construction: newConstruction || false,
-          amenities: selectedAmenities,
-          contact_name: resolvedProfile?.full_name || null,
-          contact_whatsapp: resolvedProfile?.whatsapp_number || null,
-          published_at: new Date().toISOString(),
-          source: 'submission_form',
-          status: 'published',
-          profile_id: profileId,
-        }])
-        .select('id')
-        .single();
+      const listingPayload = {
+        title: titleValue,
+        price_usd: priceNum,
+        country_code: countryValue,
+        department_code: departmentValue,
+        city: cityValue,
+        mode: modeValue,
+        type: typeValue,
+        description: descriptionValue || null,
+        lat,
+        lng,
+        beds: bedsValue === '6+' ? 6 : (bedsValue ? Number(bedsValue) : null),
+        baths: bathsValue === '6+' ? 6 : (bathsValue ? Number(bathsValue) : null),
+        area_m2: areaValue ? Number(areaValue) : null,
+        year_built: yearValue ? Number(yearValue) : null,
+        new_construction: newConstruction || false,
+        amenities: selectedAmenities,
+        contact_name: resolvedProfile?.full_name || null,
+        contact_whatsapp: resolvedProfile?.whatsapp_number || null,
+        published_at: new Date().toISOString(),
+        source: 'submission_form',
+        status: 'published',
+        profile_id: profileId,
+      };
 
-      if (insertError) throw insertError;
-      const listingId = insertData.id;
+      let listingId = editListingId;
+
+      if (editListingId) {
+        const { data: updateData, error: updateError } = await supabase
+          .from('listings')
+          .update(listingPayload)
+          .eq('id', editListingId)
+          .eq('profile_id', profileId)
+          .select('id')
+          .single();
+
+        if (updateError) throw updateError;
+        listingId = updateData.id;
+      } else {
+        const { data: insertData, error: insertError } = await supabase
+          .from('listings')
+          .insert([listingPayload])
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        listingId = insertData.id;
+      }
 
       // Subir fotos si hay
+      if (!listingId) throw new Error(ll("No se pudo resolver el listing a guardar", "Could not resolve listing to save"));
+
       if (files.length > 0) {
         setUploadProgress(10);
         // Comprimir imágenes (WebP, max 1600px)
