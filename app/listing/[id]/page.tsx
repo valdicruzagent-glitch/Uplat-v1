@@ -13,6 +13,7 @@ import ReportButton from "@/app/components/ReportButton";
 import ShareButton from "@/app/components/ShareButton";
 import OwnerListingActions from "@/app/components/OwnerListingActions";
 import { DEPARTMENTS_BY_COUNTRY } from "@/app/submit-listing/departments";
+import { getAmenityDisplay } from "@/app/lib/amenities";
 
 function getSortedImages(listing: Record<string, unknown>) {
   const urls = Array.isArray(listing.image_urls) ? listing.image_urls : [];
@@ -148,8 +149,8 @@ export default async function ListingPage({
           {es.back}
         </Link>
 
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="w-full space-y-3">
             <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{title}</h1>
             <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
               <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{listingType}</span>
@@ -157,7 +158,7 @@ export default async function ListingPage({
               {locationText ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{locationText}</span> : null}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <ShareButton title={String(title)} priceText={priceText} locationText={locationText} />
             <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
             <ReportButton listingId={listing.id} />
@@ -191,11 +192,17 @@ export default async function ListingPage({
             <p className="text-base leading-7 text-zinc-700 dark:text-zinc-300">{listing.description}</p>
             {Array.isArray(listing.amenities) && listing.amenities.length > 0 ? (
               <div className="flex flex-wrap gap-2 pt-2">
-                {listing.amenities.map((item: string) => (
-                  <span key={item} className="rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                    {item}
-                  </span>
-                ))}
+                {listing.amenities
+                  .filter((item: string) => !(listing.mode === 'buy' && item === 'pet_friendly'))
+                  .map((item: string) => {
+                    const amenity = getAmenityDisplay(item, 'es');
+                    return (
+                      <span key={item} className="inline-flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                        <span aria-hidden="true">{amenity.emoji}</span>
+                        <span>{amenity.label}</span>
+                      </span>
+                    );
+                  })}
               </div>
             ) : null}
           </section>

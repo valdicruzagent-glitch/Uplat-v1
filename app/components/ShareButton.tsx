@@ -12,16 +12,20 @@ export default function ShareButton({ title, priceText, locationText }: { title:
 
   const handleNativeShare = async () => {
     const url = window.location.href;
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+
+    if (!isTouchDevice || !navigator.share) {
+      return false;
+    }
+
     try {
-      if (navigator.share) {
-        await navigator.share({ title, text: shareText, url });
-        setOpen(false);
-        return true;
-      }
+      await navigator.share({ title, text: shareText, url });
+      setOpen(false);
+      return true;
     } catch (error) {
       console.error('Native share failed', error);
+      return true;
     }
-    return false;
   };
 
   const copyLink = async () => {
@@ -43,7 +47,8 @@ export default function ShareButton({ title, priceText, locationText }: { title:
         type="button"
         onClick={async () => {
           const shared = await handleNativeShare();
-          if (!shared) setOpen(true);
+          if (shared) return;
+          setOpen(true);
         }}
         className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
       >
