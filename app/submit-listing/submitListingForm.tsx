@@ -454,7 +454,12 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         {/* Map picker */}
         <div>
           <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll("Ubicación en mapa", "Location on map")}</label>
-          <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={null} />
+          {editListingId && lat !== null && lng !== null ? (
+            <div className="mb-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+              {ll("Ubicación actual guardada:", "Current saved location:")} {lat.toFixed(5)}, {lng.toFixed(5)}
+            </div>
+          ) : null}
+          <LocationPicker onChange={(lat, lng) => { setLat(lat); setLng(lng); }} initialCenter={lat !== null && lng !== null ? [lat, lng] : null} />
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Mueve el mapa hasta centrar el marcador.", "Move the map to center the marker.")}</p>
         </div>
 
