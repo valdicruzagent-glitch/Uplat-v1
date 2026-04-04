@@ -256,7 +256,26 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const priceNum = parsePrice(priceValue);
       if (priceNum === null) throw new Error(ll("Precio inválido", "Invalid price"));
 
-      const profileId = profile?.id || user.id;
+      let resolvedProfileId = profile?.id || null;
+      let resolvedProfile = profile;
+
+      if (!resolvedProfileId && user?.id) {
+        const profileRes = await supabase
+          .from('profiles')
+          .select('id, full_name, phone, whatsapp_number, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profileRes.error) {
+          console.error('Profile reload error:', profileRes.error);
+        } else if (profileRes.data) {
+          resolvedProfile = profileRes.data;
+          resolvedProfileId = profileRes.data.id;
+          setProfile(profileRes.data);
+        }
+      }
+
+      const profileId = resolvedProfileId || user.id;
       if (!profileId) throw new Error(ll("No se encontró el perfil del usuario", "User profile not found"));
 
       // Insertar listing (sin imágenes)
@@ -279,8 +298,8 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           year_built: yearValue ? Number(yearValue) : null,
           new_construction: newConstruction || false,
           amenities: selectedAmenities,
-          contact_name: profile?.full_name || null,
-          contact_whatsapp: profile?.whatsapp_number || null,
+          contact_name: resolvedProfile?.full_name || null,
+          contact_whatsapp: resolvedProfile?.whatsapp_number || null,
           published_at: new Date().toISOString(),
           source: 'submission_form',
           status: 'published',
