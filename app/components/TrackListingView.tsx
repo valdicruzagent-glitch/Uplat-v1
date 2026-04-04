@@ -19,66 +19,54 @@ export default function TrackListingView({
 
   useEffect(() => {
     const supabase = getSupabaseClient();
-    const visitor_id = getOrCreateVisitorId();
+    const visitorId = getOrCreateVisitorId();
 
-    // Check if view already recorded for this visitor/listing
-    supabase
-      .from('events')
-      .select('id')
-      .eq('type', 'listing_view')
-      .eq('listing_id', listingId)
-      .eq('meta->>visitor_id', visitor_id)
-      .maybeSingle()
-      .then(async (res: { data: any; error: any }) => {
-        const existing = res.data;
-        const checkErr = res.error;
-        if (checkErr) {
-          console.error('[TrackListingView] check error:', checkErr);
+    async function run() {
+      try {
+        const existingRes = await supabase
+          .from('events')
+          .select('id')
+          .eq('type', 'listing_view')
+          .eq('listing_id', listingId)
+          .eq('meta->>visitor_id', visitorId)
+          .limit(1)
+          .maybeSingle();
+
+        if (existingRes.error) {
+          console.error('[TrackListingView] check error:', existingRes.error);
         }
-        // Insert only if not exists
-        if (!existing) {
+
+        if (!existingRes.data) {
           const { error: insertErr } = await supabase.from('events').insert({
             type: 'listing_view',
             listing_id: listingId,
-            meta: { visitor_id },
+            meta: { visitor_id: visitorId },
           });
           if (insertErr) {
             console.error('[TrackListingView] insert error:', insertErr);
-          } else {
-            console.log('[TrackListingView] event recorded', { listingId, visitor_id });
           }
-        } else {
-          console.log('[TrackListingView] already viewed', { listingId, visitor_id });
         }
-        // Fetch latest count
-        const { data, error } = await supabase.rpc('get_listing_views', { listing: listingId });
-        if (error) {
-          console.error('[TrackListingView] get_listing_views error:', error);
-          const fallback = await supabase
-            .from('events')
-            .select('id', { count: 'exact', head: true })
-            .eq('type', 'listing_view')
-            .eq('listing_id', listingId);
-          setViews(fallback.count ?? 0);
+
+        const countRes = await supabase
+          .from('events')
+          .select('id', { count: 'exact', head: true })
+          .eq('type', 'listing_view')
+          .eq('listing_id', listingId);
+
+        if (countRes.error) {
+          console.error('[TrackListingView] count error:', countRes.error);
+          setViews(0);
           return;
         }
-        const count = Number(data ?? 0);
-        if (count <= 0) {
-          const fallback = await supabase
-            .from('events')
-            .select('id', { count: 'exact', head: true })
-            .eq('type', 'listing_view')
-            .eq('listing_id', listingId);
-          setViews(fallback.count ?? 0);
-          return;
-        }
-        console.log('[TrackListingView] count:', count);
-        setViews(count);
-      })
-      .catch((err: any) => {
+
+        setViews(countRes.count ?? 0);
+      } catch (err) {
         console.error('[TrackListingView] unexpected error:', err);
         setViews(0);
-      });
+      }
+    }
+
+    run();
   }, [listingId]);
 
   return (
