@@ -78,6 +78,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [newConstruction, setNewConstruction] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [selectedCoverIndex, setSelectedCoverIndex] = useState<number>(0);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -179,7 +180,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     const loadListingForEdit = async () => {
       const { data, error } = await supabase
         .from('listings')
-        .select('id, profile_id, title, price_usd, country_code, department_code, city, mode, type, description, lat, lng, beds, baths, area_m2, year_built, new_construction, amenities')
+        .select('id, profile_id, title, price_usd, country_code, department_code, city, mode, type, description, lat, lng, beds, baths, area_m2, year_built, new_construction, amenities, image_urls, cover_image_url')
         .eq('id', editListingId)
         .eq('profile_id', user.id)
         .maybeSingle();
@@ -215,6 +216,15 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       setYearBuilt(data.year_built ? String(data.year_built) : '');
       setNewConstruction(Boolean(data.new_construction));
       setSelectedAmenities(Array.isArray(data.amenities) ? data.amenities : []);
+      const normalizedExistingImages = Array.from(new Set([
+        ...(Array.isArray(data.image_urls) ? data.image_urls.filter((url: unknown): url is string => typeof url === 'string' && url.trim().length > 0) : []),
+        typeof data.cover_image_url === 'string' && data.cover_image_url.trim().length > 0 ? data.cover_image_url : null,
+      ].filter((url): url is string => Boolean(url))));
+      const currentCoverIndex = typeof data.cover_image_url === 'string'
+        ? normalizedExistingImages.findIndex((url) => url === data.cover_image_url)
+        : -1;
+      setExistingImageUrls(normalizedExistingImages);
+      setSelectedCoverIndex(currentCoverIndex >= 0 ? currentCoverIndex : 0);
       setEditingLoaded(true);
     };
 
@@ -244,6 +254,18 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   }, []);
 
   const photoPreviewUrls = useMemo(() => files.map(file => URL.createObjectURL(file)), [files]);
+  const showingReplacementFiles = files.length > 0;
+  const imageBlockItems = showingReplacementFiles
+    ? files.map((file, index) => ({
+        key: `new-${file.name}-${index}`,
+        src: photoPreviewUrls[index],
+        label: file.name,
+      }))
+    : existingImageUrls.map((url, index) => ({
+        key: `existing-${index}-${url}`,
+        src: url,
+        label: ll(`Foto ${index + 1}`, `Photo ${index + 1}`),
+      }));
 
   useEffect(() => {
     return () => {
@@ -410,6 +432,12 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         await supabase.from('listings').update({
           cover_image_url: urls[coverIdx],
           image_urls: urls
+        }).eq('id', listingId);
+      } else if (editListingId && existingImageUrls.length > 0) {
+        const coverIdx = selectedCoverIndex >= 0 && selectedCoverIndex < existingImageUrls.length ? selectedCoverIndex : 0;
+        await supabase.from('listings').update({
+          cover_image_url: existingImageUrls[coverIdx],
+          image_urls: existingImageUrls,
         }).eq('id', listingId);
       }
 
@@ -640,36 +668,62 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         </div>
 
         {/* Photos */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.photosLabel}</label>
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll('Fotos y portada', 'Photos and cover')}</label>
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll('Toca una imagen para marcarla como portada.', 'Tap an image to mark it as the cover.')}</p>
+            </div>
+            {imageBlockItems.length > 0 ? (
+              <div className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                {showingReplacementFiles
+                  ? ll(`${files.length}/25 fotos nuevas`, `${files.length}/25 new photos`)
+                  : ll(`${existingImageUrls.length} fotos actuales`, `${existingImageUrls.length} current photos`)}
+              </div>
+            ) : null}
+          </div>
+
           <input type="file" multiple accept="image/*" onChange={handleFileChange} className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300" />
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Las imágenes se comprimen automáticamente antes de subirlas.", "Images are automatically compressed before upload.")}</p>
+          <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{ll("Las imágenes se comprimen automáticamente antes de subirlas.", "Images are automatically compressed before upload.")}</p>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll("Puedes seleccionar múltiples imágenes", "You can select multiple images")}</p>
-          {files.length > 0 && (
-            <>
-              <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                {ll(`${files.length}/25 fotos seleccionadas`, `${files.length}/25 photos selected`)}
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
-                {files.map((file, index) => (
-                  <button
-                    key={`${file.name}-${index}`}
-                    type="button"
-                    onClick={() => setSelectedCoverIndex(index)}
-                    className={`overflow-hidden rounded-lg border text-left ${selectedCoverIndex === index ? 'border-blue-600 ring-2 ring-blue-200' : 'border-zinc-200 dark:border-zinc-800'}`}
-                  >
-                    <img src={photoPreviewUrls[index]} alt={file.name} className="h-32 w-full object-cover" />
-                    <div className="flex items-center justify-between px-2 py-2 text-xs">
-                      <span className="truncate">{file.name}</span>
-                      <span className={`${selectedCoverIndex === index ? 'text-blue-600 font-semibold' : 'text-zinc-500'}`}>
-                        {selectedCoverIndex === index ? ll('Portada', 'Cover') : ll('Elegir', 'Pick')}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
+          {editListingId && existingImageUrls.length > 0 && !showingReplacementFiles ? (
+            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+              {ll('Mostrando las fotos actuales del listing. Si subes nuevas fotos, reemplazarán esta galería al guardar.', 'Showing the current listing photos. If you upload new photos, they will replace this gallery when you save.')}
+            </p>
+          ) : null}
+          {showingReplacementFiles ? (
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+              {ll('Estas fotos nuevas reemplazarán las actuales cuando guardes.', 'These new photos will replace the current gallery when you save.')}
+            </p>
+          ) : null}
+
+          {imageBlockItems.length > 0 ? (
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+              {imageBlockItems.map((item, index) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setSelectedCoverIndex(index)}
+                  className={`overflow-hidden rounded-lg border text-left ${selectedCoverIndex === index ? 'border-blue-600 ring-2 ring-blue-200' : 'border-zinc-200 dark:border-zinc-800'}`}
+                >
+                  <img src={item.src} alt={item.label} className="h-32 w-full object-cover" />
+                  <div className="flex items-center justify-between px-2 py-2 text-xs">
+                    <span className="truncate">{item.label}</span>
+                    <span className={`${selectedCoverIndex === index ? 'text-blue-600 font-semibold' : 'text-zinc-500'}`}>
+                      {selectedCoverIndex === index ? ll('Portada', 'Cover') : ll('Elegir', 'Pick')}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-lg border border-dashed border-zinc-300 px-4 py-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+              {editListingId
+                ? ll('Todavía no hay fotos cargadas para este listing.', 'There are no uploaded photos for this listing yet.')
+                : ll('Todavía no has seleccionado fotos.', 'You have not selected any photos yet.')}
+            </div>
           )}
+
           {uploading && (
             <div className="mt-2">
               <div className="h-2 w-full overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
