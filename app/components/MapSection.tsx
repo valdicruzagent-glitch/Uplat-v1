@@ -185,8 +185,9 @@ export default function MapSection({
         for (let i = 0; i < 2; i++) {
           const res = await supabase
             .from("listings")
-            .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url, headline, listing_type, property_type, image_urls, beds, baths, area_m2, status, contact_whatsapp, updated_at, published_at')
+            .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url, headline, listing_type, property_type, image_urls, beds, baths, area_m2, status, contact_whatsapp, updated_at, published_at, favorites_count')
             .eq('status', 'published')
+            .order('favorites_count', { ascending: false })
             .order("published_at", { ascending: false })
             .limit(500);
           data = res.data;
