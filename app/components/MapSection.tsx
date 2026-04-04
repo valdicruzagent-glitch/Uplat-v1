@@ -472,12 +472,12 @@ export default function MapSection({
   ) : (
     <div className="flex h-full items-center justify-center text-xs text-zinc-500">{t.noImage}</div>
   )}
-  <div className="absolute right-2 top-2">
-    <FavoriteButton listingId={listing.id} initialCount={(listing as any).favorites_count ?? 0} />
-  </div>
 </div>
               <div className="flex-1">
-                <div className="font-semibold">{listing.headline || listing.title}</div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="font-semibold">{listing.headline || listing.title}</div>
+                  <FavoriteButton listingId={listing.id} initialCount={(listing as any).favorites_count ?? 0} />
+                </div>
                 <div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
                 {/* Ownership */}
                 {(listing as any).profiles?.[0] && (() => {
