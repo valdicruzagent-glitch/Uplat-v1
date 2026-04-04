@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getSupabaseClient } from "@/lib/supabaseClient";
-
-const supabase = getSupabaseClient();
 
 interface Props {
   listingId: string;
@@ -36,19 +33,13 @@ export default function FavoriteButton({ listingId, initialFavorited = false, in
   }, [listingId]);
 
   const toggle = async () => {
-    // First, check local auth state
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      window.location.href = `/signin?next=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await fetch('/api/favorites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ listing_id: listingId }),
+        credentials: 'include',
       });
       if (res.status === 401) {
         window.location.href = `/signin?next=${encodeURIComponent(window.location.pathname)}`;
