@@ -10,6 +10,7 @@ import InquiryForm from "@/app/components/InquiryForm";
 import ListingMap from "@/app/components/ListingMap";
 import OwnerCard from "@/app/components/OwnerCard";
 import ReportButton from "@/app/components/ReportButton";
+import ShareButton from "@/app/components/ShareButton";
 import OwnerListingActions from "@/app/components/OwnerListingActions";
 import { DEPARTMENTS_BY_COUNTRY } from "@/app/submit-listing/departments";
 
@@ -157,6 +158,7 @@ export default async function ListingPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ShareButton title={String(title)} />
             <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
             <ReportButton listingId={listing.id} />
           </div>
