@@ -158,7 +158,7 @@ export default async function ListingPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ShareButton title={String(title)} />
+            <ShareButton title={String(title)} priceText={priceText} locationText={locationText} />
             <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
             <ReportButton listingId={listing.id} />
           </div>
