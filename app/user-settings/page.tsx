@@ -23,6 +23,13 @@ export default function UserSettingsPage() {
 
   const t = es;
   const user = profile ? { name: profile.full_name || profile.email, avatar_url: profile.avatar_url } : null;
+  const dashboardLabel = profile?.is_admin
+    ? 'Abrir admin dashboard'
+    : profile?.role === 'agency'
+      ? 'Abrir dashboard de agencia'
+      : profile?.role === 'realtor'
+        ? 'Abrir dashboard de agente'
+        : 'Abrir dashboard';
 
   const handleSell = () => {
     window.location.href = '/signin?next=/sell';
@@ -195,9 +202,31 @@ export default function UserSettingsPage() {
       )}
 
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <h1 className="text-2xl font-semibold mb-6">Perfil</h1>
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Mi cuenta</h1>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Aquí solo va información de cuenta. Las acciones operativas viven en el dashboard.
+            </p>
+          </div>
+          <Link
+            href={profile?.is_admin ? '/admin/dashboard' : '/dashboard'}
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            {dashboardLabel}
+          </Link>
+        </div>
 
         <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
+          <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-200">
+            {profile?.is_admin
+              ? 'Tu operación diaria vive en Admin Dashboard.'
+              : profile?.role === 'agency'
+                ? 'Tu operación diaria vive en el dashboard de agencia.'
+                : profile?.role === 'realtor'
+                  ? 'Tu operación diaria vive en el dashboard de agente.'
+                  : 'Tu actividad vive en el dashboard.'}
+          </div>
           <div>
             <div className="text-sm text-zinc-500">Nombre</div>
             <div className="font-medium">{profile?.full_name || '(sin nombre)'}</div>
@@ -208,7 +237,7 @@ export default function UserSettingsPage() {
           </div>
           <div>
             <div className="text-sm text-zinc-500">Rol</div>
-            <div className="font-medium capitalize">{profile?.role}</div>
+            <div className="font-medium capitalize">{profile?.is_admin ? 'admin' : profile?.role}</div>
           </div>
           <div>
             <div className="text-sm text-zinc-500">Teléfono</div>

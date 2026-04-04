@@ -23,7 +23,19 @@ export default async function DashboardPage() {
     redirect('/signin?redirect=/dashboard');
   }
 
-  const { data: profile } = await supabase.from('profiles').select('role, agency_id').eq('id', user.id).single();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, agency_id, is_admin')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile?.role && !profile?.is_admin) {
+    redirect('/onboarding');
+  }
+
+  if (profile?.is_admin) {
+    redirect('/admin/dashboard');
+  }
 
   if (profile?.role === 'agency') {
     if (!profile.agency_id) redirect('/user-settings');
@@ -34,6 +46,6 @@ export default async function DashboardPage() {
     return <RealtorDashboard />;
   }
 
-  // Default: user
+  // Default: buyer/user
   return <UserDashboard />;
 }

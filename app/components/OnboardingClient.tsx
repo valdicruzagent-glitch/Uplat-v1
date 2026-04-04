@@ -226,7 +226,7 @@ export default function OnboardingClient({ locale: initialLocale }: OnboardingPr
 
       setTimeout(() => {
         if (role === 'user') router.push('/');
-        else if (role === 'realtor' || role === 'agency') router.push('/user-settings');
+        else if (role === 'realtor' || role === 'agency') router.push('/dashboard');
       }, 500);
     } catch (err: any) {
       console.error('Onboarding complete error:', err);

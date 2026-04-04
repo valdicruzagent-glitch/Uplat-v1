@@ -26,7 +26,7 @@ export default function StartPageEn() {
         router.replace('/onboarding');
       } else {
         if (profile?.role === 'user') router.replace('/');
-        else router.replace('/user-settings');
+        else router.replace('/dashboard');
       }
     };
     check();
