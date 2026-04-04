@@ -10,6 +10,8 @@ import "leaflet/dist/leaflet.css";
 import type { Listing } from "@/app/types/listing";
 
 const DEFAULT_CENTER: [number, number] = [12.1364, -86.2514]; // Managua-ish
+const DEFAULT_MAP_ZOOM = 12;
+const MAX_FIT_ZOOM = 15;
 
 function BoundsWatcher({ onBoundsChange, onZoomChange, onMapReady }: { onBoundsChange: (b: L.LatLngBounds) => void; onZoomChange?: (zoom: number) => void; onMapReady?: (map: L.Map) => void }) {
   useMapEvents({
@@ -33,7 +35,7 @@ function FitBoundsOnMount({ listings }: { listings: Listing[] }) {
     if (listings.length > 0 && !fittedRef.current) {
       fittedRef.current = true;
       const bounds = L.latLngBounds(listings.map((l) => [l.lat, l.lng]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: MAX_FIT_ZOOM });
     }
   }, [listings, map]);
   return null;
@@ -77,7 +79,7 @@ export default function LeafletMap(props: LeafletMapProps) {
     onMarkerHover,
     onMapReady,
   } = props;
-  const [currentZoom, setCurrentZoom] = useState<number>(7);
+  const [currentZoom, setCurrentZoom] = useState<number>(DEFAULT_MAP_ZOOM);
 
   useEffect(() => {
     // Only run on client.
@@ -130,7 +132,7 @@ export default function LeafletMap(props: LeafletMapProps) {
     <div className="h-[420px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
       <MapContainer
         center={center ?? DEFAULT_CENTER}
-        zoom={7}
+        zoom={DEFAULT_MAP_ZOOM}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
         key={`${(center ?? DEFAULT_CENTER)[0]}_${(center ?? DEFAULT_CENTER)[1]}`}

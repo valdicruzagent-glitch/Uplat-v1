@@ -19,19 +19,21 @@ L.Icon.Default.mergeOptions({
 });
 
 const DEFAULT_CENTER: [number, number] = [12.1364, -86.2514]; // Managua
+const DEFAULT_ZOOM = 12;
+const DETAIL_ZOOM = 16;
 
 interface LocationPickerProps {
   initialCenter?: [number, number] | null;
   onChange: (lat: number, lng: number) => void;
 }
 
-function CenterUpdater({ center }: { center?: [number, number] }) {
+function CenterUpdater({ center, zoom }: { center?: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
     if (center) {
-      map.setView(center, map.getZoom());
+      map.setView(center, zoom);
     }
-  }, [center, map]);
+  }, [center, zoom, map]);
   return null;
 }
 
@@ -60,6 +62,7 @@ function MoveListener({ onChange }: { onChange: (lat: number, lng: number) => vo
 
 export default function LocationPicker({ initialCenter, onChange }: LocationPickerProps) {
   const [center, setCenter] = useState<[number, number]>(initialCenter ?? DEFAULT_CENTER);
+  const desiredZoom = initialCenter ? DETAIL_ZOOM : DEFAULT_ZOOM;
 
   useEffect(() => {
     if (initialCenter) {
@@ -76,7 +79,7 @@ export default function LocationPicker({ initialCenter, onChange }: LocationPick
     <div className="relative h-[420px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
       <MapContainer
         center={center}
-        zoom={6}
+        zoom={desiredZoom}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
       >
@@ -84,7 +87,7 @@ export default function LocationPicker({ initialCenter, onChange }: LocationPick
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <CenterUpdater center={center} />
+        <CenterUpdater center={center} zoom={desiredZoom} />
         <MoveListener onChange={handleMove} />
         {/* Fixed pin in the center */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1000 }}>

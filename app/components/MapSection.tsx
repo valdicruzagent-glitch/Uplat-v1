@@ -185,7 +185,7 @@ export default function MapSection({
         for (let i = 0; i < 2; i++) {
           const res = await supabase
             .from("listings")
-            .select('id, title, price_usd, type, mode, city, lat, lng, cover_image_url, headline, listing_type, property_type, image_urls, beds, baths, area_m2, status, contact_whatsapp, updated_at, published_at, favorites_count')
+            .select('id, title, price_usd, price_original_usd, type, mode, city, lat, lng, cover_image_url, headline, listing_type, property_type, image_urls, beds, baths, area_m2, status, contact_whatsapp, updated_at, published_at, favorites_count')
             .eq('status', 'published')
             .order('favorites_count', { ascending: false })
             .order("published_at", { ascending: false })
@@ -479,7 +479,13 @@ export default function MapSection({
                   <div className="font-semibold">{listing.headline || listing.title}</div>
                   <FavoriteButton listingId={listing.id} initialCount={(listing as any).favorites_count ?? 0} />
                 </div>
-                <div className="text-sm text-zinc-600 dark:text-zinc-400">${Number(listing.price_usd ?? 0).toLocaleString()} • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</div>
+                <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <span>${Number(listing.price_usd ?? 0).toLocaleString()}</span>
+                  {typeof (listing as any).price_original_usd === 'number' && typeof listing.price_usd === 'number' && (listing as any).price_original_usd > listing.price_usd ? (
+                    <span className="ml-2 text-xs line-through opacity-70">${Number((listing as any).price_original_usd).toLocaleString()}</span>
+                  ) : null}
+                  <span> • {listing.city}{stats.length ? ` • ${stats.join(" • ")}` : ''}</span>
+                </div>
                 {/* Ownership */}
                 {(listing as any).profiles?.[0] && (() => {
                   const p = (listing as any).profiles[0];

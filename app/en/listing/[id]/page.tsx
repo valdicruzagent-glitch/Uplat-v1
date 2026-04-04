@@ -76,7 +76,12 @@ export default async function ListingPageEn({
     );
   }
 
-  const priceText = listing.price_usd ? `$${Number(listing.price_usd).toLocaleString()}` : "—";
+  const currentPriceValue = Number(listing.price_usd ?? 0);
+  const originalPriceValue = Number(listing.price_original_usd ?? 0);
+  const priceText = listing.price_usd ? `$${currentPriceValue.toLocaleString()}` : "—";
+  const originalPriceText = listing.price_original_usd && originalPriceValue > currentPriceValue
+    ? `$${originalPriceValue.toLocaleString()}`
+    : null;
   const title = listing.headline || listing.title;
   const propertyType = getPropertyType(listing);
   const listingType = getListingType(listing);
@@ -120,12 +125,19 @@ export default async function ListingPageEn({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <FavoriteButton listingId={listing.id} initialCount={listing.favorites_count ?? 0} />
         </div>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {priceText} • {listing.city} • {propertyType} • {listingType}
-          {typeof listing.beds === "number" ? ` • ${en.bedsShort(listing.beds)}` : ""}
-          {typeof listing.baths === "number" ? ` • ${en.bathsShort(listing.baths)}` : ""}
-          {typeof listing.area_m2 === "number" ? ` • ${en.areaShort(listing.area_m2)}` : ""}
-        </p>
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-2xl font-semibold">{priceText}</p>
+            {originalPriceText ? <p className="text-sm text-zinc-500 line-through dark:text-zinc-400">{originalPriceText}</p> : null}
+            {originalPriceText ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">Price reduced</span> : null}
+          </div>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {listing.city} • {propertyType} • {listingType}
+            {typeof listing.beds === "number" ? ` • ${en.bedsShort(listing.beds)}` : ""}
+            {typeof listing.baths === "number" ? ` • ${en.bathsShort(listing.baths)}` : ""}
+            {typeof listing.area_m2 === "number" ? ` • ${en.areaShort(listing.area_m2)}` : ""}
+          </p>
+        </div>
 
         {/* Listing ownership */}
         {(listing as any).profiles?.[0] && (

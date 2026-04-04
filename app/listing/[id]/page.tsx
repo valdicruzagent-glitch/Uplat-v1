@@ -106,7 +106,12 @@ export default async function ListingPage({
     );
   }
 
-  const priceText = listing.price_usd ? `$${Number(listing.price_usd).toLocaleString()}` : "—";
+  const currentPriceValue = Number(listing.price_usd ?? 0);
+  const originalPriceValue = Number(listing.price_original_usd ?? 0);
+  const priceText = listing.price_usd ? `$${currentPriceValue.toLocaleString()}` : "—";
+  const originalPriceText = listing.price_original_usd && originalPriceValue > currentPriceValue
+    ? `$${originalPriceValue.toLocaleString()}`
+    : null;
   const title = listing.headline || listing.title;
   const propertyType = getPropertyTypeLabel(listing);
   const listingType = getListingTypeLabel(listing);
@@ -172,7 +177,11 @@ export default async function ListingPage({
         ) : null}
 
         <section className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="text-3xl font-bold tracking-tight md:text-4xl">{priceText}</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <p className="text-3xl font-bold tracking-tight md:text-4xl">{priceText}</p>
+            {originalPriceText ? <p className="text-lg text-zinc-500 line-through dark:text-zinc-400">{originalPriceText}</p> : null}
+            {originalPriceText ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">Bajó de precio</span> : null}
+          </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-base text-zinc-800 dark:text-zinc-200">
             {typeof listing.beds === "number" ? <span>{es.bedsShort(listing.beds)}</span> : null}
             {typeof listing.baths === "number" ? <span>{es.bathsShort(listing.baths)}</span> : null}

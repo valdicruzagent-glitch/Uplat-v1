@@ -15,6 +15,8 @@ export type Listing = {
   slug?: string | null;
   headline?: string | null;
   price_usd: number | null;
+  price_original_usd?: number | null;
+  price_reduced_at?: string | null;
 
   // Canonical V1 fields
   listing_type?: "sale" | "rent" | string | null;

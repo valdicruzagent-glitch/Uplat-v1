@@ -79,6 +79,9 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [existingPriceUsd, setExistingPriceUsd] = useState<number | null>(null);
+  const [existingOriginalPriceUsd, setExistingOriginalPriceUsd] = useState<number | null>(null);
+  const [existingPriceReducedAt, setExistingPriceReducedAt] = useState<string | null>(null);
   const [selectedCoverIndex, setSelectedCoverIndex] = useState<number>(0);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -104,6 +107,11 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
   };
   const parsePrice = (val: string) => {
     const num = Number(val.replace(/,/g, ''));
+    return Number.isFinite(num) ? num : null;
+  };
+  const parseDbNumber = (val: unknown) => {
+    if (val === null || val === undefined || val === '') return null;
+    const num = Number(val);
     return Number.isFinite(num) ? num : null;
   };
 
@@ -180,7 +188,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     const loadListingForEdit = async () => {
       const { data, error } = await supabase
         .from('listings')
-        .select('id, profile_id, title, price_usd, country_code, department_code, city, mode, type, description, lat, lng, beds, baths, area_m2, year_built, new_construction, amenities, image_urls, cover_image_url')
+        .select('id, profile_id, title, price_usd, price_original_usd, price_reduced_at, country_code, department_code, city, mode, type, description, lat, lng, beds, baths, area_m2, year_built, new_construction, amenities, image_urls, cover_image_url')
         .eq('id', editListingId)
         .eq('profile_id', user.id)
         .maybeSingle();
@@ -200,8 +208,14 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         return;
       }
 
+      const currentPrice = parseDbNumber(data.price_usd);
+      const originalPrice = parseDbNumber(data.price_original_usd);
+
       setTitle(data.title || '');
       setPriceUsd(data.price_usd ? Number(data.price_usd).toLocaleString('en-US') : '');
+      setExistingPriceUsd(currentPrice);
+      setExistingOriginalPriceUsd(originalPrice);
+      setExistingPriceReducedAt(typeof data.price_reduced_at === 'string' ? data.price_reduced_at : null);
       setCountryCode(data.country_code || '');
       setDepartmentCode(data.department_code || '');
       setCity(data.city || '');
@@ -266,6 +280,17 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
         src: url,
         label: ll(`Foto ${index + 1}`, `Photo ${index + 1}`),
       }));
+  const initialPriceForHistory = existingOriginalPriceUsd ?? existingPriceUsd;
+  const formatHistoryPrice = (value: number | null) => value !== null
+    ? `$${value.toLocaleString('en-US')}`
+    : ll('No guardado', 'Not saved');
+
+  const getNextCoverIndex = (currentIndex: number, removedIndex: number, nextLength: number) => {
+    if (nextLength <= 0) return 0;
+    if (currentIndex === removedIndex) return Math.min(removedIndex, nextLength - 1);
+    if (currentIndex > removedIndex) return currentIndex - 1;
+    return currentIndex;
+  };
 
   useEffect(() => {
     return () => {
@@ -277,6 +302,22 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
     const selected = Array.from(e.target.files || []).slice(0, 25);
     setFiles(selected);
     setSelectedCoverIndex(0);
+  };
+
+  const handleRemoveExistingImage = (index: number) => {
+    setExistingImageUrls((prev) => {
+      const next = prev.filter((_, itemIndex) => itemIndex !== index);
+      setSelectedCoverIndex((current) => getNextCoverIndex(current, index, next.length));
+      return next;
+    });
+  };
+
+  const handleRemoveNewImage = (index: number) => {
+    setFiles((prev) => {
+      const next = prev.filter((_, itemIndex) => itemIndex !== index);
+      setSelectedCoverIndex((current) => getNextCoverIndex(current, index, next.length));
+      return next;
+    });
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -338,7 +379,7 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       if (!descriptionValue) throw new Error(ll("Descripción es requerida", "Description is required"));
       if (lat === null || lng === null) throw new Error(ll("Selecciona una ubicación en el mapa", "Select a location on the map"));
 
-  const priceNum = parsePrice(priceValue);
+      const priceNum = parsePrice(priceValue);
       if (priceNum === null) throw new Error(ll("Precio inválido", "Invalid price"));
 
       let resolvedProfileId = profile?.id || null;
@@ -363,9 +404,29 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
       const profileId = resolvedProfileId || user.id;
       if (!profileId) throw new Error(ll("No se encontró el perfil del usuario", "User profile not found"));
 
+      const normalizedOriginalPrice = existingOriginalPriceUsd ?? existingPriceUsd;
+      const isEditMode = Boolean(editListingId);
+      const priceDropped = isEditMode && existingPriceUsd !== null && priceNum < existingPriceUsd;
+      const stillDiscounted = normalizedOriginalPrice !== null && priceNum < normalizedOriginalPrice;
+      const priceRestored = normalizedOriginalPrice !== null && priceNum >= normalizedOriginalPrice;
+
       const listingPayload = {
         title: titleValue,
         price_usd: priceNum,
+        price_original_usd: !isEditMode
+          ? null
+          : priceDropped
+            ? normalizedOriginalPrice
+            : priceRestored
+              ? null
+              : existingOriginalPriceUsd,
+        price_reduced_at: !isEditMode
+          ? null
+          : priceDropped
+            ? new Date().toISOString()
+            : stillDiscounted
+              ? existingPriceReducedAt
+              : null,
         country_code: countryValue,
         department_code: departmentValue,
         city: cityValue,
@@ -433,10 +494,10 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           cover_image_url: urls[coverIdx],
           image_urls: urls
         }).eq('id', listingId);
-      } else if (editListingId && existingImageUrls.length > 0) {
+      } else if (editListingId) {
         const coverIdx = selectedCoverIndex >= 0 && selectedCoverIndex < existingImageUrls.length ? selectedCoverIndex : 0;
         await supabase.from('listings').update({
-          cover_image_url: existingImageUrls[coverIdx],
+          cover_image_url: existingImageUrls[coverIdx] ?? null,
           image_urls: existingImageUrls,
         }).eq('id', listingId);
       }
@@ -619,6 +680,34 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           </label>
         </div>
 
+        {editListingId ? (
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll('Caja de precios', 'Price box')}</div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm">
+                <div className="mb-1 text-zinc-700 dark:text-zinc-300">{ll('Precio anterior', 'Previous price')}</div>
+                <input
+                  readOnly
+                  value={formatHistoryPrice(existingPriceUsd)}
+                  className="w-full rounded-md border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
+                />
+              </label>
+
+              <label className="text-sm">
+                <div className="mb-1 text-zinc-700 dark:text-zinc-300">{ll('Precio inicial', 'Initial price')}</div>
+                <input
+                  readOnly
+                  value={formatHistoryPrice(initialPriceForHistory)}
+                  className="w-full rounded-md border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
+                />
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              {ll('El precio editable es el de arriba. Esta caja es solo de referencia.', 'The editable price is the field above. This box is reference only.')}
+            </p>
+          </div>
+        ) : null}
+
         {/* Mode & Type */}
         <div className="grid gap-3 md:grid-cols-2">
           <label className="text-sm">
@@ -674,13 +763,24 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">{ll('Fotos y portada', 'Photos and cover')}</label>
               <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{ll('Toca una imagen para marcarla como portada.', 'Tap an image to mark it as the cover.')}</p>
             </div>
-            {imageBlockItems.length > 0 ? (
-              <div className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-                {showingReplacementFiles
-                  ? ll(`${files.length}/25 fotos nuevas`, `${files.length}/25 new photos`)
-                  : ll(`${existingImageUrls.length} fotos actuales`, `${existingImageUrls.length} current photos`)}
-              </div>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              {imageBlockItems.length > 0 ? (
+                <div className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                  {showingReplacementFiles
+                    ? ll(`${files.length}/25 fotos nuevas`, `${files.length}/25 new photos`)
+                    : ll(`${existingImageUrls.length} fotos actuales`, `${existingImageUrls.length} current photos`)}
+                </div>
+              ) : null}
+              {showingReplacementFiles ? (
+                <button
+                  type="button"
+                  onClick={() => { setFiles([]); setSelectedCoverIndex(0); }}
+                  className="rounded-md border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                >
+                  {ll('Volver a fotos actuales', 'Use current photos')}
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <input type="file" multiple accept="image/*" onChange={handleFileChange} className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300" />
@@ -700,20 +800,31 @@ export default function SubmitListingForm({ locale }: { locale: "es" | "en" }) {
           {imageBlockItems.length > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
               {imageBlockItems.map((item, index) => (
-                <button
+                <div
                   key={item.key}
-                  type="button"
-                  onClick={() => setSelectedCoverIndex(index)}
-                  className={`overflow-hidden rounded-lg border text-left ${selectedCoverIndex === index ? 'border-blue-600 ring-2 ring-blue-200' : 'border-zinc-200 dark:border-zinc-800'}`}
+                  className={`relative overflow-hidden rounded-lg border ${selectedCoverIndex === index ? 'border-blue-600 ring-2 ring-blue-200' : 'border-zinc-200 dark:border-zinc-800'}`}
                 >
-                  <img src={item.src} alt={item.label} className="h-32 w-full object-cover" />
-                  <div className="flex items-center justify-between px-2 py-2 text-xs">
-                    <span className="truncate">{item.label}</span>
-                    <span className={`${selectedCoverIndex === index ? 'text-blue-600 font-semibold' : 'text-zinc-500'}`}>
-                      {selectedCoverIndex === index ? ll('Portada', 'Cover') : ll('Elegir', 'Pick')}
-                    </span>
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCoverIndex(index)}
+                    className="w-full text-left"
+                  >
+                    <img src={item.src} alt={item.label} className="h-32 w-full object-cover" />
+                    <div className="flex items-center justify-between px-2 py-2 text-xs">
+                      <span className="truncate">{item.label}</span>
+                      <span className={`${selectedCoverIndex === index ? 'text-blue-600 font-semibold' : 'text-zinc-500'}`}>
+                        {selectedCoverIndex === index ? ll('Portada', 'Cover') : ll('Elegir', 'Pick')}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => showingReplacementFiles ? handleRemoveNewImage(index) : handleRemoveExistingImage(index)}
+                    className="absolute right-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[11px] font-semibold text-red-600 shadow hover:bg-white dark:bg-zinc-950/95 dark:text-red-300"
+                  >
+                    {ll('Borrar', 'Delete')}
+                  </button>
+                </div>
               ))}
             </div>
           ) : (
