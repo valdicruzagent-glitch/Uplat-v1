@@ -21,6 +21,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const renderCount = useRef(0);
   renderCount.current += 1;
   console.log(`[SiteHeader] render #${renderCount.current}`, { user: user?.id, profile: profile?.full_name, loading });
@@ -105,6 +106,24 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
     };
   }, [supabase]); // removed pathname to prevent refetch on route change
 
+  useEffect(() => {
+    setMobileOpen(false);
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      return () => document.removeEventListener('mousedown', handleOutsideClick);
+    }
+  }, [menuOpen]);
+
   const handleSell = () => {
     if (user && (profile || user.email)) {
       window.location.href = locale === "en" ? "/en/submit-listing" : "/submit-listing";
@@ -176,7 +195,7 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
             </button>
             <LanguageSwitch current={locale} />
             {user ? (
-                <div className="relative">
+                <div className="relative" ref={menuRef}>
                   <button className="text-sm font-medium flex items-center gap-2 text-zinc-900 dark:text-zinc-100" onClick={() => setMenuOpen(m => !m)}>
                     {avatarUrl && (
                       <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
@@ -200,6 +219,50 @@ export default function SiteHeader({ locale }: { locale: "es" | "en" }) {
           </div>
         </div>
       </header>
+
+      {mobileOpen && (
+        <div className="fixed inset-x-0 top-14 bottom-0 z-40 bg-zinc-950/95 p-6 md:hidden overflow-y-auto">
+          <button className="absolute right-4 top-4 text-zinc-50" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+
+          <div className="mt-16 flex flex-col gap-6">
+            <button onClick={() => { handleSell(); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+              <span>→</span> {t.sell}
+            </button>
+            <Link href={locale === "en" ? "/en/agents" : "/agents"} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+              <span>→</span> {t.findAgent}
+            </Link>
+            <button onClick={() => { setHelpOpen(true); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+              <span>→</span> {t.getHelp}
+            </button>
+
+            {user ? (
+              <>
+                <Link href={locale === "en" ? "/en/user-settings" : "/user-settings"} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+                  <span>→</span> {t.profile ?? "Profile"}
+                </Link>
+                <Link href={locale === "en" ? "/en/dashboard" : "/dashboard"} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+                  <span>→</span> {t.dashboard ?? "Dashboard"}
+                </Link>
+                <button onClick={() => { supabase.auth.signOut(); setMobileOpen(false); }} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+                  <span>→</span> {t.logout ?? "Log out"}
+                </button>
+              </>
+            ) : (
+              <Link href={locale === "en" ? "/en/signin" : "/signin"} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-lg font-medium text-zinc-50 transition-colors hover:text-zinc-300">
+                <span>→</span> {t.signInTitle}
+              </Link>
+            )}
+          </div>
+
+          <div className="mt-12 flex justify-center gap-6 text-base">
+            <Link href="/" onClick={() => setMobileOpen(false)} className={locale === "es" ? "font-medium text-blue-400" : "text-zinc-400 hover:text-zinc-200"}>{t.langEs}</Link>
+            <span className="text-zinc-600">/</span>
+            <Link href="/en" onClick={() => setMobileOpen(false)} className={locale === "en" ? "font-medium text-blue-400" : "text-zinc-400 hover:text-zinc-200"}>{t.langEn}</Link>
+          </div>
+        </div>
+      )}
 
       {/* Help modal (placeholder) */}
       {helpOpen && (
