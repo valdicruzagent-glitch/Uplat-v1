@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getOrCreateVisitorId } from "@/app/lib/visitor";
 
 import { en } from "@/app/i18n/en";
@@ -18,48 +17,29 @@ export default function TrackListingView({
   const [views, setViews] = useState<number | null>(null);
 
   useEffect(() => {
-    const supabase = getSupabaseClient();
     const visitorId = getOrCreateVisitorId();
 
     async function run() {
       try {
-        const existingRes = await supabase
-          .from('events')
-          .select('id')
-          .eq('type', 'listing_view')
-          .eq('listing_id', listingId)
-          .eq('meta->>visitor_id', visitorId)
-          .limit(1)
-          .maybeSingle();
+        const res = await fetch('/api/listing-views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId, visitorId }),
+        });
 
-        if (existingRes.error) {
-          console.error('[TrackListingView] check error:', existingRes.error);
-        }
-
-        if (!existingRes.data) {
-          const { error: insertErr } = await supabase.from('events').insert({
-            type: 'listing_view',
-            listing_id: listingId,
-            meta: { visitor_id: visitorId },
-          });
-          if (insertErr) {
-            console.error('[TrackListingView] insert error:', insertErr);
+        if (!res.ok) {
+          const fallback = await fetch(`/api/listing-views?listingId=${encodeURIComponent(listingId)}`);
+          if (!fallback.ok) {
+            setViews(0);
+            return;
           }
-        }
-
-        const countRes = await supabase
-          .from('events')
-          .select('id', { count: 'exact', head: true })
-          .eq('type', 'listing_view')
-          .eq('listing_id', listingId);
-
-        if (countRes.error) {
-          console.error('[TrackListingView] count error:', countRes.error);
-          setViews(0);
+          const fallbackData = await fallback.json();
+          setViews(Number(fallbackData.count ?? 0));
           return;
         }
 
-        setViews(countRes.count ?? 0);
+        const data = await res.json();
+        setViews(Number(data.count ?? 0));
       } catch (err) {
         console.error('[TrackListingView] unexpected error:', err);
         setViews(0);
