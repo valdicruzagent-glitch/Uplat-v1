@@ -68,12 +68,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'delete_failed' }, { status: 500 });
     }
 
-    try {
-      await supabase.rpc('increment_favorites_count', { lid: listing_id, delta: -1 });
-    } catch (e) {
-      console.error('[favorites][POST] rpc decrement error', e);
-    }
-
     return NextResponse.json({ action: 'deleted' });
   }
 
@@ -84,12 +78,6 @@ export async function POST(req: Request) {
   if (insErr) {
     console.error('[favorites][POST] insert failed', insErr);
     return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
-  }
-
-  try {
-    await supabase.rpc('increment_favorites_count', { lid: listing_id, delta: 1 });
-  } catch (e) {
-    console.error('[favorites][POST] rpc increment error', e);
   }
 
   return NextResponse.json({ action: 'added' });
